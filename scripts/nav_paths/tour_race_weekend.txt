@@ -1,0 +1,12 @@
+# Race Weekend: a 3 lap solo race on the game's autopilot with time acceleration, its post-race pages, then back to the main menu
+# Hand-written (not generated). Start on MAIN MENU. Needs:  gtr2-nav.py path --session-step --drive-step FILE
+# --session-step loads the track; --drive-step allows the !RACE step (RACE button, pause menu Autopilot row + Enter only, K for time
+# acceleration, wait for the results page), and the results page's CONTINUE. Nothing else that starts or saves anything is pressed.
+# (GRIDMONITOR_POST, the MONITOR tab's page, is not reached: the tab does nothing on the results page here, as measured earlier.)
+# A race leaves a replay (ReplayData\Imola HOT LAP.Vcr and a changed Imola.Vcr) and rewrites the profile on exit: the suite reverts both.
+# Format: PAGE | LABEL | EXPECTED PAGE   (a label '@x,y' is a canvas position; '!NAME' is a special step, see gtr2-nav.py special_step)
+MAIN MENU | APP_BUTTON_GAMEMODESELECT_GRANDPRIX | SUMMARY_GRANDPRIX
+SUMMARY_GRANDPRIX | !SHORTRACE | SUMMARY_GRANDPRIX
+SUMMARY_GRANDPRIX | CONTINUE | MONITOR_SINGLE
+MONITOR_SINGLE | !RACE | POST RACE MONITOR
+POST RACE MONITOR | APP_BUTTON_POSTRACENAVIGATION | MAIN MENU

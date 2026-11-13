@@ -1,0 +1,16 @@
+# 24 Hour event at its shortest setting: step through Practice 2, Qualifying 1 and 2 and Warm-up, race on autopilot, results page, main menu
+# Hand-written (not generated). Start on MAIN MENU. Needs:  gtr2-nav.py path --session-step --drive-step FILE
+# --session-step loads the track; --drive-step allows !NEXTSESSION (NEXT SESSION button, then waits for the session label to change),
+# !RACE (RACE button, pause menu Autopilot row + Enter only, K for time acceleration, wait for the results page) and the results page's
+# CONTINUE. The race length spinner is stepped down to 24 minutes and the opponents slider dragged to the left end (!SHORTENDURANCE).
+# Format: PAGE | LABEL | EXPECTED PAGE   (a label '@x,y' is a canvas position; '!NAME' is a special step, see gtr2-nav.py special_step)
+MAIN MENU | APP_BUTTON_ENDURANCE_EVENT | SUMMARY_ENDURANCE
+SUMMARY_ENDURANCE | !SHORTENDURANCE | SUMMARY_ENDURANCE
+SUMMARY_ENDURANCE | CONTINUE | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !RACE | ENDURANCE POST RACE MONITOR
+ENDURANCE POST RACE MONITOR | APP_BUTTON_POSTRACENAVIGATION | MAIN MENU

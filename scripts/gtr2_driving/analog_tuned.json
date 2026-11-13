@@ -1,0 +1,248 @@
+{
+ "4imol": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 13 --decel 9 --lookahead 5.0 1.2 --analog-steer 0.7 --analog-throttle 0.900 1.000 1.000 1.000 1.000 1.000 --shift-rpm 7200",
+  "first_crossing_s": 154.4,
+  "note": "Imola GP out lap from the pits, Murcielago, analog input, Difficulty Type 2 with Steering Help/Brake Help/Stability Control/Auto Clutch/Invulnerability on (see CLAUDE.md). Tuned 2026-11-11 by gtr2-tune-lap.py, three passes (12, 14 and 11 trials; pass 3 best 153.1 s). With the garage-safe exit (drive straight to the pit-stop point, merge slowly: no wall hits) two verification runs gave 154.4 s and 154.4 s, 0.46% and 0.49% off the road (limit 0.5%), largest offset 6.2 m. Shift rpm 7200 is the Murcielago's rev limiter.",
+  "zones": [
+   [
+    1120,
+    1220,
+    0.9,
+    1.5
+   ],
+   [
+    2560,
+    2660,
+    0.9,
+    0
+   ],
+   [
+    3060,
+    3180,
+    0.9,
+    1.5
+   ],
+   [
+    4500,
+    4600,
+    0.9,
+    0
+   ]
+  ]
+ },
+ "4zhuhai": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md).",
+  "zones": [
+   [
+    1060,
+    1180,
+    0.85,
+    -1.5
+   ]
+  ],
+  "first_crossing_s": 159.7
+ },
+ "3anderstorp": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 168.5,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3barcelona": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 176.2,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "nbarcelona": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 128.0,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3brno": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 177.7,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4brno": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 177.8,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3donington": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 147.1,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4donington": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 147.1,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "ndonington": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 115.7,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4dubai": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 186.2,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "cdubai": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 107.4,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "idubai": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 155.0,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "ndubai": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 139.6,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3enna": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 148.8,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3estoril": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 163.6,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "gphockenheim": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 169.2,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "nthockenheim": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 148.0,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3magny": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 171.7,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4magny": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 170.9,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "ntmagny": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 9 --decel 6.5 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 111.7,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3monza": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 213.4,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4monza": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 213.4,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "jnmonza": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 8.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 90.5,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3oschersleben": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 151.1,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4boschersleben": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 107.4,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4oschersleben": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 145.8,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "3spa": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 233.4,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4spa": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 234.4,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4gpvalencia": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 155.6,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4navalencia": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 126.8,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "4ngvalencia": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 190.9,
+  "note": "Tuned 2026-11-12 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ },
+ "sanderstorp": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 7.5 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "note": "Tuned 2026-11-13 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md).",
+  "zones": [
+   [
+    820,
+    940,
+    0.85,
+    1.5
+   ]
+  ],
+  "first_crossing_s": 149.1
+ },
+ "shhockenheim": {
+  "car": "gt/lamborghini_murcielago",
+  "args": "--lat-accel 10 --decel 6 --lookahead 5.0 1.2 --analog-steer 0.6 --analog-throttle 0.600 0.700 0.850 1.000 1.000 1.000 --shift-rpm 6300",
+  "first_crossing_s": 138.0,
+  "note": "Tuned 2026-11-13 by gtr2-tune-all.py (7 trials, coordinate search; see CLAUDE.md)."
+ }
+}

@@ -1,0 +1,9 @@
+{
+  "3enna": "--center-gain 0",
+  "3monza": "--tight-radius 25 --pit-speed 10 --tight-speed 5 --guard-deg 8 --guard-span 25 --guard-floor 0.08",
+  "4monza": "--tight-radius 25 --pit-speed 10 --tight-speed 5 --guard-deg 8 --guard-span 25 --guard-floor 0.08",
+  "4ngvalencia": "--guard-deg 12 --guard-span 25 --guard-floor 0.08",
+  "sanderstorp": "--pit-speed 10 --lat-accel 6.0",
+  "4zhuhai": "--guard-deg 12 --guard-span 25 --guard-floor 0.15",
+  "jnmonza": "--guard-deg 12 --guard-span 25 --guard-floor 0.15"
+}

@@ -1,0 +1,13 @@
+# Replay studio: the replay list, play a replay, the studio's full screen view, and back to the main menu
+# Hand-written (not generated). Start on MAIN MENU. Plain navigation: nothing is renamed, deleted or saved (RENAME and DELETE are not pressed).
+# Needs at least one replay (ReplayData\*.Vcr); this install ships some. Run after tour_race_weekend and the first replay in the list is the newest or not,
+# either way it plays. The studio draws the 3D scene behind its bars, so its references mask that area (pagerec.MASKS, PAGE_MAX_SCORE).
+# Format: PAGE | LABEL | EXPECTED PAGE   (a label '@x,y' is a canvas position)
+MAIN MENU | REPLAY | REPLAY_STUDIO_SIMMAIN
+REPLAY_STUDIO_SIMMAIN | @316,257 | REPLAY_STUDIO_SIMMAIN
+REPLAY_STUDIO_SIMMAIN | PLAY | REPLAY STUDIO PAGE
+REPLAY STUDIO PAGE | @387.5,583.5 | REPLAY STUDIO PAGE
+REPLAY STUDIO PAGE | FULL SCREEN | REPLAY STUDIO MAXIMIZED
+REPLAY STUDIO MAXIMIZED | @398,298 | REPLAY STUDIO PAGE
+REPLAY STUDIO PAGE | BACK | REPLAY_STUDIO_SIMMAIN
+REPLAY_STUDIO_SIMMAIN | MAIN MENU | MAIN MENU

@@ -1,0 +1,10 @@
+# Custom championship: RESTART on the Custom tab opens the team and car choice for the highlighted custom championship; BACK leaves it
+# Hand-written (not generated). Start on MAIN MENU. Needs SDNDTG.DYN in the install root (an empty file that unlocks every custom
+# championship; without it every one is locked, START is greyed and the step stalls) and:  gtr2-nav.py path --season-step FILE
+# RESTART is a season-start kind, so it needs the flag. The tour stops on the team choice and goes BACK: no season is started.
+# Format: PAGE | LABEL | EXPECTED PAGE   (a label '@x,y' is a canvas position)
+MAIN MENU | APP_BUTTON_GAMEMODESELECT_CHAMPIONSHIP | RESUMEORNEW_CHAMP
+RESUMEORNEW_CHAMP | CUSTOM | CUSTOM_CHAMP
+CUSTOM_CHAMP | RESTART | TEAM_SELECT_CUSTOMCHAMP
+TEAM_SELECT_CUSTOMCHAMP | BACK | CUSTOM_CHAMP
+CUSTOM_CHAMP | BACK | MAIN MENU

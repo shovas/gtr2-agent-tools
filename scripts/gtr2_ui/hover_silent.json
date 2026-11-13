@@ -1,0 +1,953 @@
+{
+ "CHAMPIONSHIP START NEW SEASON WANING": {
+  "buttons": 2,
+  "silent": []
+ },
+ "CIRCUIT_INFO": {
+  "buttons": 10,
+  "silent": [
+   "CIRCUIT (435,63)",
+   "GENERIC_BUTTON_NORMAL (779.5,120.5)"
+  ]
+ },
+ "CIRCUIT_INFO_HOST": {
+  "buttons": 10,
+  "silent": [
+   "CIRCUIT (434,63)",
+   "GENERIC_BUTTON_NORMAL (779.5,120.5)"
+  ]
+ },
+ "CIRCUIT_SELECT": {
+  "buttons": 11,
+  "silent": [
+   "CIRCUIT (435,63)",
+   "GENERIC_BUTTON_NORMAL (779.5,120.5)",
+   "UNLOCK (293,477)"
+  ]
+ },
+ "CIRCUIT_SELECT_HOST": {
+  "buttons": 10,
+  "silent": [
+   "CIRCUIT (434,63)",
+   "GENERIC_BUTTON_NORMAL (779.5,120.5)"
+  ]
+ },
+ "CLASS_SELECT": {
+  "buttons": 12,
+  "silent": [
+   "CAR (339,63)",
+   "CLASS (304,119)"
+  ]
+ },
+ "CLASS_SELECT_24H": {
+  "buttons": 12,
+  "silent": [
+   "CAR (338,63)",
+   "CLASS (304,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "CLASS_SELECT_HOST": {
+  "buttons": 12,
+  "silent": [
+   "CAR (338,63)",
+   "CLASS (304,119)"
+  ]
+ },
+ "CONFIRM_CONTROL2": {
+  "buttons": 2,
+  "silent": []
+ },
+ "CONFIRM_EXIT": {
+  "buttons": 2,
+  "silent": []
+ },
+ "CONFIRM_KEYBOARD": {
+  "buttons": 2,
+  "silent": []
+ },
+ "CONFIRM_TO_WINDOWS": {
+  "buttons": 2,
+  "silent": []
+ },
+ "CONTROL_FORCE_24H": {
+  "buttons": 20,
+  "silent": [
+   "FORCE (480,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "CONTROL_FORCE_CHAMP": {
+  "buttons": 20,
+  "silent": [
+   "FORCE (480,119)",
+   "START (735,575)"
+  ]
+ },
+ "CONTROL_FORCE_DYNAMIC": {
+  "buttons": 20,
+  "silent": [
+   "FORCE (480,119)"
+  ]
+ },
+ "CONTROL_FORCE_HOST": {
+  "buttons": 19,
+  "silent": [
+   "FORCE (480,119)"
+  ]
+ },
+ "CONTROL_FORCE_MULTIPLAYER": {
+  "buttons": 15,
+  "silent": [
+   "FORCE (480,119)"
+  ]
+ },
+ "CONTROL_FORCE_PRECHAMP": {
+  "buttons": 18,
+  "silent": [
+   "FORCE (480,119)",
+   "START (735,575)"
+  ]
+ },
+ "CONTROL_FORCE_SCHOOL": {
+  "buttons": 18,
+  "silent": [
+   "FORCE (480,119)"
+  ]
+ },
+ "CONTROL_FORCE_SIMMAIN": {
+  "buttons": 19,
+  "silent": [
+   "FORCE (480,119)"
+  ]
+ },
+ "CONTROL_FORCE_SUMMARY": {
+  "buttons": 19,
+  "silent": [
+   "FORCE (480,119)"
+  ]
+ },
+ "CONTROL_KEYS_24H": {
+  "buttons": 21,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "CONTROL_KEYS_CHAMP": {
+  "buttons": 21,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)",
+   "START (735,575)"
+  ]
+ },
+ "CONTROL_KEYS_DYNAMIC": {
+  "buttons": 21,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)"
+  ]
+ },
+ "CONTROL_KEYS_HOST": {
+  "buttons": 20,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)"
+  ]
+ },
+ "CONTROL_KEYS_MULTIPLAYER": {
+  "buttons": 16,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)"
+  ]
+ },
+ "CONTROL_KEYS_PRECHAMP": {
+  "buttons": 19,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)",
+   "START (735,575)"
+  ]
+ },
+ "CONTROL_KEYS_SCHOOL": {
+  "buttons": 19,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)"
+  ]
+ },
+ "CONTROL_KEYS_SIMMAIN": {
+  "buttons": 20,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)"
+  ]
+ },
+ "CONTROL_KEYS_SUMMARY": {
+  "buttons": 20,
+  "silent": [
+   "BUTTONS (304,119)",
+   "WingMan RumblePad USB (270,165.5)",
+   "DRIVING (158,364)"
+  ]
+ },
+ "CONTROL_ONE_24H": {
+  "buttons": 14,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "CONTROL_ONE_CHAMP": {
+  "buttons": 14,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)",
+   "START (735,575)"
+  ]
+ },
+ "CONTROL_ONE_DYNAMIC": {
+  "buttons": 14,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)"
+  ]
+ },
+ "CONTROL_ONE_HOST": {
+  "buttons": 13,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)"
+  ]
+ },
+ "CONTROL_ONE_MULTIPLAYER": {
+  "buttons": 9,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)"
+  ]
+ },
+ "CONTROL_ONE_PRECHAMP": {
+  "buttons": 12,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)",
+   "START (735,575)"
+  ]
+ },
+ "CONTROL_ONE_SCHOOL": {
+  "buttons": 12,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)"
+  ]
+ },
+ "CONTROL_ONE_SIMMAIN": {
+  "buttons": 13,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)"
+  ]
+ },
+ "CONTROL_ONE_SUMMARY": {
+  "buttons": 13,
+  "silent": [
+   "ADVANCED (392,119)",
+   "HOLD BUTTON FOR GEAR (455.5,353.5)"
+  ]
+ },
+ "CUSTOM_CHAMP": {
+  "buttons": 10,
+  "silent": [
+   "CUSTOM (434,63)",
+   "UNLOCK (688,477)",
+   "CONTINUE (734,515.5)",
+   "LOAD LAST SAVED (730,585.5)"
+  ]
+ },
+ "DELETE REPLAY": {
+  "buttons": 2,
+  "silent": []
+ },
+ "DELETE TIMETRIAL": {
+  "buttons": 2,
+  "silent": []
+ },
+ "DRIVERSCHOOL_ABOUTASSISTS": {
+  "buttons": 8,
+  "silent": [
+   "ASSISTS (626,63)"
+  ]
+ },
+ "DRIVERSCHOOL_ABOUTFIA": {
+  "buttons": 8,
+  "silent": [
+   "FIA GT (530,63)"
+  ]
+ },
+ "DRIVERSCHOOL_THEORY": {
+  "buttons": 8,
+  "silent": [
+   "THEORY (338,63)"
+  ]
+ },
+ "DRIVERSTANDING_CHAMP": {
+  "buttons": 8,
+  "silent": [
+   "STANDINGS (434,63)"
+  ]
+ },
+ "DRIVERSTANDING_SCHOOL": {
+  "buttons": 9,
+  "silent": [
+   "TRACK WORK (435,63.5)"
+  ]
+ },
+ "FULLGRID_SINGLE": {
+  "buttons": 15,
+  "silent": [
+   "TIMING (530,63)",
+   "GENERAL (54,119)",
+   "CLASS (212.5,143.5)",
+   "CONTINUE TO (738,357)"
+  ]
+ },
+ "FULLGRID_TIMETRIAL": {
+  "buttons": 13,
+  "silent": [
+   "TIMING (530,63)",
+   "SECTOR (61,119)",
+   "CLASS (217.5,145.5)",
+   "SAVE GAME (738,452.5)"
+  ]
+ },
+ "GARAGEPAGE": {
+  "buttons": 21,
+  "silent": [
+   "GARAGE (434,63)",
+   "FILE (216,119)",
+   "FAVORITE (287,315)",
+   "DELETE (373,315)",
+   "LOAD (631,315)",
+   "CONTINUE TO (738,357)"
+  ]
+ },
+ "GEARSGARAGE": {
+  "buttons": 14,
+  "silent": [
+   "GARAGE (434,63)",
+   "SETUP ONE (304,119)"
+  ]
+ },
+ "GRIDMONITOR_NOLIST": {
+  "buttons": 4,
+  "silent": []
+ },
+ "LEAVE LOBBY": {
+  "buttons": 2,
+  "silent": []
+ },
+ "LOAD GAME": {
+  "buttons": 2,
+  "silent": [
+   "GENERIC_BUTTON_NORMAL (137,300)",
+   "APP_BUTTON_LOADGAME (660,300)"
+  ]
+ },
+ "MAIN MENU": {
+  "buttons": 16,
+  "silent": [
+   "MAIN MENU (338,63)"
+  ]
+ },
+ "MONITOR_SCHOOL": {
+  "buttons": 12,
+  "silent": [
+   "TECHNIQUE (338,63)",
+   "DRIVE (521,574)"
+  ]
+ },
+ "MONITOR_SINGLE": {
+  "buttons": 16,
+  "silent": [
+   "GRID (338,63)",
+   "CLASS (195.5,149.5)",
+   "APP_BUTTON_NEXTSESSION (738,357)",
+   "GENERIC_BUTTON_NORMAL (397,358)",
+   "APP_BUTTON_REPLAYCHANGEVEHICLE (512,358)",
+   "APP_BUTTON_REPLAYCHANGECAMERA (569,358)"
+  ]
+ },
+ "MONITOR_TIMETRIAL": {
+  "buttons": 18,
+  "silent": [
+   "GRID (338,63)",
+   "CLASS (199.5,148.5)",
+   "GENERIC_BUTTON_NORMAL (397,358)",
+   "APP_BUTTON_REPLAYCHANGEVEHICLE (512,358)",
+   "APP_BUTTON_REPLAYCHANGECAMERA (570,358)",
+   "MONITOR (402,403)",
+   "SAVE GAME (738,452.5)"
+  ]
+ },
+ "MP_ADDGAME": {
+  "buttons": 2,
+  "silent": []
+ },
+ "NEXTROUND_CHAMP": {
+  "buttons": 8,
+  "silent": [
+   "ROUND INFO (338,63)"
+  ]
+ },
+ "OPTIONS_ADVANCED_24H": {
+  "buttons": 15,
+  "silent": [
+   "ADVANCED (480,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "OPTIONS_ADVANCED_CHAMP": {
+  "buttons": 15,
+  "silent": [
+   "ADVANCED (480,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_ADVANCED_HOST": {
+  "buttons": 14,
+  "silent": [
+   "ADVANCED (480,119)"
+  ]
+ },
+ "OPTIONS_ADVANCED_MULTIPLAYER": {
+  "buttons": 10,
+  "silent": [
+   "ADVANCED (480,119)"
+  ]
+ },
+ "OPTIONS_ADVANCED_PRECHAMP": {
+  "buttons": 13,
+  "silent": [
+   "ADVANCED (480,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_ADVANCED_SCHOOL": {
+  "buttons": 13,
+  "silent": [
+   "ADVANCED (480,119)"
+  ]
+ },
+ "OPTIONS_ADVANCED_SIMDYN": {
+  "buttons": 16,
+  "silent": [
+   "ADVANCED (480,119)",
+   "DRIVE (730,575)"
+  ]
+ },
+ "OPTIONS_ADVANCED_SIMMAIN": {
+  "buttons": 14,
+  "silent": [
+   "ADVANCED (480,119)"
+  ]
+ },
+ "OPTIONS_ADVANCED_SUMMARY": {
+  "buttons": 14,
+  "silent": [
+   "ADVANCED (480,119)"
+  ]
+ },
+ "OPTIONS_ASSISTS_24H": {
+  "buttons": 10,
+  "silent": [
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "OPTIONS_ASSISTS_CHAMP": {
+  "buttons": 10,
+  "silent": [
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_ASSISTS_HOST": {
+  "buttons": 9,
+  "silent": []
+ },
+ "OPTIONS_ASSISTS_MULTIPLAYER": {
+  "buttons": 5,
+  "silent": []
+ },
+ "OPTIONS_ASSISTS_PRECHAMP": {
+  "buttons": 8,
+  "silent": [
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_ASSISTS_SCHOOL": {
+  "buttons": 8,
+  "silent": []
+ },
+ "OPTIONS_ASSISTS_SIMDYN": {
+  "buttons": 10,
+  "silent": []
+ },
+ "OPTIONS_ASSISTS_SIMMAIN": {
+  "buttons": 9,
+  "silent": []
+ },
+ "OPTIONS_ASSISTS_SUMMARY": {
+  "buttons": 10,
+  "silent": [
+   "CONTINUE (738,546)"
+  ]
+ },
+ "OPTIONS_AUDIO_24H": {
+  "buttons": 15,
+  "silent": [
+   "AUDIO (392,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "OPTIONS_AUDIO_CHAMP": {
+  "buttons": 15,
+  "silent": [
+   "AUDIO (392,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_AUDIO_HOST": {
+  "buttons": 14,
+  "silent": [
+   "AUDIO (392,119)"
+  ]
+ },
+ "OPTIONS_AUDIO_MULTIPLAYER": {
+  "buttons": 10,
+  "silent": [
+   "AUDIO (392,119)"
+  ]
+ },
+ "OPTIONS_AUDIO_PRECHAMP": {
+  "buttons": 13,
+  "silent": [
+   "AUDIO (392,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_AUDIO_SCHOOL": {
+  "buttons": 13,
+  "silent": [
+   "AUDIO (392,119)"
+  ]
+ },
+ "OPTIONS_AUDIO_SIMDYN": {
+  "buttons": 15,
+  "silent": [
+   "AUDIO (392,119)"
+  ]
+ },
+ "OPTIONS_AUDIO_SIMMAIN": {
+  "buttons": 14,
+  "silent": [
+   "AUDIO (392,119)"
+  ]
+ },
+ "OPTIONS_AUDIO_SUMMARY": {
+  "buttons": 14,
+  "silent": [
+   "AUDIO (392,119)"
+  ]
+ },
+ "OPTIONS_BASIC_24H": {
+  "buttons": 15,
+  "silent": [
+   "GAME (216,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "OPTIONS_BASIC_CHAMP": {
+  "buttons": 15,
+  "silent": [
+   "GAME (216,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_BASIC_HOST": {
+  "buttons": 14,
+  "silent": [
+   "GAME (216,119)"
+  ]
+ },
+ "OPTIONS_BASIC_MULTIPLAYER": {
+  "buttons": 10,
+  "silent": [
+   "GAME (216,119)"
+  ]
+ },
+ "OPTIONS_BASIC_PRECHAMP": {
+  "buttons": 13,
+  "silent": [
+   "GAME (216,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_BASIC_SCHOOL": {
+  "buttons": 13,
+  "silent": [
+   "GAME (216,119)"
+  ]
+ },
+ "OPTIONS_BASIC_SIMDYN": {
+  "buttons": 15,
+  "silent": [
+   "GAME (216,119)"
+  ]
+ },
+ "OPTIONS_BASIC_SIMMAIN": {
+  "buttons": 14,
+  "silent": [
+   "GAME (216,119)"
+  ]
+ },
+ "OPTIONS_BASIC_SUMMARY": {
+  "buttons": 14,
+  "silent": [
+   "GAME (216,119)"
+  ]
+ },
+ "OPTIONS_DETAIL_24H": {
+  "buttons": 15,
+  "silent": [
+   "VIDEO (304,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "OPTIONS_DETAIL_CHAMP": {
+  "buttons": 15,
+  "silent": [
+   "VIDEO (304,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_DETAIL_HOST": {
+  "buttons": 14,
+  "silent": [
+   "VIDEO (304,119)"
+  ]
+ },
+ "OPTIONS_DETAIL_MULTIPLAYER": {
+  "buttons": 10,
+  "silent": [
+   "VIDEO (304,119)"
+  ]
+ },
+ "OPTIONS_DETAIL_PRECHAMP": {
+  "buttons": 13,
+  "silent": [
+   "VIDEO (304,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_DETAIL_SCHOOL": {
+  "buttons": 13,
+  "silent": [
+   "VIDEO (304,119)"
+  ]
+ },
+ "OPTIONS_DETAIL_SIMDYN": {
+  "buttons": 15,
+  "silent": [
+   "VIDEO (304,119)"
+  ]
+ },
+ "OPTIONS_DETAIL_SIMMAIN": {
+  "buttons": 14,
+  "silent": [
+   "VIDEO (304,119)"
+  ]
+ },
+ "OPTIONS_DETAIL_SUMMARY": {
+  "buttons": 14,
+  "silent": [
+   "VIDEO (304,119)"
+  ]
+ },
+ "OPTIONS_GAME_24H": {
+  "buttons": 15,
+  "silent": [
+   "MULTIPLAYER (568,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "OPTIONS_GAME_HOST": {
+  "buttons": 14,
+  "silent": [
+   "MULTIPLAYER (568,119)"
+  ]
+ },
+ "OPTIONS_GAME_MULTIPLAYER": {
+  "buttons": 10,
+  "silent": [
+   "MULTIPLAYER (568,119)"
+  ]
+ },
+ "OPTIONS_GAME_PRECHAMP": {
+  "buttons": 13,
+  "silent": [
+   "MULTIPLAYER (568,119)",
+   "START (735,575)"
+  ]
+ },
+ "OPTIONS_GAME_SCHOOL": {
+  "buttons": 13,
+  "silent": [
+   "MULTIPLAYER (568,119)"
+  ]
+ },
+ "OPTIONS_GAME_SIMMAIN": {
+  "buttons": 14,
+  "silent": [
+   "MULTIPLAYER (568,119)"
+  ]
+ },
+ "OPTIONS_GAME_SUMMARY": {
+  "buttons": 14,
+  "silent": [
+   "MULTIPLAYER (568,119)"
+  ]
+ },
+ "PHOTO SHOP": {
+  "buttons": 5,
+  "silent": [
+   "APP_BUTTON_PAGEFADE (446.5,583)"
+  ]
+ },
+ "PROFILE ADD": {
+  "buttons": 2,
+  "silent": [
+   "NEWPROFILEOK (660,300)"
+  ]
+ },
+ "PROFILE_SELECT_SIMMAIN": {
+  "buttons": 15,
+  "silent": [
+   "PLAYERS (304,119)",
+   "DELETE (316,454)",
+   "LOAD (486,454)"
+  ]
+ },
+ "RENAME REPLAY": {
+  "buttons": 2,
+  "silent": []
+ },
+ "RENAME TIMETRIAL": {
+  "buttons": 2,
+  "silent": []
+ },
+ "REPLAY STUDIO MAXIMIZED": {
+  "buttons": 1,
+  "silent": []
+ },
+ "REPLAY STUDIO PAGE": {
+  "buttons": 17,
+  "silent": [
+   "APP_BUTTON_ZOOMOUT (715.5,455.5)",
+   "APP_BUTTON_PANUP (744.5,455.5)",
+   "APP_BUTTON_ZOOMIN (773.5,455.5)",
+   "APP_BUTTON_PANLEFT (715.5,484.5)",
+   "APP_BUTTON_RESETSWINGMAN (744.5,484.5)",
+   "APP_BUTTON_PANRIGHT (773.5,484.5)",
+   "APP_BUTTON_PANDOWN (744.5,513.5)",
+   "APP_BUTTON_REPLAYTOBEGINNING (283.5,583.5)",
+   "APP_BUTTON_REPLAYREWIND (317.5,583.5)",
+   "APP_BUTTON_REPLAYSTOP (352.5,583.5)",
+   "APP_BUTTON_REPLAYPLAY (387.5,583.5)",
+   "APP_BUTTON_REPLAYFASTFORWARD (422.5,583.5)",
+   "APP_BUTTON_REPLAYTOEND (456.5,583.5)"
+  ]
+ },
+ "REPLAY_STUDIO_SIMMAIN": {
+  "buttons": 13,
+  "silent": [
+   "REPLAYS (328.5,138.5)",
+   "PLAY (316,454)",
+   "RENAME (401,454)",
+   "DELETE (486,454)"
+  ]
+ },
+ "RESUMEORNEW_CHAMP": {
+  "buttons": 9,
+  "silent": [
+   "OFFICIAL (338,63)",
+   "CONTINUE (734,515.5)",
+   "LOAD LAST SAVED (730,585.5)"
+  ]
+ },
+ "SAVE GARAGE SETUP": {
+  "buttons": 2,
+  "silent": [
+   "SAVESETUPOK (660,300)"
+  ]
+ },
+ "SAVEGAME": {
+  "buttons": 1,
+  "silent": []
+ },
+ "SECTORGRID_SINGLE": {
+  "buttons": 15,
+  "silent": [
+   "TIMING (530,63)",
+   "SECTOR (142,119)",
+   "CLASS (212.5,143.5)",
+   "CONTINUE TO (738,357)"
+  ]
+ },
+ "SUMMARY_24H": {
+  "buttons": 9,
+  "silent": [
+   "EVENTS (435,63)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "SUMMARY_CHAMP": {
+  "buttons": 4,
+  "silent": [
+   "SUMMARY (433,63)"
+  ]
+ },
+ "SUMMARY_ENDURANCE": {
+  "buttons": 9,
+  "silent": [
+   "SUMMARY (531,63)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "SUMMARY_GHOST": {
+  "buttons": 8,
+  "silent": [
+   "SUMMARY (531,63)"
+  ]
+ },
+ "SUMMARY_GRANDPRIX": {
+  "buttons": 9,
+  "silent": [
+   "SUMMARY (531,63)",
+   "LOAD LAST SAVED (735,588.5)"
+  ]
+ },
+ "SUMMARY_MPCLIENT": {
+  "buttons": 9,
+  "silent": [
+   "SETTINGS (529,63)"
+  ]
+ },
+ "SUMMARY_MPLIST": {
+  "buttons": 15,
+  "silent": [
+   "GAMES (338,63)",
+   "JOIN (616,435)",
+   "DRIVE (735,515.5)"
+  ]
+ },
+ "SUMMARY_MPSETTINGS": {
+  "buttons": 9,
+  "silent": [
+   "RESTRICTION (626,63)"
+  ]
+ },
+ "SUMMARY_PRACTICE": {
+  "buttons": 9,
+  "silent": [
+   "SUMMARY (531,63)",
+   "LOAD LAST SAVED (735,588.5)"
+  ]
+ },
+ "SUSPENSIONGARAGE": {
+  "buttons": 14,
+  "silent": [
+   "GARAGE (434,63)",
+   "SETUP TWO (392,119)"
+  ]
+ },
+ "TEAMSTANDINGS_CHAMP": {
+  "buttons": 8,
+  "silent": [
+   "TEAM (530,63)"
+  ]
+ },
+ "TEAM_SELECT": {
+  "buttons": 12,
+  "silent": [
+   "CAR (339,63)",
+   "MODEL (392,119)"
+  ]
+ },
+ "TEAM_SELECT_24H": {
+  "buttons": 12,
+  "silent": [
+   "CAR (338,63)",
+   "MODEL (392,119)",
+   "LOAD LAST SAVED (735,587.5)"
+  ]
+ },
+ "TEAM_SELECT_CHAMP": {
+  "buttons": 4,
+  "silent": [
+   "CAR (338,63)"
+  ]
+ },
+ "TEAM_SELECT_CUSTOMCHAMP": {
+  "buttons": 2,
+  "silent": []
+ },
+ "TEAM_SELECT_HOST": {
+  "buttons": 12,
+  "silent": [
+   "CAR (338,63)",
+   "MODEL (392,119)"
+  ]
+ },
+ "TIMETRIAL_SELECT": {
+  "buttons": 21,
+  "silent": [
+   "GRID (338,63)",
+   "TIMETRIAL (614,403)",
+   "SAVE GAME (738,452.5)",
+   "RENAME (43,487)",
+   "SAVE (129,487)",
+   "LOAD (215,487)",
+   "DELETE (301,487)",
+   "REALISM (605,555)",
+   "REALISM (569,567)"
+  ]
+ },
+ "TRACKINFO_SCHOOL": {
+  "buttons": 11,
+  "silent": []
+ },
+ "TRACKINFO_SINGLE": {
+  "buttons": 12,
+  "silent": [
+   "APP_BUTTON_NEXTSESSION (738,357)"
+  ]
+ },
+ "TRACKINFO_TIMETRIAL": {
+  "buttons": 11,
+  "silent": [
+   "SAVE GAME (738,452.5)"
+  ]
+ }
+}

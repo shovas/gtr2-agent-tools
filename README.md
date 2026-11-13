@@ -1,2 +1,57 @@
 # gtr2-agent-tools
-AI LLM Agent Tools for GTR2 for Automated Testing, Driving, Troubleshooting, etc.
+
+Automation tools for *GTR 2 - FIA GT Racing Game* (Windows): a launcher that keeps the game's shared `Documents\GTR2` folder safe, a verified-resolution tool, a scripted menu navigator with page recognition, hands-free lap driving from the shared-memory telemetry, weather forcing, Driving School helpers, a crash-dump reader and offline guard tests. They were built with an AI coding agent (see `CLAUDE.md` and `AGENTS.md`, the instructions it reads) and are meant to be usable by an agent or by hand.
+
+This is an unofficial fan project. It is not affiliated with or endorsed by the publishers or developers of GTR 2 or by Steam. **This repository contains no game files**: you need your own copy of the game, and the tools act on that folder.
+
+## Before you start
+
+- **Status:** developed and tested on one Windows 10 machine with the Steam release of the game. Setup on other machines (no Steam, no vJoy, a game folder that is not a git repository) is untested.
+- **Requirements:** Windows 10/11, Python 3.11+, git, PowerShell 5.1, the game, and optionally vJoy for hands-free driving. The full list and which feature needs what is in [DEPENDENCIES.md](DEPENDENCIES.md); `python scripts\gtr2-setup.py --check-deps` shows what your machine already has.
+- **vJoy** (optional) is a kernel driver: installing it needs administrator rights, and your game profile's controls have to be bound to it. Everything except analog driving works without it.
+
+## What to expect
+
+- **The tools run your real game.** The navigator and the test suite start `GTR2.exe`, click through its menus with real mouse and keyboard input and take screenshots of its window. **Leave the PC alone while they run** (the full suite takes about 6 minutes): anything that takes the focus from the game pauses it, and stray input can click the wrong thing.
+- **Always launch through the launcher** (`scripts\gtr2-launch.ps1`). The game only reads its configuration from the shared `Documents\GTR2`, so the launcher backs that folder up, swaps in the game folder's own configuration for the run, then restores it and verifies the result. On a first run it sets any existing `Documents\GTR2` aside and puts it back afterwards.
+- **Game files change.** A run rewrites the player profile and writes logs and replays in the game folder. That is why the game folder should be a git repository (setup can create one): the test suite reverts those changes with git. Inside this repository a run only writes `scripts/gtr2_ui/runs/` (git-ignored), plus the reference pictures you choose to learn.
+- **One GTR2 at a time.** A second copy of the game crashes; the tools refuse to start one.
+- **A slow first start after the display slept.** On the machine this was developed on, a game started after Windows had turned the display off (default: 10 minutes without input) took 10 to 20 s to show its window instead of about 5, because the graphics driver was busy for that long; the window stays white meanwhile. The launcher works around it: it keeps the display on while it runs and, if the display was probably asleep, wakes it and waits 20 s first (`-WakeWait`, or `-NoWakeDisplay` to turn it off). If you see it anyway, or want it gone for everything, try a lighter setting on your side: a longer "Turn off display after" (or Never) in the Windows power plan, a plain black screen saver instead of turning the display off, a look at your monitor's own deep-sleep or eco setting, and the graphics driver's power management mode and PCI Express link power setting in the power plan. Only the first of these was measured (display held on: no slow start); the others are suggestions.
+
+## Quick start
+
+Run the guided setup. It detects what it can, asks for the rest and shows a review before it changes anything:
+
+```powershell
+python scripts\gtr2-setup.py --dry-run     # ask and review only
+python scripts\gtr2-setup.py               # do it
+```
+
+Or set it up by hand and point the tools at your game folder:
+
+```powershell
+$env:GTR2_ROOT = 'D:\Games\GTR2'          # the folder that holds GTR2.exe
+python -m venv scripts\.venv; scripts\.venv\Scripts\pip install -r scripts\requirements.txt
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\gtr2-launch.ps1 -DryRun   # first real run creates <game>\config\Documents-Config.ini
+scripts\.venv\Scripts\python.exe -I scripts\test_nav_guards.py                      # offline tests
+```
+
+Per-machine files (the config, the verified-resolution record, a snapshot of `Documents\GTR2`) are written to the game folder, not here. Optional: `GTR2_PROFILE` selects the player profile.
+
+## Where things are
+
+| Path | What it holds |
+|---|---|
+| `scripts/` | the tools (Python and PowerShell); `scripts/README.md` has a one-line index of every script |
+| `scripts/nav_paths/` | the navigation tours the test suite runs |
+| `scripts/gtr2_ui/baselines/` | reference pictures of the game's menu pages, used for page recognition (the player name is painted out) |
+| `config/weather/` | weather files used by the weather-forcing tool |
+| `docs/` | the findings and decisions behind the tools (see below) |
+| `templates/` | the instructions file `setup` adds to your game folder |
+| `DEPENDENCIES.md` | what to install |
+
+**About `docs/`:** these files are the working notes of the project, split by topic: what was measured, what failed, what is still unexplained. They read as a dated log, not as a manual. Start with `scripts/README.md` and this file; open a `docs/` file when you work on that topic (the index is at the end of `CLAUDE.md`).
+
+## License
+
+[Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/) (CC BY-NC 4.0); the full text is in [LICENSE](LICENSE). Creative Commons does not recommend its licenses for software, so check that this suits how you want to use the code. The game and its assets belong to their owners and are not covered by this license.

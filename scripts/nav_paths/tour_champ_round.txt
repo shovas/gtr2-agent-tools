@@ -1,0 +1,25 @@
+# Championship round 1 raced on autopilot: new season, practice to race, results, the standings, round 2 loads, leave
+# Hand-written (not generated). Start on MAIN MENU with the season from tour_champ_season IN PROGRESS (the first page then is
+# RESUMEORNEW_CHAMP IN PROGRESS). It starts another season through the "progress will be lost" warning's confirm, which only
+# --season-step allows. Needs:  gtr2-nav.py path --season-step --session-step --drive-step FILE
+# Steps: !SHORTCHAMP (opponents and distance to their minimum), CONTINUE through the team and round pages (starts the round),
+# !NEXTSESSION five times (Practice 2, Qualifying 1 and 2, Warm-up, Race), !RACE (autopilot, K for time acceleration), the results
+# page's CONTINUE, the standings, CONTINUE (loads round 2), LEAVE TRACK and the leave confirmation. Revert the profile afterwards.
+# Format: PAGE | LABEL | EXPECTED PAGE   (a label '@x,y' is a canvas position; '!NAME' is a special step, see gtr2-nav.py special_step)
+MAIN MENU | APP_BUTTON_GAMEMODESELECT_CHAMPIONSHIP | RESUMEORNEW_CHAMP IN PROGRESS
+RESUMEORNEW_CHAMP=RESUMEORNEW_CHAMP IN PROGRESS | RESTART | CHAMPIONSHIP START NEW SEASON WANING
+CHAMPIONSHIP START NEW SEASON WANING | @660,300 | SUMMARY_CHAMP
+SUMMARY_CHAMP | !SHORTCHAMP | SUMMARY_CHAMP
+SUMMARY_CHAMP | CONTINUE | NEXTROUND_CHAMP
+NEXTROUND_CHAMP | CONTINUE | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !NEXTSESSION | MONITOR_SINGLE
+MONITOR_SINGLE | !RACE | POST RACE MONITOR
+POST RACE MONITOR | APP_BUTTON_POSTRACENAVIGATION | DRIVERSTANDING_CHAMP
+DRIVERSTANDING_CHAMP | CONTINUE | MONITOR_SINGLE
+MONITOR_SINGLE | LEAVE TRACK | CONFIRM_EXIT
+CONFIRM_EXIT | APP_BUTTON_BACKTOMAIN | RESUMEORNEW_CHAMP IN PROGRESS
+RESUMEORNEW_CHAMP=RESUMEORNEW_CHAMP IN PROGRESS | BACK | MAIN MENU
