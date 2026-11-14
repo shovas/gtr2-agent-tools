@@ -176,6 +176,8 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
         STAGE_TEXT = "".join("STAGE %s epoch=%.3f" % (n, v) + chr(10) for n, v in (("drive_step_begin", t_drive), ("drive_step_done", t_cockpit), ("driver_spawned", t_spawn)))
         r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=1500)
         (SCRIPTS / "gtr2_ui" / "runs" / "lap_drive.log").write_text(STAGE_TEXT + r.stdout + r.stderr, encoding="utf-8")
+        with (SCRIPTS / "gtr2_ui" / "runs" / "start_timing.log").open("a", encoding="utf-8") as f:      # every run's start-up stages, for comparing changes
+            f.write("# %s %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), Path(trk).stem) + "".join(l + "\n" for l in (STAGE_TEXT + r.stdout).splitlines() if l.startswith("STAGE ") or l.startswith("gear before")))
         line = [l for l in r.stdout.splitlines() if l.startswith("RESULT ")]
         result = json.loads(line[-1][7:]) if line else {"outcome": "no result: " + (r.stderr or r.stdout)[-300:].replace("\n", " | ")}
         ok, out = run_path(["MONITOR_SINGLE | !LEAVEDRIVE | MONITOR_SINGLE", "MONITOR_SINGLE | LEAVE TRACK | CONFIRM_EXIT",

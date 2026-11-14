@@ -809,6 +809,20 @@ def step_race(ox, oy, pages, page, expect):
         limit, shown[0])
 
 
+def settle_still(ox, oy, quiet=0.5, timeout=3.0):
+    """Return once the screen has not changed for `quiet` seconds (at most `timeout` seconds). Returns the seconds waited."""
+    t0 = time.time()
+    last, since = thumbnail(ox, oy, *CLIENT), time.time()
+    while time.time() - t0 < timeout:
+        time.sleep(POLL)
+        cur = thumbnail(ox, oy, *CLIENT)
+        if cur != last:
+            last, since = cur, time.time()
+        elif time.time() - since >= quiet:
+            break
+    return time.time() - t0
+
+
 def step_drive(ox, oy, pages, page, expect):
     """On a practice or time trial session's monitor: press DRIVE (the car leaves the monitor for the cockpit, in its garage box) and wait
     until the monitor is gone and the cockpit has been still for a moment. Nothing else is pressed: the driving is left to the caller
@@ -831,7 +845,7 @@ def step_drive(ox, oy, pages, page, expect):
         time.sleep(0.2)
     if pagerec.is_page(look(ox, oy), page):
         return False, "!DRIVE: still on %s after 60 s" % page
-    time.sleep(3.0)                                 # the cockpit view settles
+    settle_still(ox, oy, quiet=0.3, timeout=0.6)    # the cockpit view settles: it never goes fully still (3 s cap reached every time), the driver retries a lost key press anyway; was a fixed 3.0 s sleep
     return True, "!DRIVE: in the car after %.1f s" % (time.time() - t0)
 
 

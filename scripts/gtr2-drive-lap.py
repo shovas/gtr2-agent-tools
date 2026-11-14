@@ -189,6 +189,7 @@ def main():
         if getattr(args, name) is None:      # an explicit option always wins over the preset
             setattr(args, name, value)
 
+    CLUTCH_HOLD_MS, CLUTCH_LEAD_S = 500, 0.15      # first-gear step (was 900 ms and 0.3 s; shortened 2026-11-14, a failed shift is retried up to 8 times)
     STAGE = lambda name: print("STAGE %s epoch=%.3f" % (name, time.time()), flush=True)      # start-up timing: compared with gtr2-lap-check.py's own stamps
     STAGE("script_started")
     track = trackmap.Track(args.aiw)
@@ -416,13 +417,17 @@ def main():
             gear = cur["gear"]
             if gear == 1 or cur["speed"] > 2.0:
                 break
-            clutch = threading.Thread(target=press_key, args=("q",), kwargs={"hold": 900}); clutch.start()
-            time.sleep(0.3)
+            clutch = threading.Thread(target=press_key, args=("q",), kwargs={"hold": CLUTCH_HOLD_MS}); clutch.start()
+            time.sleep(CLUTCH_LEAD_S)
             if analog:      # shift on the virtual joystick's buttons (1 up, 2 down); the clutch stays on keyboard Q
-                joy.button(1 if gear < 1 else 2, True); time.sleep(0.15); joy.button(1 if gear < 1 else 2, False)
+                joy.button(1 if gear < 1 else 2, True); time.sleep(0.1); joy.button(1 if gear < 1 else 2, False)
             else:
                 press_key("alt" if gear < 1 else "ralt", hold=150)
-            clutch.join(); time.sleep(0.4)
+            clutch.join()
+            for _ in range(12):      # wait for the shift to show on the telemetry (at most 0.6 s) instead of a fixed 0.4 s
+                if tm.read()["gear"] != gear:
+                    break
+                time.sleep(0.05)
         print("gear before moving off: %d" % tm.read()["gear"], flush=True)
         STAGE("gear_step_done")
         for fn in ((analog_loop,) if analog else (throttle_loop, steer_loop, brake_loop)):
