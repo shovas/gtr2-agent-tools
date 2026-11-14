@@ -18,6 +18,7 @@ import argparse
 import importlib.util
 import json
 import re
+import os
 import subprocess
 import sys
 import time
@@ -172,7 +173,7 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
             if tr.exists():
                 (SCRIPTS / "gtr2_ui" / "runs" / "last_failure_trace.txt").write_bytes(tr.read_bytes())
             return None, "could not get into the car: " + out.splitlines()[-1]
-        cmd = [suite.PY, "-I", str(SCRIPTS / "gtr2-drive-lap.py"), "--aiw", str(aiw)] + (["--fast"] if fast else []) + ["--input", "analog" if input_mode == "wheel" else input_mode] + list(drive_args)
+        cmd = [suite.PY, "-I", str(SCRIPTS / os.environ.get("GTR2_DRIVER_SCRIPT", "gtr2-drive-lap.py")), "--aiw", str(aiw)] + (["--fast"] if fast else []) + ["--input", "analog" if input_mode == "wheel" else input_mode] + list(drive_args)
         t_spawn = time.time()
         LAST_OUT[0] = ""
         STAGE_TEXT = "".join("STAGE %s epoch=%.3f" % (n, v) + chr(10) for n, v in (("drive_step_begin", t_drive), ("drive_step_done", t_cockpit), ("driver_spawned", t_spawn)))
@@ -229,7 +230,7 @@ def main():
     ap.add_argument("--runs", type=int, default=1)
     ap.add_argument("--limit", type=float, default=CLEAN_LIMIT)
     ap.add_argument("--input", choices=("keyboard", "analog", "wheel"), default="keyboard", help="analog: drive through the vJoy virtual joystick; wheel: the same with the profile as after selecting the wheel in the game (Basic Controls 2; run gtr2-select-wheel.py first)")
-    ap.add_argument("--profile", default="", help="extra profile values for the run, e.g. \"Speed Sensitive Steering=0,Steer Ratio Speed=40\" (reverted afterwards)")
+    ap.add_argument("--profile", default="", help="extra profile values for the run, e.g. \"Speed Sensitive Steering=0,Steer Ratio Speed=40\" (reverted afterwards); separate with ; when a key contains a comma (Axis [00, 00] Dead Zone=0.1)")
     ap.add_argument("--quick", action="store_true", help="stop at the first start/finish crossing: the out lap from the pits (about 3 min) instead of out lap plus a timed lap (about 5.5 min)")
     ap.add_argument("--drive-args", default="", help="extra options for gtr2-drive-lap.py, e.g. \"--analog-steer 0.3\"")
     ap.add_argument("--no-fast", action="store_true", help="drive at the slow default settings instead of --fast")
@@ -241,7 +242,7 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--list-cars", action="store_true")
     a = ap.parse_args()
-    for kv in [x for x in a.profile.split(",") if x]:
+    for kv in [x for x in a.profile.split(";" if ";" in a.profile else ",") if x]:
         PROFILE_EXTRA[kv.split("=", 1)[0].strip()] = kv.split("=", 1)[1].strip()
     items, car_files = layouts(), cars()
     if a.list:
