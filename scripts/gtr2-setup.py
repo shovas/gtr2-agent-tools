@@ -303,6 +303,8 @@ def gather(a):
     if not re.fullmatch(r"\d+x\d+", ans["resolution"].replace(" ", "")):
         sys.exit("setup: bad resolution %r (use WxH)" % ans["resolution"])
     ans["resolution"] = ans["resolution"].replace(" ", "")
+    if ans["resolution"] != "1280x720":
+        say("   NOTE: 1280x720 is the supported size. At other sizes the game starts and the main menu is recognised, but the reference pictures were taken at 1280x720 and most other pages and popups are not reliably recognised (measured at 1600x900), so the tours fail.")
     ans["shader"] = ask("   Shader level (matched by text against GTR2Config's list; usual options: Auto, DirectX 9, DirectX 8, DirectX 7)",
                         a.shader or "Auto", a.yes)
 

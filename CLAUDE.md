@@ -12,6 +12,18 @@ This file is the short, always-loaded core. The long history of what was measure
 - Prefer deterministic local tooling over inference (section below). Commit confident changes to git (this repo and the game folder separately); never push unless the user asks.
 - Treat the user's personal details as private: no names, e-mail addresses or absolute user paths in files of this public repo (use `<game folder>`, `<profile>`, relative paths).
 
+## Fresh clone? Start here (no `gtr2-tools.json` in the repository root)
+
+The user has just cloned this repository and wants to use it with their own copy of GTR 2. Do these in order and tell the user what you are doing:
+
+1. `python scripts\gtr2-setup.py --check-deps`: report anything missing (Python 3.11+, git, PowerShell 5.1, the game; vJoy is optional). Do not install drivers for them.
+2. Ask the user where their game folder is (the one holding `GTR2.exe`; setup finds a Steam install by itself) and which player profile to use. Tell them the window will be 1280x720 and windowed: the navigator is tested at that size only (other sizes: the game starts and the main menu is recognised, the reference pictures do not match reliably, see `docs/ui-navigation.md`).
+3. `python scripts\gtr2-setup.py --dry-run`, show the review, then, with the user's go-ahead, `python scripts\gtr2-setup.py`. It writes `gtr2-tools.json`, creates `scripts\.venv`, makes the game folder a git repository (a baseline commit), adds the game-folder `CLAUDE.md`, does the bootstrap launch, sets the window size through `GTR2Config.exe` and checks it by starting the game. Warn the user first: the game starts and clicks by itself, so they must leave the PC alone for a few minutes.
+4. Confirm the game reaches the main menu: `scripts\.venv\Scripts\python.exe -I scripts\gtr2-nav.py preflight`, then `... gtr2-nav.py ready` and `where` (it should say MAIN MENU). Close the game with `gtr2-nav.py exit`.
+5. Offer the offline tests (`test_nav_guards.py`) and, with the PC left alone for about 6 minutes, the full suite (`gtr2-nav-suite.py`). If a tour fails, read `docs/ui-navigation.md` before changing anything.
+
+Never launch `GTR2.exe` directly (see the rules below). Things that are per machine and not in the repository on purpose: `gtr2-tools.json`, `scripts\.venv\`, `scripts\gtr2_ui\runs\` and everything under the game folder; setup recreates them.
+
 ## What this repository is
 
 `gtr2-agent-tools` is the **tooling** for *GTR 2 - FIA GT Racing Game* (Windows, 32-bit, DirectX 9): automation for launching it safely, setting its window, driving its menus, driving laps, forcing weather, reading crash dumps. It holds `scripts/` (Python + PowerShell), `config/weather/`, `Tools/DocumentsGTR2.ps1`, `docs/` and the offline tests. It contains **no game files**. The game lives in a separate folder (a git repository of its own, with `config/`, `_DocumentsGTR2/` snapshot, `UserData/`, ...); the tools act on it.

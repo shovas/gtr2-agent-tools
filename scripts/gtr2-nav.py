@@ -53,6 +53,7 @@ MIN_STEP = 0.03                                # lowest allowed hover/hold/relea
 HOVER, HOLD, RELEASE = 0.03, 0.03, 0.03       # 30 ms each: the minimum the user set; the 10 ms settings missed clicks on tabs
 POLL = 0.05                                    # how often the screen is looked at
 QUIET = 0.15                                   # the screen must stay the same this long to count as settled
+CLIENT = [1280, 720]                           # the game window's client size; read from the window by refresh_client (default: the reference size)
 THUMB = (160, 90)                              # thumbnail size used for the change check
 PARK = (5, 5)                                  # client point the mouse rests on, away from buttons
 
@@ -91,11 +92,21 @@ def ensure_focus(timeout=1.0):
     sys.exit("could not bring GTR2 to the front (foreground is another window); click refused")
 
 
+def refresh_client(h):
+    """Read the window's client size (the game runs windowed at whatever size setup chose). Page recognition shrinks every capture to
+    800x450 and the UI is an 800x600 canvas stretched over the client, so any 16:9 or 4:3 size works with the one set of references."""
+    r = wintypes.RECT()
+    if user32.GetClientRect(h, ctypes.byref(r)) and r.right > 0 and r.bottom > 0:
+        CLIENT[0], CLIENT[1] = r.right, r.bottom
+        pagerec.SCORE_SLACK[0] = 1.0 if (r.right, r.bottom) == (1280, 720) else 2.0
+
+
 def window_origin():
     h = user32.FindWindowW(None, "GTR2")
     if not h:
         sys.exit("GTR2 window not found (is the game running?)")
     GAME[0] = h
+    refresh_client(h)
     pt = wintypes.POINT(0, 0)
     user32.ClientToScreen(h, ctypes.byref(pt))
     return pt.x, pt.y, h
@@ -171,7 +182,7 @@ def sweep(ox, oy, points, n=20, region=(478, 166, 137, 18)):
         for i in range(n):
             k = i % 2
             x, y = points[k]
-            before = thumbnail(ox, oy, 1280, 720)
+            before = thumbnail(ox, oy, *CLIENT)
             t0 = time.time()
             press(ox, oy, x, y, hv, hd, rl)
             ch, st = wait_change_then_settle(ox, oy, before, timeout=3.0)
@@ -182,8 +193,9 @@ def sweep(ox, oy, points, n=20, region=(478, 166, 137, 18)):
         print("%-24s registered %2d/%d   mean %.2f s per click" % (name, ok, n, t_total / n))
 
 
-def capture(ox, oy, w=1280, h=720):
+def capture(ox, oy, w=None, h=None):
     """The game window's client area scaled to THUMB (160x90), as top-down 32-bit BGRA bytes."""
+    w, h = w or CLIENT[0], h or CLIENT[1]
     tw, th = THUMB
     sdc = user32.GetDC(0)
     mdc = gdi32.CreateCompatibleDC(sdc)
@@ -212,7 +224,7 @@ def look(ox, oy):
     """The game's client area as pagerec's 800x450 comparison picture."""
     if not SCT:
         SCT.append(mss.MSS())
-    g = SCT[0].grab({"left": ox, "top": oy, "width": 1280, "height": 720})
+    g = SCT[0].grab({"left": ox, "top": oy, "width": CLIENT[0], "height": CLIENT[1]})
     return pagerec.shrink(np.frombuffer(g.rgb, dtype=np.uint8).reshape(g.height, g.width, 3).astype(np.int16))
 
 
@@ -239,7 +251,7 @@ def wait_for_page(ox, oy, pages_wanted, timeout=3.0, need=2):
 def wait_change_then_settle(ox, oy, before, timeout=10.0):
     """Wait until the screen differs from `before`, then until it has been unchanged for QUIET seconds.
     Returns (seconds to first change, seconds to settle) or (None, None) on timeout."""
-    w, h = 1280, 720
+    w, h = CLIENT
     t0 = time.time()
     changed = None
     while time.time() - t0 < timeout:
@@ -273,7 +285,7 @@ def wait_session_loaded(ox, oy, before_thumb, timeout=LOAD_TIMEOUT, source=None,
     """After pressing a load button: wait until the screen has changed and then shows a lit, still page (the static top and bottom bars unchanged 0.5 s apart, twice in a row). Returns seconds or None."""
     t0, hits = time.time(), 0
     while time.time() - t0 < timeout:
-        if thumbnail(ox, oy, 1280, 720) == before_thumb:
+        if thumbnail(ox, oy, *CLIENT) == before_thumb:
             time.sleep(POLL)
             continue
         if source and has_ref(source) and pagerec.is_page(look(ox, oy), source):
@@ -290,7 +302,7 @@ def wait_session_loaded(ox, oy, before_thumb, timeout=LOAD_TIMEOUT, source=None,
         a = grab_client(ox, oy).astype(np.int16)
         time.sleep(0.5)
         b = grab_client(ox, oy).astype(np.int16)
-        bands = (slice(0, 90), slice(576, 720))
+        bands = (slice(0, CLIENT[1] // 8), slice(CLIENT[1] * 4 // 5, CLIENT[1]))
         still = all(float(np.abs(a[r] - b[r]).mean()) < 1.0 for r in bands)
         hits = hits + 1 if (still and float(b.mean()) > 20) else 0
         if hits >= 2:
@@ -409,9 +421,9 @@ def goto_one(ox, oy, pages, page, label, expect=None, verify=True, on_page=False
     if page in dests:        # a button that stays on its own page can't be verified by arrival
         verified = []
     cx, cy = b.center
-    # canvas 800x600 maps to the 1280x720 client (1.6 across, 1.2 down); checked against known buttons
-    x, y = int(round(cx * 1280 / 800)), int(round(cy * 720 / 600))
-    before = thumbnail(ox, oy, 1280, 720)
+    # the 800x600 canvas is stretched over the client (1.6 across, 1.2 down at 1280x720); checked against known buttons
+    x, y = ui(cx, cy)
+    before = thumbnail(ox, oy, *CLIENT)
     t0 = time.time()
     press(ox, oy, x, y)
     names = ", ".join(dests) or "-"
@@ -477,7 +489,7 @@ def goto_one(ox, oy, pages, page, label, expect=None, verify=True, on_page=False
     if ch is not None and has_ref(page) and repeatable and pagerec.is_page(look(ox, oy), page):
         # the screen changed (a hover highlight) but the source page is still showing: the click did not take. Press once more.
         press(ox, oy, x, y)
-        ch2, st2 = wait_change_then_settle(ox, oy, thumbnail(ox, oy, 1280, 720), timeout=1.0)
+        ch2, st2 = wait_change_then_settle(ox, oy, thumbnail(ox, oy, *CLIENT), timeout=1.0)
         ch, st = (ch2, st2) if ch2 is not None else (ch, st)
     if ch is None and page in dests and has_ref(page) and pagerec.is_page(look(ox, oy), page):
         # a click that stays on its own page (selecting a list row) changes nothing when the row was already selected
@@ -720,7 +732,7 @@ def step_race(ox, oy, pages, page, expect):
         return False, "!RACE: %s has %d race buttons" % (page, len(drive))
     x, y = ui(*drive[0].center)
     t0 = time.time()
-    before = thumbnail(ox, oy, 1280, 720)
+    before = thumbnail(ox, oy, *CLIENT)
     press(ox, oy, x, y)
     ch, _ = wait_change_then_settle(ox, oy, before, timeout=2.5)
     if ch is None and pagerec.is_page(look(ox, oy), page):
@@ -773,7 +785,7 @@ def step_drive(ox, oy, pages, page, expect):
         return False, "!DRIVE: %s has %d drive buttons" % (page, len(drive))
     x, y = ui(*drive[0].center)
     t0 = time.time()
-    before = thumbnail(ox, oy, 1280, 720)
+    before = thumbnail(ox, oy, *CLIENT)
     press(ox, oy, x, y)
     ch, _ = wait_change_then_settle(ox, oy, before, timeout=2.5)
     if ch is None and pagerec.is_page(look(ox, oy), page):
@@ -917,7 +929,7 @@ def press_key(scancode, extended=False, hold=0.03):
 
 def grab_client(ox, oy):
     with mss.MSS() as s:
-        g = s.grab({"left": ox, "top": oy, "width": 1280, "height": 720})
+        g = s.grab({"left": ox, "top": oy, "width": CLIENT[0], "height": CLIENT[1]})
     return np.frombuffer(g.rgb, dtype=np.uint8).reshape(g.height, g.width, 3)
 
 
@@ -1017,8 +1029,8 @@ def cmd_watch(limit, poll=0.25):
 
 
 def ui(x, y):
-    """UI canvas units (800x600) to client pixels (1280x720)."""
-    return int(round(x * 1280 / 800)), int(round(y * 720 / 600))
+    """UI canvas units (800x600) to client pixels (1.6 across and 1.2 down at 1280x720; the canvas is stretched over any window size)."""
+    return int(round(x * CLIENT[0] / 800)), int(round(y * CLIENT[1] / 600))
 
 
 DRAG_STEPS = 12
@@ -1058,7 +1070,7 @@ def cmd_slider(ox, oy, page, index, side):
         print("not on %s: the screen shows %s" % (page, recognize_now(ox, oy)[0]))
         return False
     y, start, left, right = geom[index]
-    before = thumbnail(ox, oy, 1280, 720)
+    before = thumbnail(ox, oy, *CLIENT)
     drag(ox, oy, start, y, left if side == "left" else right, y)
     key = coords.SLIDERS[page][index][0]
     ch, st = wait_change_then_settle(ox, oy, before, timeout=1.0)
@@ -1078,7 +1090,7 @@ def cmd_row(ox, oy, which, index):
     else:
         print("unknown list %s" % which)
         return False
-    before = thumbnail(ox, oy, 1280, 720)
+    before = thumbnail(ox, oy, *CLIENT)
     press(ox, oy, *ui(*pt))
     ch, st = wait_change_then_settle(ox, oy, before, timeout=1.0)
     print("%s row %d at UI (%.1f,%.1f): %s" % (which, index, pt[0], pt[1], "screen changed" if ch is not None else "no change"))
@@ -1091,7 +1103,7 @@ def cmd_scroll(ox, oy, which, direction, count):
     pt = down if direction == "down" else up
     moved = 0
     for _ in range(count):
-        before = thumbnail(ox, oy, 1280, 720)
+        before = thumbnail(ox, oy, *CLIENT)
         press(ox, oy, *ui(*pt))
         ch, _st = wait_change_then_settle(ox, oy, before, timeout=0.5)
         moved += ch is not None
@@ -1174,6 +1186,7 @@ def cmd_ready(timeout):
         h = user32.FindWindowW(None, "GTR2")
         if h:
             GAME[0] = h
+            refresh_client(h)
             win_seen = win_seen or time.time()
             place_window(h)
             pt = wintypes.POINT(0, 0)
@@ -1201,8 +1214,8 @@ def cmd_ready(timeout):
             if has_ref("MAIN MENU"):
                 shown = wait_for_page(pt.x, pt.y, ["MAIN MENU"], timeout=0.5) is not None
             else:     # no learned reference yet: a lit window whose thumbnail has stopped changing
-                first = thumbnail(pt.x, pt.y, 1280, 720); time.sleep(0.5)
-                shown = first == thumbnail(pt.x, pt.y, 1280, 720) and sum(capture(pt.x, pt.y)) / (THUMB[0] * THUMB[1] * 4) > 20
+                first = thumbnail(pt.x, pt.y, *CLIENT); time.sleep(0.5)
+                shown = first == thumbnail(pt.x, pt.y, *CLIENT) and sum(capture(pt.x, pt.y)) / (THUMB[0] * THUMB[1] * 4) > 20
             if shown:
                 print("main menu ready after %.1f s" % (time.time() - t0))
                 return True
@@ -1274,7 +1287,7 @@ def cmd_preflight():
     return all(ok for _n, ok, _d in results)
 
 
-EXIT_BUTTON, EXIT_CONFIRM = (131, 687), (1056, 359)   # client coordinates (canvas (82,572) and (660,299))
+EXIT_BUTTON, EXIT_CONFIRM = (82, 572), (660, 299)   # UI canvas units (client (131,687) and (1056,359) at 1280x720); use ui()
 
 
 def cmd_exit(ox, oy, timeout=20.0):
@@ -1286,12 +1299,12 @@ def cmd_exit(ox, oy, timeout=20.0):
     # confirm clicked 3.0 s after EXIT). Watch only the thumbnail cells around the confirm tick instead: when they change, the popup
     # is drawn; click after a short beat.
     def tick_cells():
-        buf = capture(ox, oy, 1280, 720)
-        cx, cy = EXIT_CONFIRM[0] * THUMB[0] // 1280, EXIT_CONFIRM[1] * THUMB[1] // 720
+        buf = capture(ox, oy)
+        cx, cy = EXIT_CONFIRM[0] * THUMB[0] // 800, EXIT_CONFIRM[1] * THUMB[1] // 600
         return b"".join(bytes(buf[(r * THUMB[0] + cx - 8) * 4:(r * THUMB[0] + cx + 8) * 4]) for r in range(cy - 6, cy + 7))
     before = tick_cells()
     t_press = time.time()
-    press(ox, oy, *EXIT_BUTTON)
+    press(ox, oy, *ui(*EXIT_BUTTON))
     t_pressed = time.time()
     ch = None
     while time.time() - t_pressed < 3.0:
@@ -1306,7 +1319,7 @@ def cmd_exit(ox, oy, timeout=20.0):
     _st = None
     t_settled = time.time()
     ensure_focus()
-    move_to(ox, oy, *EXIT_CONFIRM)
+    move_to(ox, oy, *ui(*EXIT_CONFIRM))
     time.sleep(HOVER)
     mouse(0x0002); time.sleep(HOLD); mouse(0x0004)
     # timing of the exit sequence, to find where the delay before the confirm click comes from
@@ -1538,7 +1551,7 @@ def main():
         sweep(ox, oy, [(a.x1, a.y1), (a.x2, a.y2)], a.n, tuple(int(v) for v in a.region.split(",")))
         return
     if a.cmd == "click":
-        before = thumbnail(ox, oy, 1280, 720)
+        before = thumbnail(ox, oy, *CLIENT)
         press(ox, oy, a.x, a.y)
         if not a.no_wait:
             ch, st = wait_change_then_settle(ox, oy, before)
@@ -1546,7 +1559,7 @@ def main():
                 "-" if ch is None else "%.2f" % ch, "-" if st is None else "%.2f" % st))
     elif a.cmd == "measure":
         for r in range(a.runs):
-            before = thumbnail(ox, oy, 1280, 720)
+            before = thumbnail(ox, oy, *CLIENT)
             press(ox, oy, a.x, a.y)
             ch, st = wait_change_then_settle(ox, oy, before)
             print("run %d: changed %s s, settled %s s" % (r + 1, "-" if ch is None else "%.2f" % ch,

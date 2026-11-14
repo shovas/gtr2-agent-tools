@@ -20,7 +20,14 @@ This is an unofficial fan project. It is not affiliated with or endorsed by the 
 
 ## Quick start
 
-Run the guided setup. It detects what it can, asks for the rest and shows a review before it changes anything:
+Get the tools and open a PowerShell in the folder:
+
+```powershell
+git clone https://github.com/shovas/gtr2-agent-tools.git
+cd gtr2-agent-tools
+```
+
+If you use an AI coding agent, start it in this folder and ask it to set the tools up for your game: it reads `CLAUDE.md`, which tells it the first steps. Otherwise run the guided setup yourself. It detects what it can, asks for the rest and shows a review before it changes anything:
 
 ```powershell
 python scripts\gtr2-setup.py --dry-run     # ask and review only
@@ -37,6 +44,31 @@ scripts\.venv\Scripts\python.exe -I scripts\test_nav_guards.py                  
 ```
 
 Per-machine files (the config, the verified-resolution record, a snapshot of `Documents\GTR2`) are written to the game folder, not here. Optional: `GTR2_PROFILE` selects the player profile.
+
+## What you can do with it
+
+Start your agent in this folder (it reads `CLAUDE.md` and knows the tools) and ask in plain words. Examples of what to ask and which tool answers:
+
+| You want to... | Ask your agent, for example | Tool |
+|---|---|---|
+| Set everything up for your game folder | "Set up the GTR2 tools for my game in D:\Games\GTR2" | `gtr2-setup.py` |
+| Check what is missing on your PC | "What do I still need to install for these tools?" | `gtr2-setup.py --check-deps` |
+| Start the game safely | "Start GTR2 and get to the main menu" | `gtr2-launch.ps1`, `gtr2-nav.py ready` |
+| Change the window size or shader | "Set the game window to 1600x900" / "show me GTR2Config's drop-downs" | `gtr2-set-resolution.ps1` |
+| Move around the menus | "Go to the Options page and tell me what is on it" / "open the Time Trial setup" | `gtr2-nav.py` (`where`, `goto`, `path`) |
+| Check that every menu page still works | "Run the full navigation test and report what failed" (about 6 minutes) | `gtr2-nav-suite.py`, `test_nav_guards.py` (offline, 0.2 s) |
+| Add menu pages to page recognition | "Learn reference pictures for the pages that have none" | `gtr2-nav.py learn`, `coverage.py` |
+| Test the Options controls | "Click every checkbox and spinner on the Options pages and check they hold" | `gtr2-control-check.py` |
+| Find buttons that do nothing | "Hover over every button and list the ones that do not react" | `gtr2-hover-check.py` |
+| Drive a lap by itself (needs vJoy) | "Drive a hands-free lap at Imola in the Murcielago" | `gtr2-lap-check.py`, `gtr2-drive-lap.py`, `gtr2-tune-lap.py` |
+| Pass a Driving School test | "Run the Acceleration level 1 challenge" | `gtr2-accel-challenge.py` |
+| Force the weather | "Make the next race weekend rainy" / "restore the weather" | `gtr2-weather.py` |
+| Read a crash | "Explain the latest GTR2 crash" | `gtr2-crash-report.py` |
+| See which files the game reads | "Report when the game opens Config.ini during a run" | `gtr2-file-watch.py` |
+| Check the shared `Documents\GTR2` folder | "Has anything changed in Documents\GTR2?" | `Tools\DocumentsGTR2.ps1` |
+| Return to a first-run state | "Set my Documents\GTR2 and profiles aside for a clean first run" | `gtr2-clean-slate.ps1` |
+
+Every script has a usage line in its header and a one-line entry in [scripts/README.md](scripts/README.md). The navigator never presses buttons that start sessions, save, delete, join or host unless you (or the agent, on your word) give the matching opt-in flag.
 
 ## Where things are
 

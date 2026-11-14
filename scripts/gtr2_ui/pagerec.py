@@ -59,6 +59,7 @@ MAX_SCORE = 2.0
 # is refined (gtr2-nav.py refine) on each background; a wrong page scores 13 or more against it.
 PAGE_MAX_SCORE = {"REPLAY STUDIO PAGE": 3.5, "REPLAY STUDIO MAXIMIZED": 4.0, "CONFIRM_EXIT": 6.0, "LEAVE LOBBY": 6.0, "MP_ADDGAME": 6.0}
 MIN_MARGIN = 1.0
+SCORE_SLACK = [1.0]      # set by gtr2-nav.py refresh_client: 1.0 at the reference size, 2.0 at any other
 
 
 def shrink(frame):
@@ -175,8 +176,10 @@ def cached_references():
 
 
 def max_score(page):
-    """The worst score still counted as this page."""
-    return PAGE_MAX_SCORE.get(page, MAX_SCORE)
+    """The worst score still counted as this page. SCORE_SLACK widens it when the window is not at the size the references were taken at:
+    the game's own scaling of the text and edges differs a little, so the same page scores higher (2.15 against a limit of 2.0 at
+    1600x900). The margin to the next page is not widened."""
+    return PAGE_MAX_SCORE.get(page, MAX_SCORE) * SCORE_SLACK[0]
 
 
 _keep = {}
