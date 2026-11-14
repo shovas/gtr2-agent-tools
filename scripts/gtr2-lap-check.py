@@ -58,6 +58,7 @@ MODE_KEYS = ["Difficulty Type", "Difficulty", "Arcade Mode", "Steering Help", "S
              "Speed Sensitive Steering", "Steer Ratio Speed", "Basic Controls", "PRACT Weather", "PRACT Failure Rate",
              "PRACT Fuel Consumption Multiplier"]
 LAST_PROFILE = {}
+LAST_OUT = [""]       # the last driver run's stdout (for --garage-exit)
 
 
 def mode_snapshot(data):
@@ -173,11 +174,13 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
             return None, "could not get into the car: " + out.splitlines()[-1]
         cmd = [suite.PY, "-I", str(SCRIPTS / "gtr2-drive-lap.py"), "--aiw", str(aiw)] + (["--fast"] if fast else []) + ["--input", "analog" if input_mode == "wheel" else input_mode] + list(drive_args)
         t_spawn = time.time()
+        LAST_OUT[0] = ""
         STAGE_TEXT = "".join("STAGE %s epoch=%.3f" % (n, v) + chr(10) for n, v in (("drive_step_begin", t_drive), ("drive_step_done", t_cockpit), ("driver_spawned", t_spawn)))
         r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=1500)
         (SCRIPTS / "gtr2_ui" / "runs" / "lap_drive.log").write_text(STAGE_TEXT + r.stdout + r.stderr, encoding="utf-8")
         with (SCRIPTS / "gtr2_ui" / "runs" / "start_timing.log").open("a", encoding="utf-8") as f:      # every run's start-up stages, for comparing changes
             f.write("# %s %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), Path(trk).stem) + "".join(l + "\n" for l in (STAGE_TEXT + r.stdout).splitlines() if l.startswith("STAGE ") or l.startswith("gear before")))
+        LAST_OUT[0] = r.stdout
         line = [l for l in r.stdout.splitlines() if l.startswith("RESULT ")]
         result = json.loads(line[-1][7:]) if line else {"outcome": "no result: " + (r.stderr or r.stdout)[-300:].replace("\n", " | ")}
         ok, out = run_path(["MONITOR_SINGLE | !LEAVEDRIVE | MONITOR_SINGLE", "MONITOR_SINGLE | LEAVE TRACK | CONFIRM_EXIT",
@@ -196,6 +199,29 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
     return result, message
 
 
+def garage_done(venue, trk, car, input_mode):
+    f = SCRIPTS / "gtr2_ui" / "runs" / "garage_exit.jsonl"
+    if not f.exists():
+        return False
+    return any(r.get("ok") and r.get("layout") == "%s/%s" % (venue, trk) and r.get("car") == car and r.get("input") == input_mode
+               for r in (json.loads(l) for l in f.read_text(encoding="utf-8").splitlines() if l.strip()))
+
+
+def garage_verdict(out, result, message):
+    """--garage-exit: did the car leave the box, merge onto the pit lane line, reach the racing line, with no impact and no stall?"""
+    if result is None:
+        return False, message or "no result"
+    need = ("gear before moving off: 1", "left the box path", "merged onto the pit lane line")
+    missing = [n for n in need if n not in out]
+    impacts = [l.strip() for l in out.splitlines() if "IMPACT" in l]
+    outcome = str(result.get("outcome"))
+    bad_outcome = outcome != "merged"
+    first_move = [l for l in out.splitlines() if l.startswith("STAGE first_movement")]
+    if missing or impacts or bad_outcome or not first_move or message:
+        return False, "; ".join(x for x in ("missing: " + ", ".join(missing) if missing else "", "%d impact(s), first: %s" % (len(impacts), impacts[0]) if impacts else "", outcome if bad_outcome else "", "" if first_move else "never moved", message) if x)
+    return True, "left the box, merged onto the pit lane line, no impact"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("layout", nargs="?")
@@ -209,6 +235,8 @@ def main():
     ap.add_argument("--no-fast", action="store_true", help="drive at the slow default settings instead of --fast")
     ap.add_argument("--all-layouts", action="store_true", help="every layout with --car (about 3 to 7 minutes each)")
     ap.add_argument("--all-cars", action="store_true", help="every car on LAYOUT")
+    ap.add_argument("--skip-done", action="store_true", help="with --garage-exit: skip layout/car pairs that already have an ok row in runs/garage_exit.jsonl")
+    ap.add_argument("--garage-exit", action="store_true", help="only check leaving the garage: drive until 2 s after merging onto the pit lane line (at most 40 s), judge that the car left the box, merged onto the pit lane line and hit nothing (rows go to runs/garage_exit.jsonl, not to lap_results.jsonl)")
     ap.add_argument("--resume", action="store_true", help="with --all-*: skip combinations whose newest fast result is already clean")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--list-cars", action="store_true")
@@ -263,7 +291,21 @@ def main():
     for (venue, trk, aiw), car in plan:
         for n in range(1, a.runs + 1):
             began = time.time()
-            result, message = one_run(venue, trk, aiw, car, car_files[car], not a.no_fast, a.input, (["--laps-crossed", "1", "--total", "420"] if a.quick else []) + a.drive_args.split())
+            if a.garage_exit and a.skip_done and garage_done(venue, trk, car, a.input):
+                print("skip %s/%s %s (already ok)" % (venue, trk, car), flush=True)
+                continue
+            result, message = one_run(venue, trk, aiw, car, car_files[car], not a.no_fast, a.input, (["--total", "40", "--stop-at-merge", "2"] if a.garage_exit else ["--laps-crossed", "1", "--total", "420"] if a.quick else []) + a.drive_args.split())
+            if a.garage_exit:
+                ok, why = garage_verdict(LAST_OUT[0], result, message)
+                with (SCRIPTS / "gtr2_ui" / "runs" / "garage_exit.jsonl").open("a", encoding="utf-8") as f:
+                    f.write(json.dumps({"layout": "%s/%s" % (venue, trk), "car": car, "input": a.input, "ok": ok, "why": why, "time": time.strftime("%Y-%m-%d %H:%M:%S")}) + "\n")
+                print("run %d/%d %s/%s %s: %s - %s" % (n, a.runs, venue, trk, car, "PASS" if ok else "FAIL", why), flush=True)
+                failed += not ok
+                infra = infra + 1 if result is None else 0
+                if infra >= 2 or (message and "left open" in message):
+                    print("stopping the batch (no result twice in a row, or the game was left open)")
+                    return 1
+                continue
             if result is None:
                 ok, why = False, message
             else:

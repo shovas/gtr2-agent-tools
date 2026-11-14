@@ -157,6 +157,7 @@ def main():
     ap.add_argument("--tight-speed", type=float, default=7.0)
     ap.add_argument("--laps-crossed", type=int, default=2, help="stop after the lap counter has advanced this many times")
     ap.add_argument("--finish-extra", type=float, default=4.0, help="seconds to keep driving after that, then stop")
+    ap.add_argument("--stop-at-merge", type=float, default=0.0, metavar="SECONDS", help="garage-exit test: stop SECONDS after merging onto the pit lane line (outcome 'merged')")
     ap.add_argument("--total", type=float, default=900.0, help="give up after this many seconds")
     ap.add_argument("--every", type=int, default=60, help="print a status line every N loops")
     ap.add_argument("--dry-run", action="store_true", help="read the telemetry and the track, print the plan, press no keys")
@@ -445,6 +446,7 @@ def main():
         off_lat = {}
         max_lat = 0.0
         STAGE_MOVED = []
+        merged_at = None
         ft = {"phase": 0, "until": 0.0, "proc": None, "sum": [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], "prev": None}
         while state["run"] and time.time() - t0 < args.total:
             tel = tm.read()
@@ -556,6 +558,9 @@ def main():
             if merging and (chain is not track.pit or (abs(herr) < 15.0 and abs(lat) < 2.5)):
                 print("t=%5.1f merged onto the pit lane line" % (now - t0), flush=True)
                 merging = False
+                merged_at = now
+            if args.stop_at_merge and merged_at is not None and now - merged_at >= args.stop_at_merge:
+                result["outcome"] = "merged"; break
             shared["scale"] = args.merge_steer if (merging or box_target is not None or chain is track.pit) else args.analog_steer   # slow in the pit lane: full lock (Anderstorp's 90 degree bend, 5 to 6 m wide)
             shared["steer"] = max(-1.0, min(1.0, herr / args.steer_gain - yawrate / args.damping))
 
