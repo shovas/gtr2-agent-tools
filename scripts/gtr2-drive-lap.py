@@ -189,9 +189,12 @@ def main():
         if getattr(args, name) is None:      # an explicit option always wins over the preset
             setattr(args, name, value)
 
+    STAGE = lambda name: print("STAGE %s epoch=%.3f" % (name, time.time()), flush=True)      # start-up timing: compared with gtr2-lap-check.py's own stamps
+    STAGE("script_started")
     track = trackmap.Track(args.aiw)
     tm = telemetry.Telemetry()
     first = tm.read()
+    STAGE("telemetry_first_read")
     if first is None:
         sys.exit("no telemetry: is the game running with Plugins/rFactorSharedMemoryMap.dll loaded?")
     print("track '%s', car '%s'; waypoints: main %d, pit %d, lap length %.0f m; position (%.0f, %.0f), lap counter %d" % (
@@ -407,6 +410,7 @@ def main():
         # Right Alt down, each with the clutch (Q) held; stop after 8 tries if the gear never reaches 1.
         # Time Trial starts the car already rolling (about 13 m/s in 3rd) at the pit lane and parks it by itself within ~15 s, so
         # with a moving car this step is skipped and the loop below takes over at once. Open Practice starts it at rest in the box.
+        STAGE("gear_step_begin")
         for attempt in range(8):
             cur = tm.read()
             gear = cur["gear"]
@@ -420,6 +424,7 @@ def main():
                 press_key("alt" if gear < 1 else "ralt", hold=150)
             clutch.join(); time.sleep(0.4)
         print("gear before moving off: %d" % tm.read()["gear"], flush=True)
+        STAGE("gear_step_done")
         for fn in ((analog_loop,) if analog else (throttle_loop, steer_loop, brake_loop)):
             th = threading.Thread(target=fn); th.start(); threads.append(th)
 
@@ -434,12 +439,15 @@ def main():
         off_buckets = {}
         off_lat = {}
         max_lat = 0.0
+        STAGE_MOVED = []
         ft = {"phase": 0, "until": 0.0, "proc": None, "sum": [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], "prev": None}
         while state["run"] and time.time() - t0 < args.total:
             tel = tm.read()
             if tel is None:
                 time.sleep(0.05); continue
             now = time.time()
+            if tel["speed"] > 0.3 and not STAGE_MOVED:
+                STAGE_MOVED.append(1); STAGE("first_movement")
             x, z = tel["pos"][0], tel["pos"][2]
             yaw, speed = tel["yaw"], tel["speed"]
             dt = max(now - prev_t, 1e-3)

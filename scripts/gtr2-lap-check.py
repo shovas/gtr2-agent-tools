@@ -161,16 +161,21 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
     try:
         if not suite.start_game():
             return None, "the game never reached the main menu"
-        ok, out = run_path(["MAIN MENU | APP_BUTTON_GAMEMODESELECT_PRACTICE | SUMMARY_PRACTICE", "SUMMARY_PRACTICE | CONTINUE | MONITOR_SINGLE",
-                            "MONITOR_SINGLE | !DRIVE | MONITOR_SINGLE"], "--session-step", "--drive-step")
+        ok, out = run_path(["MAIN MENU | APP_BUTTON_GAMEMODESELECT_PRACTICE | SUMMARY_PRACTICE", "SUMMARY_PRACTICE | CONTINUE | MONITOR_SINGLE"], "--session-step", "--drive-step")
+        t_drive = time.time()
+        if ok:
+            ok, out = run_path(["MONITOR_SINGLE | !DRIVE | MONITOR_SINGLE"], "--session-step", "--drive-step")
+        t_cockpit = time.time()
         if not ok:
             tr = ROOT / "UserData" / "LOG" / "trace.txt"       # keep the game's trace for diagnosing a failed start
             if tr.exists():
                 (SCRIPTS / "gtr2_ui" / "runs" / "last_failure_trace.txt").write_bytes(tr.read_bytes())
             return None, "could not get into the car: " + out.splitlines()[-1]
         cmd = [suite.PY, "-I", str(SCRIPTS / "gtr2-drive-lap.py"), "--aiw", str(aiw)] + (["--fast"] if fast else []) + ["--input", "analog" if input_mode == "wheel" else input_mode] + list(drive_args)
+        t_spawn = time.time()
+        STAGE_TEXT = "".join("STAGE %s epoch=%.3f" % (n, v) + chr(10) for n, v in (("drive_step_begin", t_drive), ("drive_step_done", t_cockpit), ("driver_spawned", t_spawn)))
         r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=1500)
-        (SCRIPTS / "gtr2_ui" / "runs" / "lap_drive.log").write_text(r.stdout + r.stderr, encoding="utf-8")
+        (SCRIPTS / "gtr2_ui" / "runs" / "lap_drive.log").write_text(STAGE_TEXT + r.stdout + r.stderr, encoding="utf-8")
         line = [l for l in r.stdout.splitlines() if l.startswith("RESULT ")]
         result = json.loads(line[-1][7:]) if line else {"outcome": "no result: " + (r.stderr or r.stdout)[-300:].replace("\n", " | ")}
         ok, out = run_path(["MONITOR_SINGLE | !LEAVEDRIVE | MONITOR_SINGLE", "MONITOR_SINGLE | LEAVE TRACK | CONFIRM_EXIT",
