@@ -3,3 +3,8 @@ __pycache__/
 scripts/gtr2_ui/runs/
 .claude/
 gtr2-tools.json
+# references learned for another test size (only 1280x720 ships); the page-pair scores computed from them
+scripts/gtr2_ui/baselines/local/*
+!scripts/gtr2_ui/baselines/local/1280x720
+scripts/gtr2_ui/pair_scores_*.json
+!scripts/gtr2_ui/pair_scores_1280x720.json

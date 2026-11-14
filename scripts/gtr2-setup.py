@@ -298,13 +298,11 @@ def gather(a):
     ww, wh, scale = work_area_and_scale()
     fit = sizes_that_fit(ww, wh, scale)
     say("3. Screen work area %dx%d, display scale %d%%. Window sizes that fit: %s" % (ww, wh, round(scale * 100), ", ".join("%dx%d" % s for s in fit) or "none"))
-    default_res = a.resolution or ("1280x720" if (1280, 720) in fit else ("%dx%d" % fit[0] if fit else "1280x720"))
-    ans["resolution"] = ask("   Window size for the game (always windowed)", default_res, a.yes)
+    default_res = a.resolution or ("1280x720" if (1280, 720) in fit else "640x480")
+    ans["resolution"] = ask("   Test window size: the tools run the game windowed at this size, and it must fit the screen with its title bar (1280x720 on a 1080p screen; 640x480 on a 4:3 screen)", default_res, a.yes)
     if not re.fullmatch(r"\d+x\d+", ans["resolution"].replace(" ", "")):
         sys.exit("setup: bad resolution %r (use WxH)" % ans["resolution"])
     ans["resolution"] = ans["resolution"].replace(" ", "")
-    if ans["resolution"] != "1280x720":
-        say("   NOTE: 1280x720 is the supported size. At other sizes the game starts and the main menu is recognised, but the reference pictures were taken at 1280x720 and most other pages and popups are not reliably recognised (measured at 1600x900), so the tours fail.")
     ans["shader"] = ask("   Shader level (matched by text against GTR2Config's list; usual options: Auto, DirectX 9, DirectX 8, DirectX 7)",
                         a.shader or "Auto", a.yes)
 
@@ -347,6 +345,14 @@ def gather(a):
             say(msg)
     ans["claude_md_state"] = state
     ans["suite"] = a.suite
+    ans["learn"] = False
+    if ans["resolution"] != "1280x720":
+        local = SCRIPTS / "gtr2_ui" / "baselines" / "local" / ans["resolution"]
+        if not (local.is_dir() and any(local.glob("*.png"))):
+            say("   %s has no reference pictures yet: only 1280x720 ships with them. The navigator needs them to recognise the menu pages, so setup can learn them now:" % ans["resolution"])
+            say("   it runs a full navigation sweep of every tour in the game (about 10 minutes, plus about 4 to build the page-pair scores) and saves a picture of each page.")
+            say("   The PC must be left alone meanwhile. Choose 1280x720 on a 16:9 screen to skip this; use 640x480 on a 4:3 screen.")
+            ans["learn"] = confirm("   Learn the reference pictures for %s at the end of setup?" % ans["resolution"], True, a.yes)
     return ans
 
 
@@ -362,6 +368,8 @@ def review(ans, a):
                                       "merged": "already there"}[ans["claude_md_state"]] if ans["claude_md"] or ans["claude_md_state"] == "merged" else "skipped"))
     say("  game folder git : %s" % ("git init + baseline commit" if ans["git_init"] else "leave as is"))
     say("  first launch    : %s" % ("bootstrap config, set and verify the window size, preflight" if ans["launch"] else "skipped"))
+    if ans["learn"]:
+        say("  reference pictures: learn for %s (full navigation sweep, about 15 minutes)" % ans["resolution"])
     say("  navigation suite: %s" % ("run at the end" if ans["suite"] else "not run (use --suite)"))
     if a.dry_run:
         say("  (dry run: nothing will be changed)")
@@ -436,6 +444,10 @@ def execute(ans):
     if VENV_PY.is_file():
         r = run([str(VENV_PY), "-I", str(SCRIPTS / "gtr2-nav.py"), "preflight"], cwd=str(root))
         ok &= step("preflight (session, config, no other GTR2, capture)", r.returncode == 0, "" if r.returncode == 0 else r.stdout.strip()[-400:])
+    if ans["learn"] and VENV_PY.is_file():
+        say("  learning the reference pictures for %s (a full navigation sweep, about 15 minutes; leave the PC alone)..." % ans["resolution"])
+        r = subprocess.run([str(VENV_PY), "-I", str(SCRIPTS / "gtr2-nav-suite.py"), "--learn"], cwd=str(root))
+        ok &= step("reference pictures learned for %s" % ans["resolution"], r.returncode == 0)
     if ans["suite"] and VENV_PY.is_file():
         say("  running the navigation suite (about 6 minutes)...")
         r = subprocess.run([str(VENV_PY), "-I", str(SCRIPTS / "gtr2-nav-suite.py")], cwd=str(root))

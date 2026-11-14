@@ -11,7 +11,7 @@ from PIL import Image, ImageFilter
 
 from paths import BASELINES, HERE, LOCAL_BASELINES, MASK_SCALE, SHRINK_SIZE  # noqa: E402  (the size-dependent settings live in paths.py)
 
-SIZE = SHRINK_SIZE  # 800 wide, the window's own aspect ratio (800x450 for 16:9). References are per window size.
+SIZE = SHRINK_SIZE  # 800 wide, the window's own aspect ratio (800x450 for 16:9). References are per test size (paths.py).
 VOLATILE_THRESHOLD = 12
 
 
@@ -59,7 +59,6 @@ MAX_SCORE = 2.0
 # is refined (gtr2-nav.py refine) on each background; a wrong page scores 13 or more against it.
 PAGE_MAX_SCORE = {"REPLAY STUDIO PAGE": 3.5, "REPLAY STUDIO MAXIMIZED": 4.0, "CONFIRM_EXIT": 6.0, "LEAVE LOBBY": 6.0, "MP_ADDGAME": 6.0}
 MIN_MARGIN = 1.0
-SCORE_SLACK = [1.0]      # set by gtr2-nav.py refresh_client: 1.0 at the reference size, 2.0 at any other
 
 
 def shrink(frame):
@@ -107,9 +106,24 @@ def scrub_name(image, mask):
     return image, mask
 
 
+def reference_mask_of_shipped_size(page, directory):
+    """The mask the shipped 1280x720 set has for this page, as a mask for a reference saved at another test size. Masks are in the
+    800x450 picture's coordinates and the UI is stretched over the window, so a hand-made mask (the popup-only box of CONFIRM_EXIT,
+    the live car view, the name boxes, the standings tables, found by comparing frames at 1280x720) still covers the same things
+    at any size. Nothing is added for the shipped size itself."""
+    if directory.name == "1280x720":
+        return np.zeros((SIZE[1], SIZE[0]), dtype=bool)
+    for folder in (HERE / "baselines" / "local" / "1280x720", HERE / "baselines" / "1280x720"):
+        path = folder / f"{file_stem(page)}.mask.png"
+        if path.exists():
+            return np.asarray(Image.open(path).convert("L")) > 0
+    return np.zeros((SIZE[1], SIZE[0]), dtype=bool)
+
+
 def save_reference(page, frames, directory=BASELINES):
     directory.mkdir(parents=True, exist_ok=True)
     mask = volatile_mask(page, frames)
+    mask = mask | reference_mask_of_shipped_size(page, directory)
     picture, mask = scrub_name(frames[0], mask)
     Image.fromarray(picture.astype("uint8")).save(directory / f"{file_stem(page)}.png", optimize=True)
     Image.fromarray((mask * 255).astype("uint8")).convert("1").save(directory / f"{file_stem(page)}.mask.png",
@@ -176,10 +190,8 @@ def cached_references():
 
 
 def max_score(page):
-    """The worst score still counted as this page. SCORE_SLACK widens it when the window is not at the size the references were taken at:
-    the game's own scaling of the text and edges differs a little, so the same page scores higher (2.15 against a limit of 2.0 at
-    1600x900). The margin to the next page is not widened."""
-    return PAGE_MAX_SCORE.get(page, MAX_SCORE) * SCORE_SLACK[0]
+    """The worst score still counted as this page."""
+    return PAGE_MAX_SCORE.get(page, MAX_SCORE)
 
 
 _keep = {}

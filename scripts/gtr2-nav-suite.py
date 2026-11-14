@@ -21,6 +21,7 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS / "gtr2_ui"))
 import diag  # noqa: E402
+from paths import WINDOW_KEY  # noqa: E402
 
 ROOT = diag.game_root()                          # the game folder (GTR2_ROOT, else the parent of scripts/)
 os.environ["GTR2_ROOT"] = str(ROOT)              # child processes (launcher, navigator) use the same folder
@@ -180,6 +181,7 @@ def main():
     ap.add_argument("--skip-season", action="store_true", help="leave out the championship season tour (it starts a season)")
     ap.add_argument("--keep-open", action="store_true", help="do not close the game or clean up at the end")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--learn", action="store_true", help="learn the reference pictures for the configured test size: run every tour in learning mode, then compute the page-pair scores (use for a size other than 1280x720)")
     a = ap.parse_args()
 
     tours = [t for t in ORDER if (PATHS / (t + ".txt")).exists()]
@@ -201,6 +203,8 @@ def main():
         return 0
     if missing:
         print("warning: tours not in the suite's ORDER:", ", ".join(missing))
+    if a.learn:
+        print("LEARNING MODE for the test size %s: this runs a full navigation sweep of every tour (about 6 to 10 minutes), saves a reference picture of each page it reaches to scripts/gtr2_ui/baselines/local/%s and then computes the page-pair scores (about 4 minutes more). Leave the PC alone while it runs." % (WINDOW_KEY, WINDOW_KEY), flush=True)
     if game_running():
         print("GTR2 is already running; close it first (nothing was started)")
         return 2
@@ -223,14 +227,20 @@ def main():
     for t in tours:
         flags = flags_of(t)
         s = time.time()
-        r = nav("path", *flags, str(PATHS / (t + ".txt")))
+        r = nav("learn", *flags, "--start", "MAIN MENU", str(PATHS / (t + ".txt"))) if a.learn else nav("path", *flags, str(PATHS / (t + ".txt")))
         out = r.stdout + r.stderr
-        m = re.search(r"path of (\d+) steps done in ([\d.]+) s", out)
-        if r.returncode == 0 and m:
+        m = re.search(r"(\d+) page\(s\) learned", out) if a.learn else re.search(r"path of (\d+) steps done in ([\d.]+) s", out)
+        if r.returncode == 0 and m and not (a.learn and ("stopped at" in out or "expected " in out)):
+            if a.learn:
+                results.append((t, "ok", int(m.group(1)), time.time() - s, ""))
+                print("%-32s learned %2d page(s)  %6.2f s" % (t, int(m.group(1)), time.time() - s), flush=True)
+                continue
             results.append((t, "ok", int(m.group(1)), float(m.group(2)), ""))
             print("%-32s ok   %3d steps  %6.2f s" % (t, int(m.group(1)), float(m.group(2))), flush=True)
             continue
         bad = [l for l in out.splitlines() if "stopped at" in l or "NOT verified" in l or "refused" in l or "not on" in l]
+        if not bad:
+            bad = [l for l in out.splitlines() if l.strip()][-3:]      # no known failure line: show the last output instead of nothing
         results.append((t, "FAIL", 0, time.time() - s, "; ".join(bad[-2:])))
         print("%-32s FAIL %s" % (t, "; ".join(bad[-2:])), flush=True)
         ok = False
@@ -241,6 +251,9 @@ def main():
         ok = ok and closed
         if not game_running():
             ok = revert_and_check(before_untracked) and ok
+    if a.learn and ok:
+        print("computing the page-pair scores...", flush=True)
+        ok = nav("index").returncode == 0 and ok
     passed = sum(1 for r in results if r[1] == "ok")
     steps = sum(r[2] for r in results)
     print("\n%d of %d tours passed, %d steps, %.0f s total" % (passed, len(tours), steps, time.time() - t0))

@@ -707,6 +707,34 @@ class Suite(unittest.TestCase):
         self.assertEqual(suite.WATCHED, ["UserData", "ReplayData"])
 
 
+class TestSizes(unittest.TestCase):
+    """References are per test size; a learned mask inherits the shipped 1280x720 mask of the same page."""
+
+    def test_the_configured_size_is_read_and_defaults_to_1280x720(self):
+        import os
+        import paths
+        old = os.environ.get("GTR2_RESOLUTION")
+        try:
+            os.environ["GTR2_RESOLUTION"] = "640 x 480"
+            self.assertEqual(paths._configured_size(), (640, 480))
+            os.environ["GTR2_RESOLUTION"] = "nonsense"
+            self.assertIn(paths._configured_size(), [paths.DEFAULT_SIZE, (1280, 720)])
+        finally:
+            if old is None:
+                os.environ.pop("GTR2_RESOLUTION", None)
+            else:
+                os.environ["GTR2_RESOLUTION"] = old
+
+    def test_a_learned_mask_inherits_the_shipped_mask_but_the_shipped_size_does_not(self):
+        import pagerec
+        other = Path("baselines") / "local" / "640x480"
+        shipped = Path("baselines") / "local" / "1280x720"
+        inherited = pagerec.reference_mask_of_shipped_size("CONFIRM_EXIT", other)
+        self.assertEqual(inherited.shape, (450, 800))
+        self.assertTrue(inherited.any())          # the popup-only mask: everything outside the box
+        self.assertFalse(pagerec.reference_mask_of_shipped_size("CONFIRM_EXIT", shipped).any())
+
+
 class ScrubbedNames(unittest.TestCase):
     """Saved page references must not carry the player name from the header band."""
 
@@ -741,7 +769,7 @@ class ScrubbedNames(unittest.TestCase):
     def test_the_shipped_references_show_no_text_in_the_name_box(self):
         from PIL import Image
         x0, y0, x1, y1 = self.pagerec.NAME_BOX
-        for path in sorted((SCRIPTS / "gtr2_ui" / "baselines").rglob("*.png")):
+        for path in sorted(p for p in (SCRIPTS / "gtr2_ui" / "baselines").rglob("*.png") if "1280x720" in p.parts):   # the shipped sets; sizes learned on this machine are git-ignored and may show the name     # (learned sizes under local/ are not shipped and may show the name)
             if path.name.endswith(".mask.png") or path.name.startswith("PHOTO+SHOP"):
                 continue
             lum = self.np.asarray(Image.open(path).convert("L"), dtype=self.np.int16)[y0:y1, x0:x1]

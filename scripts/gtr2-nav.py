@@ -41,7 +41,7 @@ import menumap  # noqa: E402
 import mss  # noqa: E402  (needs scripts/.venv: numpy, Pillow, mss; see scripts/requirements.txt)
 import numpy as np  # noqa: E402
 import pagerec  # noqa: E402
-from paths import LOCAL_BASELINES  # noqa: E402
+from paths import LOCAL_BASELINES, WINDOW  # noqa: E402
 import diag  # noqa: E402  (preflight and failure diagnostics)
 from pausemenu import pause_row_of  # noqa: E402
 import coords  # noqa: E402  (measured slider and list positions)
@@ -53,7 +53,7 @@ MIN_STEP = 0.03                                # lowest allowed hover/hold/relea
 HOVER, HOLD, RELEASE = 0.03, 0.03, 0.03       # 30 ms each: the minimum the user set; the 10 ms settings missed clicks on tabs
 POLL = 0.05                                    # how often the screen is looked at
 QUIET = 0.15                                   # the screen must stay the same this long to count as settled
-CLIENT = [1280, 720]                           # the game window's client size; read from the window by refresh_client (default: the reference size)
+CLIENT = list(WINDOW)                          # the game window's client size; read from the window by refresh_client (default: the configured test size)
 THUMB = (160, 90)                              # thumbnail size used for the change check
 PARK = (5, 5)                                  # client point the mouse rests on, away from buttons
 
@@ -92,13 +92,19 @@ def ensure_focus(timeout=1.0):
     sys.exit("could not bring GTR2 to the front (foreground is another window); click refused")
 
 
+SIZE_WARNED = []
+
+
 def refresh_client(h):
-    """Read the window's client size (the game runs windowed at whatever size setup chose). Page recognition shrinks every capture to
-    800x450 and the UI is an 800x600 canvas stretched over the client, so any 16:9 or 4:3 size works with the one set of references."""
+    """Read the window's client size. It should be the test size in gtr2-tools.json (`resolution`): the references are stored per size
+    (paths.py), and a window of another size is compared against the wrong set, so that is said once. Clicks scale to the real size."""
     r = wintypes.RECT()
     if user32.GetClientRect(h, ctypes.byref(r)) and r.right > 0 and r.bottom > 0:
         CLIENT[0], CLIENT[1] = r.right, r.bottom
-        pagerec.SCORE_SLACK[0] = 1.0 if (r.right, r.bottom) == (1280, 720) else 2.0
+        if tuple(CLIENT) != tuple(WINDOW) and not SIZE_WARNED:
+            SIZE_WARNED.append(1)
+            print("warning: the game window is %dx%d but the references are for %dx%d (gtr2-tools.json `resolution`); set the window with gtr2-set-resolution.ps1 or learn this size: gtr2-nav-suite.py --learn"
+                  % (CLIENT[0], CLIENT[1], WINDOW[0], WINDOW[1]), flush=True)
 
 
 def window_origin():
@@ -213,10 +219,11 @@ def capture(ox, oy, w=None, h=None):
 def thumbnail(ox, oy, w, h):
     """Hash of the game window scaled to THUMB, so a changed page shows up cheaply."""
     buf = capture(ox, oy, w, h)
-    # rows are top-down; skip the main menu's animated photo band (client y 75-165) so it can't keep
+    # rows are top-down; skip the main menu's animated photo band (client y 75-165 at 1280x720) so it can't keep
     # a screen from ever settling
     row = THUMB[0] * 4
-    rows = [buf[r * row:(r + 1) * row] for r in range(THUMB[1]) if not (9 <= r <= 21)]
+    lo, hi = (10, 29) if CLIENT[0] * 3 == CLIENT[1] * 4 else (9, 21)     # the photo band sits lower and taller in the 4:3 layout
+    rows = [buf[r * row:(r + 1) * row] for r in range(THUMB[1]) if not (lo <= r <= hi)]
     return hashlib.md5(b"".join(rows)).hexdigest()
 
 
@@ -715,6 +722,30 @@ def open_pause_menu(ox, oy, tries=6):
     return False
 
 
+LEARNING = [False]       # set by the learn command: some steps may then run without the references they normally check against
+
+
+def results_screen_shown(ox, oy):
+    """True when the race view has been left for a menu page: the GTR2 logo at the top left (drawn on every menu page, never in the
+    race view) matches the main menu's picture of it. Used only while learning, when the results page has no reference to compare."""
+    ref = cached_refs_get("MAIN MENU")
+    if ref is None:
+        return False
+    for _ in range(2):
+        cap = look(ox, oy)
+        # the logo sits a pixel or two off between pages and sizes, so take the best of a few shifts (a race view scores 40 or more)
+        best = min(float(np.abs(cap[10 + dy:40 + dy, 10 + dx:140 + dx] - ref[0][10:40, 10:140]).mean()) for dy in range(-3, 4) for dx in range(-3, 4))
+        if best > 25.0:
+            return False
+        time.sleep(0.5)
+    return True
+
+
+def cached_refs_get(name):
+    refs = pagerec.cached_references()
+    return refs[name] if name in refs else None
+
+
 def step_race(ox, oy, pages, page, expect):
     """From a race session's monitor: press the race button (DRIVE), give the car to the game's own autopilot from the pause menu,
     switch time acceleration on with K and wait for the results page. Enter is pressed only on the Autopilot row (never Restart,
@@ -723,7 +754,8 @@ def step_race(ox, oy, pages, page, expect):
     if not DRIVE_OK[0]:
         return False, "refused: !RACE needs --drive-step"
     dests = [d.strip() for d in (expect or "POST RACE MONITOR").split(",")]
-    if not all(has_ref(d) for d in dests):
+    learning = LEARNING[0] and not all(has_ref(d) for d in dests)      # learn-all on a new test size: the results pages have no picture yet
+    if not learning and not all(has_ref(d) for d in dests):
         return False, "!RACE: no saved reference for %s" % ", ".join(dests)
     if wait_for_page(ox, oy, [page], timeout=3.0, need=1) is None:
         return False, "!RACE: not on %s (screen shows %s)" % (page, recognize_now(ox, oy)[0])
@@ -763,7 +795,12 @@ def step_race(ox, oy, pages, page, expect):
     while time.time() < deadline:
         if not user32.IsWindow(GAME[0]):
             return False, "!RACE: the game window closed during the race"
-        here = next((d for d in dests if wait_for_page(ox, oy, [d], timeout=1.0, need=2) is not None), None)
+        if learning:
+            here = dests[0] if results_screen_shown(ox, oy) else None
+            if here:
+                time.sleep(2.0)                         # let the page finish drawing before it is photographed
+        else:
+            here = next((d for d in dests if wait_for_page(ox, oy, [d], timeout=1.0, need=2) is not None), None)
         if here:
             ARRIVED[0] = here
             return True, "!RACE -> %s: autopilot race finished in %.0f s" % (here, time.time() - t0)
@@ -876,6 +913,7 @@ def learn(ox, oy, pages, steps, start_page=None, samples=4, relearn=()):
     baselines/local, which override the shipped copies, because those were made on another profile (a different difficulty
     mode changes which controls are greyed). Returns the pages learned."""
     learned = []
+    LEARNING[0] = True
 
     def settle_on(name):
         """A page that already has a reference is checked, not overwritten, so a button that led somewhere else can't

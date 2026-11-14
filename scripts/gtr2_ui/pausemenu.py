@@ -20,7 +20,7 @@ def pause_row_of(frame):
         found[name] = int(orange.sum())
         text[name] = float((orange | ((r > 235) & (gr > 235) & (b > 235))).mean())
     best = max(found, key=found.get)
-    if found[best] <= 150:
+    if found[best] <= 150 * fw * fh / (1280 * 720):      # a pixel count: smaller windows show fewer orange pixels
         return None
     if best == "Autopilot" and text["Hide Menu"] < 0.04:
         return "Hide Menu"
