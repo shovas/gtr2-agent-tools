@@ -117,12 +117,12 @@ def set_values(data, values):
 PROFILE_EXTRA = {}      # --profile Key=Value,...: extra profile values for the run (reverted with git afterwards)
 
 
-def profile_values(venue, trk, aiw, car_path, analog=False):
+def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
     rel = lambda name: "GAMEDATA\\LOCATIONS\\%s\\%s" % (venue, name)      # noqa: E731
     values = dict(DRIVING_PROFILE)
     if analog:      # the committed profile already binds the vJoy axes (CLAUDE.md); only the non-control driving settings
         values = {k: v for k, v in values.items() if not k.startswith("Control - ")}
-        values["Basic Controls"] = "0"
+        values["Basic Controls"] = "2" if wheel else "0"      # 2 = what the game writes once JOY1 is selected on the Controls page (gtr2-select-wheel.py)
     values.update(PROFILE_EXTRA)
     values.update({"Track File": rel(trk), "Track Description": Path(trk).stem, "AI Database File": rel(aiw.name)})
     if car_path is not None:
@@ -154,7 +154,7 @@ def run_path(lines, *flags, timeout=300):
 def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", drive_args=()):
     """One lap. Returns (result dict or None, message)."""
     before = suite.untracked()
-    PLR.write_bytes(set_values(PLR.read_bytes(), profile_values(venue, trk, aiw, car_path, input_mode == "analog")))
+    PLR.write_bytes(set_values(PLR.read_bytes(), profile_values(venue, trk, aiw, car_path, input_mode in ("analog", "wheel"), input_mode == "wheel")))
     LAST_PROFILE.clear()
     LAST_PROFILE.update(mode_snapshot(PLR.read_bytes()))
     result, message = None, ""
@@ -168,7 +168,7 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
             if tr.exists():
                 (SCRIPTS / "gtr2_ui" / "runs" / "last_failure_trace.txt").write_bytes(tr.read_bytes())
             return None, "could not get into the car: " + out.splitlines()[-1]
-        cmd = [suite.PY, "-I", str(SCRIPTS / "gtr2-drive-lap.py"), "--aiw", str(aiw)] + (["--fast"] if fast else []) + ["--input", input_mode] + list(drive_args)
+        cmd = [suite.PY, "-I", str(SCRIPTS / "gtr2-drive-lap.py"), "--aiw", str(aiw)] + (["--fast"] if fast else []) + ["--input", "analog" if input_mode == "wheel" else input_mode] + list(drive_args)
         r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=1500)
         (SCRIPTS / "gtr2_ui" / "runs" / "lap_drive.log").write_text(r.stdout + r.stderr, encoding="utf-8")
         line = [l for l in r.stdout.splitlines() if l.startswith("RESULT ")]
@@ -195,7 +195,7 @@ def main():
     ap.add_argument("--car", default=DEFAULT_CAR, help="car key (see --list-cars); default: the Murcielago")
     ap.add_argument("--runs", type=int, default=1)
     ap.add_argument("--limit", type=float, default=CLEAN_LIMIT)
-    ap.add_argument("--input", choices=("keyboard", "analog"), default="keyboard", help="analog: drive through the vJoy virtual joystick")
+    ap.add_argument("--input", choices=("keyboard", "analog", "wheel"), default="keyboard", help="analog: drive through the vJoy virtual joystick; wheel: the same with the profile as after selecting the wheel in the game (Basic Controls 2; run gtr2-select-wheel.py first)")
     ap.add_argument("--profile", default="", help="extra profile values for the run, e.g. \"Speed Sensitive Steering=0,Steer Ratio Speed=40\" (reverted afterwards)")
     ap.add_argument("--quick", action="store_true", help="stop at the first start/finish crossing: the out lap from the pits (about 3 min) instead of out lap plus a timed lap (about 5.5 min)")
     ap.add_argument("--drive-args", default="", help="extra options for gtr2-drive-lap.py, e.g. \"--analog-steer 0.3\"")

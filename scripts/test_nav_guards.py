@@ -336,6 +336,50 @@ class SettingStep(Base):
                 if c.attribute_set.startswith("SpinBox"):
                     self.assertIsNotNone(menumap.spinner_next(c), (main, c.kind))
 
+    def test_selectwheel_needs_the_setting_flag(self):
+        ok, msg = nav.goto_one(0, 0, PAGES, coords.WHEEL_PAGE, "!SELECTWHEEL")
+        self.assertFalse(ok)
+        self.assertIn("--setting-step", msg)
+
+    def test_selectwheel_refuses_other_pages(self):
+        self.set_flags("SETTING_OK")
+        for page in ("MAIN MENU", "OPTIONS_BASIC_SIMMAIN", "CONTROL_KEYS_SCHOOL", "CONTROL_KEYS_MULTIPLAYER", "CONFIRM_CONTROL1"):
+            ok, msg = nav.goto_one(0, 0, PAGES, page, "!SELECTWHEEL")
+            self.assertFalse(ok, page)
+            self.assertIn("refused", msg)
+
+    def test_the_wheel_slot_opens_the_confirm_popup_and_the_tick_is_on_it(self):
+        slot = menumap.find_button(PAGES, coords.WHEEL_PAGE, coords.WHEEL_SLOT_LABEL)
+        self.assertEqual([str(t) for t in slot.targets], ["CONFIRM_CONTROL1"])
+        self.assertIn("CONFIRM_CONTROL1", coords.POPUP_PAGES)
+        x, y = coords.WHEEL_CONFIRM_TICK
+        self.assertTrue(188 + 424 <= x <= 188 + 424 + 60 and 277 <= y <= 277 + 46)      # the Yes button of the popup strip
+
+
+class WheelBindings(unittest.TestCase):
+    def setUp(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from gtr2_driving import controls
+        self.c = controls
+        self.data = (b'\x00\x00head\r\nBasic Controls="0"\r\nControl - Accelerate="(1, 4)" // note\r\nControl - Brake="(1, 3)"\r\n'
+                     b'Control - Steer Left="(1, 2)"\r\nControl - Steer Right="(1, 1)"\r\nControl - Shift Up="(1, 13)"\r\n'
+                     b'Control - Shift Down="(1, 14)"\r\nother="x"\r\n')
+
+    def test_preset_changes_only_its_keys_and_keeps_bytes(self):
+        new = self.c.set_values(self.data, self.c.PRESETS["wheel-split"])
+        self.assertTrue(new.startswith(b"\x00\x00head\r\n") and new.endswith(b'other="x"\r\n'))
+        self.assertEqual(new.count(b"\r\n"), self.data.count(b"\r\n"))
+        self.assertEqual(self.c.matching_preset(new), "wheel-split")
+        self.assertIn(b'Control - Accelerate="(1, 6)" // note', new)
+
+    def test_the_games_own_wheel_defaults_are_the_combined_preset(self):
+        self.assertEqual(self.c.matching_preset(self.c.set_values(self.data, self.c.PRESETS["wheel-combined"])), "wheel-combined")
+        self.assertIsNone(self.c.matching_preset(self.data))
+
+    def test_missing_key_is_an_error(self):
+        with self.assertRaises(ValueError):
+            self.c.set_values(b'x="1"\r\n', {"Basic Controls": "2"})
+
     def test_control_expectation_covers_every_mode_copy(self):
         for suffix in ("SIMMAIN", "SUMMARY", "SCHOOL", "24H"):
             for base in coords.CONTROL_BASES:
@@ -422,8 +466,8 @@ class Tours(Base):
                     continue
                 if label.startswith("!"):
                     if label.startswith("!"):
-                        self.assertTrue(label[1:].upper() in ("SHORTRACE", "SHORTENDURANCE", "SHORTCHAMP", "NEXTSESSION", "RACE", "CONTROLS", "HOVER", "DRIVE", "LEAVEDRIVE"), (name, label))
-                        if label[1:].upper() == "CONTROLS":
+                        self.assertTrue(label[1:].upper() in ("SHORTRACE", "SHORTENDURANCE", "SHORTCHAMP", "NEXTSESSION", "RACE", "CONTROLS", "HOVER", "DRIVE", "LEAVEDRIVE", "SELECTWHEEL"), (name, label))
+                        if label[1:].upper() in ("CONTROLS", "SELECTWHEEL"):
                             self.assertIn("--setting-step", flags, (name, label))
                         if label[1:].upper() in ("NEXTSESSION", "RACE", "DRIVE", "LEAVEDRIVE"):
                             self.assertIn("--drive-step", flags, (name, label))

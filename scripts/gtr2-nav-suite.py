@@ -43,6 +43,7 @@ ORDER = [
     "tour_session_school",       # sets the profile's track to Anderstorp, which changes the track-specific pages: after everything that shows them
     "tour_champ_season",
     "tour_champ_round",          # needs the season tour's season in progress (it restarts it through the warning's confirm)
+    "tour_select_wheel",         # selects JOY1 as the control device (changes the Controls > Buttons page for the rest of the game process): last
 ]
 
 

@@ -72,6 +72,14 @@ POPUP_PAGES = {
     "DELETE TIMETRIAL", "SAVE GARAGE SETUP", "DELETE GARAGE SETUP", "SAVEGAME", "LOAD GAME",
 }
 
+# `!SELECTWHEEL` (gtr2-nav.py, needs --setting-step): on this page the JOY1 slot's name (the first game controller; the caption in the menu map is
+# a static device name, the game shows the real device there, "vJoy Device" here) opens CONFIRM_CONTROL1 ("You will lose any controller changes you
+# have made. Continue?"); the tick (at CONFIRM_TICK, canvas units) selects that controller as the basic control device: the game then writes
+# `Basic Controls="2"` and resets the pedal bindings to its wheel defaults (Accelerate Y-, Brake Y+). Measured 2026-11-14 with vJoy.
+WHEEL_PAGE = "CONTROL_KEYS_SIMMAIN"
+WHEEL_SLOT_LABEL = "WingMan RumblePad USB"
+WHEEL_CONFIRM_TICK = (642, 302)
+
 # Popups with a tick only (an acknowledgement, nothing left to decide): a path may press their tick. "Game Saved" appears after SAVE GAME
 # has already saved the game, so pressing the tick only closes the notice.
 ACK_POPUPS = {"SAVEGAME"}

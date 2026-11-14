@@ -881,6 +881,33 @@ def step_next_session(ox, oy, pages, page):
     return True, "!NEXTSESSION: session changed after %.1f s" % (time.time() - t0)
 
 
+def step_select_wheel(ox, oy, pages, page):
+    """On the main menu's Controls > Buttons page: select the first game controller (JOY1; vJoy acts as the wheel) as the basic control
+    device, as a player would: its name opens "You will lose any controller changes you have made. Continue?" and the tick confirms. The
+    game then saves `Basic Controls="2"` and its wheel default pedal bindings when it exits (see coords.WHEEL_*). Changes the profile:
+    needs --setting-step; the caller sets the bindings it wants afterwards (gtr2_driving/controls.py) and reverts with git."""
+    if not SETTING_OK[0]:
+        return False, "refused: !SELECTWHEEL needs --setting-step"
+    if page != coords.WHEEL_PAGE or page not in pages:
+        return False, "refused: !SELECTWHEEL works only on %s, not on %s" % (coords.WHEEL_PAGE, page)
+    slot = menumap.find_button(pages, page, coords.WHEEL_SLOT_LABEL)
+    rect = (188, 277, 424, 46)      # the popup's strip
+    before = ui_region(ox, oy, *rect)
+    press(ox, oy, *ui(*slot.center))
+    if not region_moved(ox, oy, before, rect, timeout=2.0, level=3.0):
+        # a controller that is already the control device opens no popup and its name is drawn yellow
+        name = ui_region(ox, oy, slot.x, slot.y, slot.w, slot.h)
+        yellow = float(((name[..., 0] > 200) & (name[..., 1] > 200) & (name[..., 2] < 90)).mean())      # RGB
+        if yellow > 0.01:
+            return True, "!SELECTWHEEL: JOY1 is already the control device (name shown in yellow)"
+        return False, "!SELECTWHEEL: the Continue? popup did not open"
+    popup = ui_region(ox, oy, *rect)
+    press(ox, oy, *ui(*coords.WHEEL_CONFIRM_TICK))
+    if not region_moved(ox, oy, popup, rect, timeout=2.0, level=3.0):
+        return False, "!SELECTWHEEL: the popup stayed after the tick"
+    return True, "!SELECTWHEEL: JOY1 selected as the control device (the profile is written when the game exits)"
+
+
 def special_step(ox, oy, pages, page, label, expect):
     """Path-file steps whose label starts with "!": things a plain button press cannot do. The first column is still the page
     that must be showing. !SHORTRACE and !SHORTENDURANCE (setup sliders), !NEXTSESSION and !RACE (the last two need --drive-step)."""
@@ -897,6 +924,8 @@ def special_step(ox, oy, pages, page, label, expect):
         return step_hover(ox, oy, pages, page)
     if verb == "CONTROLS":
         return step_controls(ox, oy, pages, page)
+    if verb == "SELECTWHEEL":
+        return step_select_wheel(ox, oy, pages, page)
     if verb == "SHORTCHAMP":
         return step_short_champ(ox, oy, page)
     if verb == "NEXTSESSION":
@@ -1474,7 +1503,7 @@ def main():
     s.add_argument("--n", type=int, default=20)
     s.add_argument("--region", default="478,166,137,18", help="client rectangle x,y,w,h whose content must show the clicked item (default: the level heading)")
     pa = sub.add_parser("path", help="run a file of 'PAGE | LABEL' steps in one process, no pauses between them")
-    pa.add_argument("file"); pa.add_argument("--session-step", action="store_true", help="unlock only loading a track and leaving it"); pa.add_argument("--host-step", action="store_true", help="with --lan-step: allow the games list HOST button, which only opens the host setup pages"); pa.add_argument("--lan-step", action="store_true", help="also touch the local multiplayer pages (never host, join, refresh or add a server)"); pa.add_argument("--popup-step", action="store_true", help="also open save/delete/rename/load/exit popups (they are only cancelled)"); pa.add_argument("--season-step", action="store_true", help="also unlock starting a championship season (new season, team and driver confirm, round start)"); pa.add_argument("--drive-step", action="store_true", help="also allow the post-race CONTINUE and the !RACE / !NEXTSESSION steps (drives a race on the game's autopilot)"); pa.add_argument("--setting-step", action="store_true", help="also allow the !CONTROLS step (clicks every checkbox and spinner of a settings page; changes the profile)")
+    pa.add_argument("file"); pa.add_argument("--session-step", action="store_true", help="unlock only loading a track and leaving it"); pa.add_argument("--host-step", action="store_true", help="with --lan-step: allow the games list HOST button, which only opens the host setup pages"); pa.add_argument("--lan-step", action="store_true", help="also touch the local multiplayer pages (never host, join, refresh or add a server)"); pa.add_argument("--popup-step", action="store_true", help="also open save/delete/rename/load/exit popups (they are only cancelled)"); pa.add_argument("--season-step", action="store_true", help="also unlock starting a championship season (new season, team and driver confirm, round start)"); pa.add_argument("--drive-step", action="store_true", help="also allow the post-race CONTINUE and the !RACE / !NEXTSESSION steps (drives a race on the game's autopilot)"); pa.add_argument("--setting-step", action="store_true", help="also allow the !CONTROLS and !SELECTWHEEL steps (change the profile)")
     g = sub.add_parser("goto", help="press a button by its caption on a page of the menu map, then wait for the screen to settle")
     g.add_argument("page"); g.add_argument("label"); g.add_argument("--session-step", action="store_true"); g.add_argument("--season-step", action="store_true"); g.add_argument("--popup-step", action="store_true"); g.add_argument("--lan-step", action="store_true"); g.add_argument("--host-step", action="store_true"); g.add_argument("--drive-step", action="store_true"); g.add_argument("--setting-step", action="store_true"); g.add_argument("--expect", help="destination page(s), comma separated, instead of the map's target")
     le = sub.add_parser("learn", help="walk a path file and save this machine's own reference image for each page it reaches")

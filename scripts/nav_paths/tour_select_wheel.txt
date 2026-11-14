@@ -1,0 +1,6 @@
+# Select the first game controller (JOY1; vJoy acts as the wheel) as the control device, as a player does on Controls > Buttons.
+# SETTING TOUR: run with  gtr2-nav.py path --setting-step FILE  (changes the profile when the game exits; gtr2-select-wheel.py runs it and sets the bindings).
+# Format: PAGE | LABEL | EXPECTED PAGE
+MAIN MENU | CONTROLS | CONTROL_KEYS_SIMMAIN
+CONTROL_KEYS_SIMMAIN | !SELECTWHEEL
+CONTROL_KEYS_SIMMAIN | MAIN MENU | MAIN MENU
