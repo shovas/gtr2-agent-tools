@@ -202,6 +202,22 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
     return result, message
 
 
+def record_box_start(stem, car, out):
+    r"""Parse the driver's garage-exit lines ("start (x, z) yaw Y, pit line D m away", "until within S m of the pit line") and keep them per
+    layout and car in gtr2_driving/box_starts.json: {layout: {car: [x, z, yaw, pit_line_distance, stop_distance]}} (the game puts different
+    cars in different bays). gtr2-garage-map.py and the box planning read it. Returns the list or None."""
+    m = re.search(r"garage exit: start \((-?[\d.]+), (-?[\d.]+)\) yaw (-?[\d.]+), pit line ([\d.]+) m away", out or "")
+    if not m:
+        return None
+    stop = re.search(r"until within ([\d.]+) m of the pit line", out or "")
+    start = [float(m.group(i)) for i in range(1, 5)] + [float(stop.group(1)) if stop else None]
+    path = SCRIPTS / "gtr2_driving" / "box_starts.json"
+    data = json.loads(path.read_text()) if path.exists() else {}
+    data.setdefault(stem.lower(), {})[car] = start
+    path.write_text(json.dumps({k: dict(sorted(v.items())) for k, v in sorted(data.items())}, indent=1) + chr(10))
+    return start
+
+
 def garage_done(venue, trk, car, input_mode):
     f = SCRIPTS / "gtr2_ui" / "runs" / "garage_exit.jsonl"
     if not f.exists():
@@ -300,8 +316,9 @@ def main():
             result, message = one_run(venue, trk, aiw, car, car_files[car], not a.no_fast, a.input, (["--total", "40", "--stop-at-merge", "2"] if a.garage_exit else ["--laps-crossed", "1", "--total", "420"] if a.quick else []) + a.drive_args.split())
             if a.garage_exit:
                 ok, why = garage_verdict(LAST_OUT[0], result, message)
+                start = record_box_start(Path(trk).stem, car, LAST_OUT[0])
                 with (SCRIPTS / "gtr2_ui" / "runs" / "garage_exit.jsonl").open("a", encoding="utf-8") as f:
-                    f.write(json.dumps({"layout": "%s/%s" % (venue, trk), "car": car, "input": a.input, "ok": ok, "why": why, "time": time.strftime("%Y-%m-%d %H:%M:%S")}) + "\n")
+                    f.write(json.dumps({"layout": "%s/%s" % (venue, trk), "car": car, "input": a.input, "ok": ok, "why": why, "start": start, "time": time.strftime("%Y-%m-%d %H:%M:%S")}) + "\n")
                 print("run %d/%d %s/%s %s: %s - %s" % (n, a.runs, venue, trk, car, "PASS" if ok else "FAIL", why), flush=True)
                 failed += not ok
                 infra = infra + 1 if result is None else 0

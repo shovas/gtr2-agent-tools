@@ -128,7 +128,7 @@ def main():
     ap.add_argument("--box-exit-dist", type=float, default=4.5, help="start turning onto the pit lane when this close (m) to the box's pit-stop point; the car starts turning later than this by its steering lag")
     ap.add_argument("--box-pick", choices=("nearest", "align", "heading"), default="heading", help="how the car leaves its box: heading (default) = straight along its own heading until inside the pit lane, no pit-stop waypoints used (clean at Imola, Donington, Dubai, Hockenheim, Magny-Cours); nearest / align = straight at the nearest / best-aligned pit-stop waypoint (failed at Donington and Dubai)")
     ap.add_argument("--box-margin", type=float, default=0.7, help="with --box-pick heading: start merging when this many metres inside the pit lane's wide side")
-    ap.add_argument("--box-yaw-bias", type=float, default=0.0, help="with --box-pick heading: aim this many degrees off the car's own heading while driving straight out of the box (positive = the yaw angle grows), to steer clear of something fixed in the box exit (Anderstorp 3 at (-349.5, -31))")
+    ap.add_argument("--box-yaw-bias", default="auto", help="with --box-pick heading: aim this many degrees off the car's own heading while driving straight out of the box (positive = the yaw angle grows), or auto (default) = pick it from the track's own wall meshes (gtr2_driving/boxplan.py: reads the .trk and .gtr; the first run of a layout and start takes several seconds, then it is cached). Anderstorp 3 needed -6 by hand")
     ap.add_argument("--box-max", type=float, default=14.0, help="with --box-pick heading: never drive straight further than this (m)")
     ap.add_argument("--box-throttle", type=float, default=0.4, help="throttle ceiling while leaving the box and merging onto the pit lane line")
     ap.add_argument("--merge-speed", type=float, default=2.5, help="speed cap (m/s) while turning from the box onto the pit lane line, until the car is lined up (heading within 15 degrees, within 2.5 m of the line)")
@@ -275,6 +275,21 @@ def main():
             print("garage exit: driving straight along the heading (%.1f deg) until within %.1f m of the pit line (lane %.1f wide on the garage side + %.1f margin), at most %.0f m" % (
                 box_heading, box_stop_lat, wide, args.box_margin, args.box_max), flush=True)
             box_target = "heading"
+            box_bias = 0.0
+            if str(args.box_yaw_bias).lower() == "auto":
+                try:
+                    sys.path.insert(0, str(Path(__file__).resolve().parent / "gtr2_driving"))
+                    import boxplan
+                    trk_file = next((q for q in Path(args.aiw).parent.iterdir() if q.suffix.lower() == ".trk" and q.stem.lower() == Path(args.aiw).stem.lower()), None)
+                    if trk_file is None:
+                        raise FileNotFoundError("no .trk next to the AIW")
+                    t_plan = time.time()
+                    box_bias, box_gap, note = boxplan.plan(trk_file, box_start, box_heading, max(2.0, d0 - box_stop_lat) + 1.0)
+                    print("garage exit: walls from the track meshes: %s -> yaw bias %+.0f deg (%.1f s)" % (note, box_bias, time.time() - t_plan), flush=True)
+                except Exception as e:     # never stop a run for the planner: fall back to the straight heading
+                    print("garage exit: wall planner unavailable (%s: %s), yaw bias 0" % (type(e).__name__, e), flush=True)
+            else:
+                box_bias = float(args.box_yaw_bias)
         elif ok_c:
             pick = min(ok_c, key=(lambda c: (abs(c[1]), c[0])) if args.box_pick == "align" else (lambda c: c[0]))
             box_target = pick[2]
@@ -472,7 +487,7 @@ def main():
         accum, prev_dist, by_distance = 0.0, None, False     # distance covered along the racing line: a fallback when the game's lap counter never moves (Hockenheim Short)
         off_samples = samples = 0
         peak_pit = peak_all = 0.0
-        impacts, last_impact = [], -1.0
+        impacts, last_impact, bumps = [], -1.0, 0
         off_buckets = {}
         off_lat = {}
         max_lat = 0.0
@@ -538,7 +553,11 @@ def main():
             peak_all = max(peak_all, a_h)
             if chain is track.pit:
                 peak_pit = max(peak_pit, a_h)
-            if a_h > args.impact_accel and now - last_impact > 0.3:
+            if a_h > args.impact_accel and now - last_impact > 0.3 and abs(tel["accel"][1]) >= 0.3 * a_h and a_h < 40.0:
+                last_impact = now      # a jolt with a big vertical part and no side force is a kerb or door sill, not a wall (Zhuhai 4: 15 to 20 m/s^2 with vert 8 to 9; Anderstorp's pillar: 70 with vert 0.5)
+                bumps += 1
+                print("t=%5.1f BUMP %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
+            elif a_h > args.impact_accel and now - last_impact > 0.3:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
                 print("t=%5.1f IMPACT %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f) yaw %.1f" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2], tel["yaw"]), flush=True)
@@ -582,7 +601,7 @@ def main():
                     print("t=%5.1f left the box path (%.1f m from the pit line)" % (now - t0, abs(track.lateral(w, x, z))), flush=True)
                     box_target, merging = None, chain is track.pit
                 elif box_target == "heading":
-                    want, pull = box_heading + args.box_yaw_bias, 0.0
+                    want, pull = box_heading + box_bias, 0.0
                 else:
                     want, pull = track.yaw_of(box_target.x - x, box_target.z - z), 0.0
             herr = wrap(want - yaw + pull)
@@ -642,7 +661,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], pit_impacts=sum(1 for i in impacts if i["pit"]), peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0

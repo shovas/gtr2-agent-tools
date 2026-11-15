@@ -46,5 +46,20 @@ class GarageMap(unittest.TestCase):
         self.assertTrue(-8 <= best <= -3 and gap > 0.05)
 
 
+    def test_planner_picks_per_bay(self):
+        import boxplan
+        trk = LOC / "3ANDERSTORP.trk"
+        bias_a, gap_a, _ = boxplan._plan(trk, (-349.6, -35.4), -178.0, 6.0, boxplan.garage.CAR_BOX)      # the Maserati's bay: the pillar
+        self.assertTrue(-8 <= bias_a <= -3 and gap_a > 0.05)
+        bias_b, gap_b, _ = boxplan._plan(trk, (-345.6, -35.4), -178.0, 6.0, boxplan.garage.CAR_BOX)      # the Murcielago's bay: clear
+        self.assertEqual(bias_b, 0.0)
+        self.assertGreater(gap_b, 0.05)
+
+    def test_doors_are_ignored(self):
+        import garage
+        obs, _floor = garage.obstacles(ROOT / "GameData" / "Locations" / "Imola" / "4Imol.trk", (-152.4, 409.6))
+        self.assertFalse(any(inst.upper().startswith("PDOOR") for _tri, inst in obs))
+
+
 if __name__ == "__main__":
     unittest.main()

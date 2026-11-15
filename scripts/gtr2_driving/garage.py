@@ -94,9 +94,14 @@ def steep(tri, max_ny=0.6):
     return n > 1e-9 and abs(ny) / n < max_ny
 
 
+# Collision meshes that are not in a car's way although they are flagged CollTarget=True: the garage doors (PDOOR00..) sit across every
+# garage opening at the start, yet all 34 layouts' garage exits drive through them (they open; checked 2026-11-14).
+IGNORE_PREFIXES = ("PDOOR",)
+
+
 def obstacles(trk, start_xz, radius=30.0, floor=None, car_height=1.2, step_up=0.15):
     """2D triangles [(x, z)] x3 that overlap the car's height band, and the floor height used."""
-    tris = triangles_near(trk, start_xz, radius)
+    tris = [t for t in triangles_near(trk, start_xz, radius) if not t[1].upper().startswith(IGNORE_PREFIXES)]
     if floor is None:
         sx, sz = start_xz
         ys = sorted(p[1] for tri, _ in tris for p in tri if math.hypot(p[0] - sx, p[2] - sz) < 3.0)
@@ -190,4 +195,11 @@ def swept_clearance(obs, start_xz, yaw, bias, run=6.0, width=2.0, length=4.8, fr
 
 def best_bias(obs, start_xz, yaw, biases=range(-12, 13), **kw):
     rows = [(swept_clearance(obs, start_xz, yaw, b, **kw), b) for b in biases]
-    return max(rows), rows
+    return max(rows, key=lambda r: (round(r[0], 2), -abs(r[1]))), rows      # largest gap; a tie goes to the smaller bias
+
+
+
+# Car body for the sweep: (width, length, front) in metres. The .hdc files only list the generic example feelers (2.08 wide, 5.23 long,
+# nose 2.64 m ahead of the reference point) for every car, commented out, so there is no per-car data to read there; a car's real body
+# comes from its graphics mesh. This is wider and longer than any car in the game, so a bias that clears it clears all of them.
+CAR_BOX = (2.08, 5.23, 2.64)
