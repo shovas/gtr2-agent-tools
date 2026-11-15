@@ -253,7 +253,7 @@ def main():
     ap.add_argument("--drive-args", default="", help="extra options for gtr2-drive-lap.py, e.g. \"--analog-steer 0.3\"")
     ap.add_argument("--no-fast", action="store_true", help="drive at the slow default settings instead of --fast")
     ap.add_argument("--all-layouts", action="store_true", help="every layout with --car (about 3 to 7 minutes each)")
-    ap.add_argument("--all-cars", action="store_true", help="every car on LAYOUT")
+    ap.add_argument("--all-cars", action="store_true", help="every car on LAYOUT (with --all-layouts: every car at every layout, 34 x 24 runs)")
     ap.add_argument("--skip-done", action="store_true", help="with --garage-exit: skip layout/car pairs that already have an ok row in runs/garage_exit.jsonl")
     ap.add_argument("--garage-exit", action="store_true", help="only check leaving the garage: drive until 2 s after merging onto the pit lane line (at most 40 s), judge that the car left the box, merged onto the pit lane line and hit nothing (rows go to runs/garage_exit.jsonl, not to lap_results.jsonl)")
     ap.add_argument("--resume", action="store_true", help="with --all-*: skip combinations whose newest fast result is already clean")
@@ -282,8 +282,8 @@ def main():
         print("unknown car %r; --list-cars shows the keys" % a.car, file=sys.stderr)
         return 2
     plan = [(layout, a.car) for layout in (items if a.all_layouts else [first])]
-    if a.all_cars:
-        plan = [(first, k) for k in car_files]
+    if a.all_cars:      # with --all-layouts too: every car at every layout
+        plan = [(lay, k) for lay in (items if a.all_layouts else [first]) for k in car_files]
     done = set()
     if a.resume and RESULTS.exists():
         rows = [json.loads(l) for l in RESULTS.read_text(encoding="utf-8").splitlines() if l.strip()]
