@@ -130,6 +130,7 @@ def main():
     ap.add_argument("--box-margin", type=float, default=0.7, help="with --box-pick heading: start merging when this many metres inside the pit lane's wide side")
     ap.add_argument("--box-yaw-bias", default="auto", help="with --box-pick heading: aim this many degrees off the car's own heading while driving straight out of the box (positive = the yaw angle grows), or auto (default) = pick it from the track's own wall meshes (gtr2_driving/boxplan.py: reads the .trk and .gtr; the first run of a layout and start takes several seconds, then it is cached). Anderstorp 3 needed -6 by hand")
     ap.add_argument("--box-max", type=float, default=14.0, help="with --box-pick heading: never drive straight further than this (m)")
+    ap.add_argument("--box-straight-throttle", type=float, default=0.15, help="throttle ceiling for the straight run out of the garage box only (a walking-pace roll over the lip at the garage mouth; the box-throttle ceiling then applies to the merge)")
     ap.add_argument("--box-throttle", type=float, default=0.4, help="throttle ceiling while leaving the box and merging onto the pit lane line")
     ap.add_argument("--merge-speed", type=float, default=2.5, help="speed cap (m/s) while turning from the box onto the pit lane line, until the car is lined up (heading within 15 degrees, within 2.5 m of the line)")
     ap.add_argument("--merge-steer", type=float, default=1.0, help="analog only: steering scale during that merge (full lock is needed; the car is slow)")
@@ -553,8 +554,8 @@ def main():
             peak_all = max(peak_all, a_h)
             if chain is track.pit:
                 peak_pit = max(peak_pit, a_h)
-            if a_h > args.impact_accel and now - last_impact > 0.3 and abs(tel["accel"][1]) >= 0.3 * a_h and a_h < 40.0:
-                last_impact = now      # a jolt with a big vertical part and no side force is a kerb or door sill, not a wall (Zhuhai 4: 15 to 20 m/s^2 with vert 8 to 9; Anderstorp's pillar: 70 with vert 0.5)
+            if a_h > args.impact_accel and now - last_impact > 0.3 and (box_target is not None or merging) and abs(tel["accel"][1]) >= 0.3 * a_h:
+                last_impact = now      # in the garage exit only: a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
                 bumps += 1
                 print("t=%5.1f BUMP %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
             elif a_h > args.impact_accel and now - last_impact > 0.3:
@@ -634,14 +635,17 @@ def main():
             shared["duty"] = max(0.0, min(1.0, 0.45 + 0.25 * (target_v - speed))) if speed > 1.5 else 1.0
             shared["brake"] = max(0.0, min(0.9, 0.25 * (speed - target_v - 0.7)))
             if box_target is not None or merging:       # creeping out of the box: gentle throttle (a full launch reached 6.5 m/s in 3 m)
-                shared["duty"] = min(shared["duty"], args.box_throttle)
+                cap = args.box_throttle
+                if box_target is not None and not (speed < 0.4 and now - t0 > 2.5):      # the straight run out of the box: a walking-pace roll over the sill at the garage mouth (0.4 reached it at 3.5 to 4 m/s and jolted 15 to 54 m/s^2); 0.15 gives 2 m/s, no jolt. A car that has not moved after 2.5 s gets the old ceiling
+                    cap = min(cap, args.box_straight_throttle)
+                shared["duty"] = min(shared["duty"], cap)
             if analog:
                 shared["gear"] = tel["gear"]
 
             n += 1
             if now - t0 < args.trace:
-                print("T %5.2f x=%7.1f z=%7.1f yaw=%7.1f rate=%+6.1f v=%5.2f herr=%+6.1f steer=%+5.2f duty=%.2f brake=%.2f gear=%d ax=%+6.1f az=%+6.1f" % (
-                    now - t0, x, z, yaw, yawrate, speed, herr, shared["steer"], shared["duty"], shared["brake"], tel["gear"], tel["accel"][0], tel["accel"][2]), flush=True)
+                print("T %5.2f x=%7.1f z=%7.1f yaw=%7.1f rate=%+6.1f v=%5.2f herr=%+6.1f steer=%+5.2f duty=%.2f brake=%.2f gear=%d ax=%+6.1f ay=%+6.1f az=%+6.1f %s" % (
+                    now - t0, x, z, yaw, yawrate, speed, herr, shared["steer"], shared["duty"], shared["brake"], tel["gear"], tel["accel"][0], tel["accel"][1], tel["accel"][2], "/".join(tel["surfaces"])), flush=True)
             if now - last_shift > 1.2 and not in_lane:
                 gear, rpm = tel["gear"], tel["rpm"]
                 if gear < args.max_gear and rpm > args.shift_rpm:
