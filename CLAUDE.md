@@ -41,6 +41,7 @@ python scripts\gtr2-setup.py --dry-run                                   # guide
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\gtr2-launch.ps1            # run the game (ALWAYS through the launcher)
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\gtr2-set-resolution.ps1 -Resolution 1280x720 [-Shader 'Auto'] [-Dropdowns|-List|-Status]
 scripts\.venv\Scripts\python.exe -I scripts\test_nav_guards.py          # offline guard tests (84), no game needed except UIData\gtr2ui.mnu
+scripts\.venv\Scripts\python.exe -I scripts\test_garage_map.py          # offline checks of the .gtr/.gmt readers and the garage-wall prediction (needs the Anderstorp files)
 scripts\.venv\Scripts\python.exe -I scripts\gtr2-nav-suite.py           # full UI navigation test, 30 tours, about 330 s: leave the PC alone
 scripts\.venv\Scripts\python.exe -I scripts\gtr2-nav.py ready|where|goto|path|learn|refine|exit|preflight|diagnose
 scripts\.venv\Scripts\python.exe -I scripts\gtr2-lap-check.py "Imola4Imol" --input analog --quick   # hands-free lap (needs vJoy)
