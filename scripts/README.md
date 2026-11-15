@@ -34,3 +34,6 @@ av_paths	our_options_main.txt`.
 - `gtr2_driving/controls.py` - the profile's control bindings (`Basic Controls`, `Control - Accelerate/Brake/Steer/Shift`) as named presets (`wheel-split`, `wheel-combined`), byte-preserving; `controls.py show|presets|apply NAME [--dry-run]`.
 - `gtr2-axis-probe.py`: sweeps a vJoy axis in the parked cockpit and reads the game's processed input from telemetry (run via `GTR2_DRIVER_SCRIPT` with lap-check); shows how Dead Zone/Sensitivity/Center change the response.
 - `gtr2-recover.py`: recovery after an interrupted run: stops stale nav servers, closes an orphaned game (`--force` kills it), reaps the launcher, `--revert` resets UserData/ReplayData in the game folder; `--dry-run`.
+- `gtr2_driving/mas.py`: reads the game's `.gtr` (GMOTORMAS10) archives: `list|cat|extract`; the same format `pitzones.py` reads for the pit gates (its own older reader).
+- `gtr2_driving/gmt.py`: reads `.gmt` track meshes (world-space vertices and triangles) from an archive; `garage.py`: finds the collision meshes a `.trk` lists, keeps the walls in the car's height band and predicts the clearance of a garage exit for a yaw bias.
+- `gtr2-garage-map.py TRK X Z YAW`: prints the predicted clearance for yaw biases -12..12 for a garage start (offline, no game); `test_garage_map.py`: offline checks of the readers and of the Anderstorp 3 pillar prediction.
