@@ -128,6 +128,7 @@ def main():
     ap.add_argument("--box-exit-dist", type=float, default=4.5, help="start turning onto the pit lane when this close (m) to the box's pit-stop point; the car starts turning later than this by its steering lag")
     ap.add_argument("--box-pick", choices=("nearest", "align", "heading"), default="heading", help="how the car leaves its box: heading (default) = straight along its own heading until inside the pit lane, no pit-stop waypoints used (clean at Imola, Donington, Dubai, Hockenheim, Magny-Cours); nearest / align = straight at the nearest / best-aligned pit-stop waypoint (failed at Donington and Dubai)")
     ap.add_argument("--box-margin", type=float, default=0.7, help="with --box-pick heading: start merging when this many metres inside the pit lane's wide side")
+    ap.add_argument("--box-yaw-bias", type=float, default=0.0, help="with --box-pick heading: aim this many degrees off the car's own heading while driving straight out of the box (positive = the yaw angle grows), to steer clear of something fixed in the box exit (Anderstorp 3 at (-349.5, -31))")
     ap.add_argument("--box-max", type=float, default=14.0, help="with --box-pick heading: never drive straight further than this (m)")
     ap.add_argument("--box-throttle", type=float, default=0.4, help="throttle ceiling while leaving the box and merging onto the pit lane line")
     ap.add_argument("--merge-speed", type=float, default=2.5, help="speed cap (m/s) while turning from the box onto the pit lane line, until the car is lined up (heading within 15 degrees, within 2.5 m of the line)")
@@ -540,7 +541,7 @@ def main():
             if a_h > args.impact_accel and now - last_impact > 0.3:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
-                print("t=%5.1f IMPACT %.1f m/s^2 at (%.1f, %.1f) speed %.1f" % (now - t0, a_h, x, z, speed), flush=True)
+                print("t=%5.1f IMPACT %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f) yaw %.1f" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2], tel["yaw"]), flush=True)
             if any(any(bad in s for bad in OFF_ROAD) for s in tel["surfaces"]):
                 off_samples += 1
                 if chain is track.main:      # where on the lap (20 m buckets of lap distance) and on what surface
@@ -581,7 +582,7 @@ def main():
                     print("t=%5.1f left the box path (%.1f m from the pit line)" % (now - t0, abs(track.lateral(w, x, z))), flush=True)
                     box_target, merging = None, chain is track.pit
                 elif box_target == "heading":
-                    want, pull = box_heading, 0.0
+                    want, pull = box_heading + args.box_yaw_bias, 0.0
                 else:
                     want, pull = track.yaw_of(box_target.x - x, box_target.z - z), 0.0
             herr = wrap(want - yaw + pull)

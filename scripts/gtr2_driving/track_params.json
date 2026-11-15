@@ -1,4 +1,5 @@
 {
+  "3anderstorp": "--box-yaw-bias -6",
   "3enna": "--center-gain 0",
   "3monza": "--tight-radius 25 --pit-speed 10 --tight-speed 5 --guard-deg 8 --guard-span 25 --guard-floor 0.08",
   "4monza": "--tight-radius 25 --pit-speed 10 --tight-speed 5 --guard-deg 8 --guard-span 25 --guard-floor 0.08",
