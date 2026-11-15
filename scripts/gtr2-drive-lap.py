@@ -100,6 +100,10 @@ def main():
     ap.add_argument("--analog-throttle", type=float, nargs=6, default=[0.6, 0.7, 0.85, 1.0, 1.0, 1.0], metavar="G",
                     help="analog only: throttle ceiling in gears 1 to 6 (full throttle in a low gear spins the car); also eased by "
                          "up to --analog-steer-ease of itself at full steering")
+    ap.add_argument("--device", choices=("stick", "wheel"), default="stick", help="analog only: which hardware the vJoy axes stand for. stick: a joystick/gamepad, full steering range under one hand (the tuned default, unchanged). wheel: a rim turned through --wheel-degrees lock to lock, so the hand needs more travel per unit of axis (the steering speed limit becomes --wheel-hand-dps divided by half the range) and the axis is quantised to --wheel-bits")
+    ap.add_argument("--wheel-degrees", type=float, default=900.0, help="wheel device: wheel rotation lock to lock in degrees (G27: 900)")
+    ap.add_argument("--wheel-hand-dps", type=float, default=1000.0, help="wheel device: fastest hand rotation of the rim, degrees per second (a quick sawing hand is about 1000)")
+    ap.add_argument("--wheel-bits", type=int, default=14, help="wheel device: steering axis resolution in bits (14 for a G27 in its native mode, from memory, not verified; vJoy itself has 15)")
     ap.add_argument("--analog-slew", type=float, default=3.0, help="analog only: top steering speed in full-lock units per second; 0 = no smoothing (the control loop runs at about 12 Hz; a 100 Hz writer ramps between its commands)")
     ap.add_argument("--analog-accel", type=float, default=20.0, help="analog only: steering acceleration limit, units/s^2 (ramp up to speed, ramp down onto the new position)")
     ap.add_argument("--analog-inertia", type=float, default=1.0, help="analog only: steering rack/hand inertia (resists slowing down and reversing: the wheel carries on; 2.0 = twice as heavy, slower response). 0 = use the plain acceleration-limited follower instead of the rack model")
@@ -348,8 +352,9 @@ def main():
         return (RackModel(args.analog_pedal_slew, m[0], m[1], m[2], m[3], 0.0, 1.0) if m[0] > 0
                 else Follower(args.analog_pedal_slew, args.analog_pedal_accel, 0.0, 1.0))
 
-    fol = {"steer": (RackModel(args.analog_slew, args.analog_inertia, args.analog_friction, args.analog_stiction, args.analog_wn)
-                     if args.analog_inertia > 0 else Follower(args.analog_slew, args.analog_accel, -1.0, 1.0)),
+    steer_vmax = args.analog_slew if args.device == "stick" else args.wheel_hand_dps / (args.wheel_degrees / 2.0)   # wheel: the same hand speed covers fewer axis units when the rim turns 900 degrees for the whole range
+    fol = {"steer": (RackModel(steer_vmax, args.analog_inertia, args.analog_friction, args.analog_stiction, args.analog_wn)
+                     if args.analog_inertia > 0 else Follower(steer_vmax, args.analog_accel, -1.0, 1.0)),
            "throttle": pedal(args.analog_throttle_model),
            "brake": pedal(args.analog_brake_model)}
 
@@ -362,7 +367,11 @@ def main():
         cap = args.analog_throttle[max(1, min(6, shared["gear"])) - 1] * (1.0 - args.analog_steer_ease * min(1.0, abs(shared["steer"])))
         th = fol["throttle"].step(min(cap, shared["duty"]), dt)
         br = fol["brake"].step(shared["brake"], dt)
-        joy.axis("X", 0.5 + 0.5 * x)
+        xa = 0.5 + 0.5 * x
+        if args.device == "wheel":
+            steps = (1 << args.wheel_bits) - 1      # the wheel reports whole steps of its sensor, not any fraction
+            xa = round(xa * steps) / steps
+        joy.axis("X", xa)
         joy.axis("Z", 0.5 - 0.5 * th)
         joy.axis("RX", 0.5 - 0.5 * br)
 
