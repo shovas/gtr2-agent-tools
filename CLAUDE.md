@@ -69,8 +69,9 @@ Always run Python tools with `-I` (isolated). Run one test file/tour: `gtr2-nav.
 
 ## Open items (not done; context in docs/)
 
+- **Reminder: full sweep of every car at every track (pit-lane exit and full lap, `--input wheel`) is still to do.** After an interrupted run use `gtr2-recover.py --force --revert` (stale nav servers and an orphaned game make every later run fail).
 - Make the nav server optional/simpler (startup under 1 s is acceptable; see `docs/ui-navigation.md`).
-- Driving: layouts and cars beyond Imola/Murcielago are untuned (every layout runs clean with defaults); pit-lane exit from the track's `XPITOUT` object was verified only on Imola and Anderstorp S (re-run Estoril 3, Magny-Cours 4, Hockenheim GP, Zhuhai 4, Dubai 4, Donington 3); Anderstorp S crawled in 1st gear on the pit chain (fix partly in); delay between entering the cockpit and the car moving not measured; wet Driving School levels 4 to 7 unsolved.
+- Driving: layouts and cars beyond Imola/Murcielago are untuned (every layout runs clean with defaults); pit-lane exit from the track's `XPITOUT` object was verified only on Imola and Anderstorp S (wheel garage-exit check passed 2026-11-14 at Magny-Cours 4, Hockenheim GP and Zhuhai 4 with 3 cars each; Estoril 3, Dubai 4, Donington 3 still to re-run; Anderstorp 3 with the Maserati MC12 touches the garage wall in about half of the runs, see docs/analog-driving.md); Anderstorp S crawled in 1st gear on the pit chain (fix partly in); delay between entering the cockpit and the car moving not measured; wet Driving School levels 4 to 7 unsolved.
 - Setup script untested on a machine without Steam/vJoy, with a non-git game folder, and its venv step.
 - First-run bootstrap tested with the real game once; `Documents\GTR2` weather.txt drift (`only in snapshot`) is the known harmless drift.
 

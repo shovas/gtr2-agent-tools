@@ -104,6 +104,7 @@ def main():
     ap.add_argument("--wheel-degrees", type=float, default=900.0, help="wheel device: wheel rotation lock to lock in degrees (G27: 900)")
     ap.add_argument("--wheel-hand-dps", type=float, default=1000.0, help="wheel device: fastest hand rotation of the rim, degrees per second (a quick sawing hand is about 1000)")
     ap.add_argument("--wheel-bits", type=int, default=14, help="wheel device: steering axis resolution in bits (14 for a G27 in its native mode, from memory, not verified; vJoy itself has 15)")
+    ap.add_argument("--wheel-pedal-bits", type=int, default=8, help="wheel device: throttle/brake/clutch pedal resolution in bits (stock G25/G27 potentiometer pedals: about 8 per community sources, not verified; a Leo Bodnar adapter gives 10, Hall sensor mods 12)")
     ap.add_argument("--analog-slew", type=float, default=3.0, help="analog only: top steering speed in full-lock units per second; 0 = no smoothing (the control loop runs at about 12 Hz; a 100 Hz writer ramps between its commands)")
     ap.add_argument("--analog-accel", type=float, default=20.0, help="analog only: steering acceleration limit, units/s^2 (ramp up to speed, ramp down onto the new position)")
     ap.add_argument("--analog-inertia", type=float, default=1.0, help="analog only: steering rack/hand inertia (resists slowing down and reversing: the wheel carries on; 2.0 = twice as heavy, slower response). 0 = use the plain acceleration-limited follower instead of the rack model")
@@ -372,6 +373,9 @@ def main():
             steps = (1 << args.wheel_bits) - 1      # the wheel reports whole steps of its sensor, not any fraction
             xa = round(xa * steps) / steps
         joy.axis("X", xa)
+        if args.device == "wheel":      # pedal sensors report whole steps (stock G25/G27 pedals: about 8 bits, source-reported, not verified)
+            ps_n = (1 << args.wheel_pedal_bits) - 1
+            th, br = round(th * ps_n) / ps_n, round(br * ps_n) / ps_n
         joy.axis("Z", 0.5 - 0.5 * th)
         joy.axis("RX", 0.5 - 0.5 * br)
 
@@ -415,6 +419,23 @@ def main():
                 press_key("a", hold=int(300 * d)); time.sleep(0.3 * (1 - d))
 
     result = {"outcome": "timeout", "lap_changes": []}
+    wheel_dev = analog and args.device == "wheel"
+
+    def clutch_pedal():
+        """Wheel device: the clutch is a foot pedal on the vJoy RY axis (below centre = pressed; the game binds Clutch In to (1, 10) in the wheel profile):
+        pressed in 0.12 s, held for CLUTCH_HOLD_MS, let out over 0.25 s, in steps of the pedal's resolution."""
+        steps_n = (1 << args.wheel_pedal_bits) - 1
+        def put(v):
+            joy.axis("RY", 0.5 - 0.5 * round(v * steps_n) / steps_n)
+        t_start = time.time()
+        while time.time() - t_start < 0.12:
+            put((time.time() - t_start) / 0.12); time.sleep(0.01)
+        put(1.0); time.sleep(max(0.0, CLUTCH_HOLD_MS / 1000.0 - 0.12 - 0.25))
+        t_start = time.time()
+        while time.time() - t_start < 0.25:
+            put(1.0 - (time.time() - t_start) / 0.25); time.sleep(0.01)
+        put(0.0)
+
     threads = []
     try:
         # first gear, read from the telemetry: the car can start in any gear (the display showed 3 at the box). Alt shifts up and
@@ -427,9 +448,9 @@ def main():
             gear = cur["gear"]
             if gear == 1 or cur["speed"] > 2.0:
                 break
-            clutch = threading.Thread(target=press_key, args=("q",), kwargs={"hold": CLUTCH_HOLD_MS}); clutch.start()
+            clutch = threading.Thread(target=clutch_pedal if wheel_dev else press_key, **({} if wheel_dev else {"args": ("q",), "kwargs": {"hold": CLUTCH_HOLD_MS}})); clutch.start()
             time.sleep(CLUTCH_LEAD_S)
-            if analog:      # shift on the virtual joystick's buttons (1 up, 2 down); the clutch stays on keyboard Q
+            if analog:      # shift on the virtual joystick's buttons (1 up, 2 down); the clutch stays on keyboard Q unless the wheel device presses it on the RY axis
                 joy.button(1 if gear < 1 else 2, True); time.sleep(0.1); joy.button(1 if gear < 1 else 2, False)
             else:
                 press_key("alt" if gear < 1 else "ralt", hold=150)
