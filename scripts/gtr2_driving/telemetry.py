@@ -55,7 +55,14 @@ class Telemetry:
         accel = struct.unpack_from("<3f", raw, 164)   # local acceleration m/s^2 (x lateral, y vertical, z longitudinal): spikes show impacts
         yaw = math.degrees(math.atan2(o[2], o[0]))     # heading; turning left makes it smaller
         surfaces = [raw[at:at + 16].split(b"\0")[0].decode("latin1") for at in (366, 433, 500, 567)]
-        return {"lap": lap, "pos": pos, "vel": vel, "speed": speed, "yaw": yaw, "surfaces": surfaces, "gear": gear, "rpm": rpm, "accel": accel,
+        # per wheel (rFactor 1 TelemWheel, 67 bytes each, first at 319, floats): rotation rad/s, suspension deflection, ride height,
+        # tyre load N, lateral force N, grip fraction, brake temp, pressure, 3 tyre temps, wear, then the 16 byte terrain name read above.
+        # Order front left, front right, rear left, rear right. Layout inferred from the terrain-name offsets; verify live (see wheels in the trace).
+        wheels = []
+        for w in range(4):
+            f = struct.unpack_from("<12f", raw, 319 + 67 * w)
+            wheels.append({"rot": f[0], "defl": f[1], "ride": f[2], "load": f[3], "lat": f[4], "grip": f[5], "btemp": f[6], "press": f[7], "temps": f[8:11], "wear": f[11]})
+        return {"lap": lap, "pos": pos, "vel": vel, "speed": speed, "yaw": yaw, "surfaces": surfaces, "wheels": wheels, "dump": raw[250:700], "gear": gear, "rpm": rpm, "accel": accel,
                 "vehicle": raw[12:76].split(b"\0")[0].decode("latin1"), "track": raw[76:140].split(b"\0")[0].decode("latin1")}
 
 

@@ -152,6 +152,51 @@ class Track:
             total += seg
             j = nj
 
+    def smooth_line(self, chain=None, iters=200, margin=1.8, alpha=0.5, pin_radius=0.0, pin_pad=6):
+        """Replace the racing line by a smoother, shorter one that stays `margin` metres inside the road edges.
+
+        Each pass moves every waypoint towards the midpoint of its two neighbours (which straightens bends and cuts corners)
+        and then back onto its own cross-line, clamped to the road width left and right of the AIW line (wp_width). The
+        waypoints are changed in place (x, z and the headings); lap distances and road widths stay as in the file, so
+        callers measure the road against the new line. Returns the largest sideways move in metres.
+
+        pin_radius > 0 keeps the AIW line where the corner radius (over 12 m of line) is under that many metres, plus
+        pin_pad waypoints either side: a tight chicane has kerbs, bollards and tyre stacks inside it that a straightened line
+        would drive over, so there the AI's own line is kept."""
+        chain = self.main if chain is None else chain
+        n = len(chain)
+        pinned = [False] * n
+        if pin_radius > 0:
+            for i in range(n):
+                tot, j = 0.0, i
+                while tot < 12.0 and j < i + n:
+                    tot += math.hypot(chain[(j + 1) % n].x - chain[j % n].x, chain[(j + 1) % n].z - chain[j % n].z)
+                    j += 1
+                a, b = chain[i], chain[j % n]
+                ang = abs(math.atan2(a.hx * b.hz - a.hz * b.hx, a.hx * b.hx + a.hz * b.hz))
+                if ang > 1e-4 and tot / ang < pin_radius:
+                    for d in range(-pin_pad, pin_pad + 1):
+                        pinned[(i + d) % n] = True
+        base = [(w.x, w.z, w.hx, w.hz, w.left, w.right) for w in chain]
+        off = [0.0] * n                 # sideways shift of each waypoint, positive to the road's right (the sign of lateral())
+        for _ in range(iters):
+            pos = [(b[0] + o * -b[3], b[1] + o * b[2]) for b, o in zip(base, off)]
+            for i in range(n):
+                a, c = pos[(i - 1) % n], pos[(i + 1) % n]
+                mx, mz = 0.5 * (a[0] + c[0]), 0.5 * (a[1] + c[1])
+                x0, z0, hx, hz, left, right = base[i]
+                want = (mx - x0) * -hz + (mz - z0) * hx
+                o = off[i] + alpha * (want - off[i])
+                off[i] = 0.0 if pinned[i] else (max(-(left - margin), min(right - margin, o)) if left > margin and right > margin else 0.0)
+        for w, b, o in zip(chain, base, off):
+            w.x, w.z = b[0] + o * -b[3], b[1] + o * b[2]
+        for k, w in enumerate(chain):
+            nx = chain[(k + 1) % n]
+            dx, dz = nx.x - w.x, nx.z - w.z
+            d = math.hypot(dx, dz) or 1.0
+            w.hx, w.hz = dx / d, dz / d
+        return max(abs(o) for o in off)
+
     def curvature_ahead(self, chain, k, metres=45.0):
         """Largest |turn rate| (rad per metre) over the next `metres` of the chain, and the distance to where it peaks."""
         n = len(chain)

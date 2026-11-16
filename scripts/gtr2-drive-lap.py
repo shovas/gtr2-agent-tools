@@ -156,6 +156,21 @@ def main():
     ap.add_argument("--brake-gain", type=float, default=0.25, help="brake pedal per m/s over the target speed (default 0.25)")
     ap.add_argument("--impact-spike", type=float, default=0.0, help="m/s^2 an impact must rise above the median of the last six samples (0: off, the plain threshold alone). Use about 6 with high cornering limits (--lat-accel 9+), where the car itself pulls over 14 m/s^2 in a corner")
     ap.add_argument("--kerb-max-accel", type=float, default=45.0, help="a jolt on the racing line that looks like a kerb strike (mostly vertical, or kerb/rumble surfaces) counts as a kerb strike up to this many m/s^2; above it, or with no kerb sign, it is an impact (default 45)")
+    ap.add_argument("--tc-gain", type=float, default=0.0, help="traction-aware throttle: cut the throttle cap by this much per m/s^2 of measured lateral load above --tc-free (0: off)")
+    ap.add_argument("--tc-free", type=float, default=6.0, help="lateral load (m/s^2) below which --tc-gain does nothing")
+    ap.add_argument("--tc-floor", type=float, default=0.3, help="lowest throttle cap --tc-gain can reach")
+    ap.add_argument("--line-smooth", type=int, default=0, help="passes of racing-line smoothing (0 = follow the AIW line as it is); a smoother line has lower curvature, so the speed planner allows more speed")
+    ap.add_argument("--line-pin", type=float, default=0.0, help="with --line-smooth: keep the AIW line where the corner radius is under this many metres (tight chicanes have kerbs and bollards inside; 0 = smooth everywhere)")
+    ap.add_argument("--line-margin", type=float, default=1.8, help="metres to stay inside the road edges when --line-smooth moves the line")
+    ap.add_argument("--shift-rpms", type=float, nargs="+", default=None, metavar="RPM", help="upshift rpm for each gear (1>2, 2>3, ...), e.g. from gtr2-shift-points.py; overrides --shift-rpm")
+    ap.add_argument("--dyn", action="store_true", help="real-time wheel monitoring: ease the throttle on driven-wheel slip and the brake on a locking wheel; replaces the per-gear throttle caps and the steering ease")
+    ap.add_argument("--dyn-slip", type=float, default=0.10, help="--dyn: rear/front wheel speed excess (beyond the rolling baseline) the throttle tolerates before easing (default 0.10)")
+    ap.add_argument("--dyn-brake-slip", type=float, default=0.12, help="--dyn: wheel slip against the car's speed the brake tolerates before easing (default 0.12)")
+    ap.add_argument("--dyn-gain", type=float, default=6.0, help="--dyn: pedal cut per unit of slip above the tolerance (default 6)")
+    ap.add_argument("--dyn-grip", type=float, default=0.4, help="--dyn: a driven (or front, braking) wheel with a grip fraction below this also cuts the pedal")
+    ap.add_argument("--dyn-recover", type=float, default=3.0, help="--dyn: how fast a cut pedal comes back, fraction per second (default 3)")
+    ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
+    ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
     ap.add_argument("--brake-allow", type=float, default=12.0, help="m/s^2 of longitudinal acceleration that our own braking explains on the main line and that impact detection ignores (0 counts it all; default 12)")
     ap.add_argument("--brake-max",type=float, default=0.9, help="brake pedal ceiling (default 0.9)")
     ap.add_argument("--brake-deadband", type=float, default=0.7, help="m/s over the target before braking starts (default 0.7)")
@@ -209,6 +224,8 @@ def main():
     STAGE = lambda name: print("STAGE %s epoch=%.3f" % (name, time.time()), flush=True)      # start-up timing: compared with gtr2-lap-check.py's own stamps
     STAGE("script_started")
     track = trackmap.Track(args.aiw)
+    if args.line_smooth > 0:
+        print("racing line smoothed (%d passes, margin %.1f m): largest move %.1f m" % (args.line_smooth, args.line_margin, track.smooth_line(track.main, args.line_smooth, args.line_margin, pin_radius=args.line_pin)), flush=True)
     tm = telemetry.Telemetry()
     first = tm.read()
     STAGE("telemetry_first_read")
@@ -391,6 +408,10 @@ def main():
         shared["wt"] = now_w
         x = fol["steer"].step(shared["steer"] * shared["scale"], dt)
         cap = args.analog_throttle[max(1, min(6, shared["gear"])) - 1] * (1.0 - args.analog_steer_ease * min(1.0, abs(shared["steer"])))
+        if args.dyn:      # the wheels are watched instead (see the dynamic control in the main loop)
+            cap = 1.0
+        if args.tc_gain > 0:      # traction-aware: ease the throttle by the lateral load the car is carrying right now (measured, not commanded); the sliding car spins when the throttle stays high at the limit of grip
+            cap *= max(args.tc_floor, 1.0 - args.tc_gain * max(0.0, shared.get("lat_load", 0.0) - args.tc_free))
         th = fol["throttle"].step(min(cap, shared["duty"]), dt)
         br = fol["brake"].step(shared["brake"], dt)
         xa = 0.5 + 0.5 * x
@@ -498,6 +519,7 @@ def main():
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
         kerbs = []
+        dyn = {"t": 0.0, "tc": 1.0, "abs": 1.0, "radius": [], "base": [], "tc_n": 0, "thr_n": 0, "abs_n": 0, "brk_n": 0}
         pending = None      # the last impact on the main line, judged one sample later: a single-sample spike on plain road is a seam in the track mesh, not a collision
         steer_travel, last_steer = 0.0, 0.0      # sum of |change of the steering command| per loop on the main line: a jerkiness measure
         off_buckets = {}
@@ -561,6 +583,7 @@ def main():
                 prev_dist = w.dist
             lat = track.lateral(w, x, z)
             samples += 1
+            shared["lat_load"] = abs(tel["accel"][0])
             a_long = abs(tel["accel"][2])
             if shared.get("brake", 0.0) > 0.1:
                 shared["brake_t"] = now
@@ -676,6 +699,40 @@ def main():
                 if box_target is not None and not (speed < 0.4 and now - t0 > 2.5):      # the straight run out of the box: a walking-pace roll over the sill at the garage mouth (0.4 reached it at 3.5 to 4 m/s and jolted 15 to 54 m/s^2); 0.15 gives 2 m/s, no jolt. A car that has not moved after 2.5 s gets the old ceiling
                     cap = min(cap, args.box_straight_throttle)
                 shared["duty"] = min(shared["duty"], cap)
+            if args.dyn and chain is track.main and analog:
+                # Real-time wheel monitoring (rFactor 1 shared-memory wheels: rotation rad/s, grip fraction), see docs/analog-driving.md.
+                # Front wheels of this rear-drive car roll freely, so rear/front rotation measures driven-wheel slip; braking slip is
+                # 1 - wheel speed (rotation x calibrated rolling radius) / car speed. The cut is immediate, the recovery is a ramp.
+                wl = tel["wheels"]
+                fr = (abs(wl[0]["rot"]) + abs(wl[1]["rot"])) / 2.0
+                rr = (abs(wl[2]["rot"]) + abs(wl[3]["rot"])) / 2.0
+                dt_d = max(0.001, min(0.2, now - dyn["t"]))
+                dyn["t"] = now
+                free = shared["brake"] < 0.02 and abs(tel["accel"][0]) < 2.5 and abs(tel["accel"][2]) < 3.0 and speed > 10.0 and fr > 1.0
+                if free:
+                    dyn["radius"].append(speed / fr)
+                    dyn["base"].append(rr / fr - 1.0)
+                    del dyn["radius"][:-300], dyn["base"][:-300]
+                radius = sorted(dyn["radius"])[len(dyn["radius"]) // 2] if len(dyn["radius"]) >= 20 else 0.322
+                base = sorted(dyn["base"])[len(dyn["base"]) // 2] if len(dyn["base"]) >= 20 else -0.03
+                slip_drive = (rr / fr - 1.0 - base) if fr > 3.0 else 0.0
+                target = max(args.dyn_min, 1.0 - args.dyn_gain * max(0.0, slip_drive - args.dyn_slip))
+                if min(wl[2]["grip"], wl[3]["grip"]) < args.dyn_grip:
+                    target = min(target, 0.5)
+                dyn["tc"] = target if target < dyn["tc"] else min(1.0, dyn["tc"] + args.dyn_recover * dt_d)
+                slip_brake = max(1.0 - abs(w["rot"]) * radius / max(speed, 0.1) for w in wl) if speed > 8.0 else 0.0
+                target_b = max(args.dyn_min_brake, 1.0 - args.dyn_gain * max(0.0, slip_brake - args.dyn_brake_slip))
+                if min(w["grip"] for w in wl[:2]) < args.dyn_grip:
+                    target_b = min(target_b, 0.6)
+                dyn["abs"] = target_b if target_b < dyn["abs"] else min(1.0, dyn["abs"] + args.dyn_recover * dt_d)
+                if shared["duty"] > 0.0:
+                    dyn["tc_n"] += 1 if dyn["tc"] < 0.9 else 0
+                    dyn["thr_n"] += 1
+                if shared["brake"] > 0.1:
+                    dyn["abs_n"] += 1 if dyn["abs"] < 0.9 else 0
+                    dyn["brk_n"] += 1
+                shared["duty"] *= dyn["tc"]
+                shared["brake"] *= dyn["abs"]
             if analog:
                 shared["gear"] = tel["gear"]
 
@@ -683,9 +740,13 @@ def main():
             if now - t0 < args.trace:
                 print("T %5.2f x=%7.1f z=%7.1f yaw=%7.1f rate=%+6.1f v=%5.2f herr=%+6.1f steer=%+5.2f duty=%.2f brake=%.2f gear=%d ax=%+6.1f ay=%+6.1f az=%+6.1f %s" % (
                     now - t0, x, z, yaw, yawrate, speed, herr, shared["steer"], shared["duty"], shared["brake"], tel["gear"], tel["accel"][0], tel["accel"][1], tel["accel"][2], "/".join(tel["surfaces"])), flush=True)
+                if n % 25 == 0:
+                    print("R %5.2f v=%.2f %s" % (now - t0, speed, tel["dump"].hex()), flush=True)
+                wl = tel["wheels"]
+                print("W %5.2f rpm=%5.0f rot=%s grip=%s load=%s lat=%s defl=%s" % (now - t0, tel["rpm"], ",".join("%.1f" % w["rot"] for w in wl), ",".join("%.2f" % w["grip"] for w in wl), ",".join("%.0f" % w["load"] for w in wl), ",".join("%.0f" % w["lat"] for w in wl), ",".join("%.3f" % w["defl"] for w in wl)), flush=True)
             if now - last_shift > 1.2 and not in_lane:
                 gear, rpm = tel["gear"], tel["rpm"]
-                if gear < args.max_gear and rpm > args.shift_rpm:
+                if gear < args.max_gear and rpm > (args.shift_rpms[gear - 1] if args.shift_rpms and gear <= len(args.shift_rpms) else args.shift_rpm):
                     last_shift = now; shift(True)
                 elif gear > 1 and rpm < args.down_rpm:
                     last_shift = now; shift(False)
@@ -702,7 +763,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0
