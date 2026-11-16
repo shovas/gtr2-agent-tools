@@ -88,4 +88,4 @@ Every script has a usage line in its header and a one-line entry in [scripts/REA
 
 ## License
 
-[Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/) (CC BY-NC 4.0); the full text, with a no-warranty notice, is in [LICENSE.md](LICENSE.md). Creative Commons does not recommend its licenses for software, so check that this suits how you want to use the code. The game and its assets belong to their owners and are not covered by this license.
+[Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/) (CC BY-NC 4.0); the full text, with a no-warranty notice, is in [LICENSE.md](LICENSE.md).
