@@ -135,6 +135,7 @@ def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
     return values
 
 
+TRACK_LIMIT_BUDGET = 0     # laps with all four wheels over the white line: none allowed
 KERB_BUDGET = 3     # kerb strikes allowed on a lap (real racing has them; see gtr2-drive-lap.py --kerb-max-accel)
 
 
@@ -149,6 +150,10 @@ def judge(result, limit=CLEAN_LIMIT):
         return False, "%d impact(s) on the track, peak %.0f m/s^2, first %s" % (len(hits), result.get("peak_accel", 0), hits[0])
     if result.get("kerb_count", 0) > KERB_BUDGET:
         return False, "%d kerb strikes (budget %d), first %s" % (result["kerb_count"], KERB_BUDGET, (result.get("kerbs") or ["?"])[0])
+    if "track_limit_events" in result:      # real-racing rule: a lap is void when all four wheels are beyond the white line; touching grass with one to three wheels is allowed
+        if result["track_limit_events"] > TRACK_LIMIT_BUDGET:
+            return False, "exceeded track limits %d time(s) (all four wheels beyond the white line, %.1f s), first %s" % (result["track_limit_events"], result.get("track_limit_seconds", 0), (result.get("track_limit_list") or ["?"])[0])
+        return True, "clean, no track-limit violation, %.2f%% of samples with a wheel on grass, largest offset %s m, %s s%s" % (result.get("off_road_share", 0) * 100, result.get("max_offset"), result.get("seconds"), (", %d kerb strike(s)" % result["kerb_count"]) if result.get("kerb_count") else "")
     share = result.get("off_road_share", 1.0)
     if share >= limit:
         return False, "%.2f%% of samples off the road (limit %.2f%%)" % (share * 100, limit * 100)

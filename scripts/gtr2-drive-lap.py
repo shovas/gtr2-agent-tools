@@ -516,6 +516,7 @@ def main():
         start_lap, last_lap, finish_at = first["lap"], first["lap"], None
         accum, prev_dist, by_distance = 0.0, None, False     # distance covered along the racing line: a fallback when the game's lap counter never moves (Hockenheim Short)
         off_samples = samples = 0
+        limit_events, limit_open, limit_last = [], None, -9.0      # track limits: all four wheels beyond the white line (no wheel on a ROAD or DRAIN surface)
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
         kerbs = []
@@ -625,6 +626,13 @@ def main():
                     key = "%d %s" % (int(w.dist // 20) * 20, ",".join(sorted({s for s in tel["surfaces"] if any(b in s for b in OFF_ROAD)})))
                     off_buckets[key] = off_buckets.get(key, 0) + 1
                     off_lat.setdefault(key, []).append(lat)      # lateral offset from the line at those samples (sign: see trackmap.lateral)
+            if chain is track.main:
+                if all(not any(k in sf.upper() for k in ("ROAD", "DRAIN")) for sf in tel["surfaces"]):
+                    if limit_open is None or now - limit_last > 0.5:
+                        limit_open = {"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "seconds": 0.0, "surface": ",".join(sorted(set(tel["surfaces"])))}
+                        limit_events.append(limit_open)
+                    limit_open["seconds"] = round(now - t0 - limit_open["t"], 2)
+                    limit_last = now
             if chain is track.main:
                 max_lat = max(max_lat, abs(lat))
 
@@ -763,7 +771,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0
