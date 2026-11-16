@@ -12,6 +12,7 @@ This is an unofficial fan project. It is not affiliated with or endorsed by the 
 
 ## What to expect
 
+- **Almost everything here was written by an AI coding agent**, including the code, the notes in `docs/` and this README. It has been tested on one machine, but the contents may not be 100% accurate or up to date, and the tools can produce unexpected output. Check what matters to you before relying on it.
 - **The tools run your real game.** The navigator and the test suite start `GTR2.exe`, click through its menus with real mouse and keyboard input and take screenshots of its window. **Leave the PC alone while they run** (the full suite takes about 6 minutes): anything that takes the focus from the game pauses it, and stray input can click the wrong thing.
 - **Always launch through the launcher** (`scripts\gtr2-launch.ps1`). The game only reads its configuration from the shared `Documents\GTR2`, so the launcher backs that folder up, swaps in the game folder's own configuration for the run, then restores it and verifies the result. On a first run it sets any existing `Documents\GTR2` aside and puts it back afterwards.
 - **Game files change.** A run rewrites the player profile and writes logs and replays in the game folder. That is why the game folder should be a git repository (setup can create one): the test suite reverts those changes with git. Inside this repository a run only writes `scripts/gtr2_ui/runs/` (git-ignored), plus the reference pictures you choose to learn.
