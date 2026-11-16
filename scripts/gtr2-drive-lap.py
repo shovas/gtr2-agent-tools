@@ -149,6 +149,7 @@ def main():
     ap.add_argument("--shift-rpm", type=float, default=None, help="default 6800; --fast 6300")
     ap.add_argument("--down-rpm", type=float, default=None, help="default 2800; --fast 3000")
     ap.add_argument("--lookahead", type=float, nargs=2, default=[5.0, 1.2], metavar=("BASE", "PER_MS"))
+    ap.add_argument("--aim-step", action="store_true", help="aim at whole waypoints as before (the aim point jumps a waypoint spacing each time the nearest waypoint advances); the default interpolates the aim point exactly the lookahead distance along the line from the car")
     ap.add_argument("--steer-gain", type=float, default=25.0)
     ap.add_argument("--damping", type=float, default=90.0)
     ap.add_argument("--steer-period", type=float, default=0.4)
@@ -489,6 +490,7 @@ def main():
         off_samples = samples = 0
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
+        steer_travel, last_steer = 0.0, 0.0      # sum of |change of the steering command| per loop on the main line: a jerkiness measure
         off_buckets = {}
         off_lat = {}
         max_lat = 0.0
@@ -576,7 +578,7 @@ def main():
                 # a short aim distance in the pit lane: the narrow winding service roads at Estoril and Anderstorp (4 to 6 m wide, 90 degree
                 # bends) were cut by 1.5 m or more with the circuit's 5 m + 1.2 per m/s, which put the car into the wall
                 look = max(args.pit_lookahead[0] + args.pit_lookahead[1] * speed, 1.5 * abs(lat))
-            target = track.ahead(chain, k, look)
+            target = track.ahead(chain, k, look) if args.aim_step else track.ahead_point(chain, k, look, x, z)
             margin = args.pit_margin if chain is track.pit else 0.0
 
             def aim_offset(p):
@@ -614,6 +616,9 @@ def main():
                 result["outcome"] = "merged"; break
             shared["scale"] = args.merge_steer if (merging or box_target is not None or chain is track.pit) else args.analog_steer   # slow in the pit lane: full lock (Anderstorp's 90 degree bend, 5 to 6 m wide)
             shared["steer"] = max(-1.0, min(1.0, herr / args.steer_gain - yawrate / args.damping))
+            if chain is track.main:
+                steer_travel += abs(shared["steer"] - last_steer)
+            last_steer = shared["steer"]
 
             window = 25.0 + speed * speed / (2.0 * args.decel)
             corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else args.lat_accel), args.decel, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
@@ -665,7 +670,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0

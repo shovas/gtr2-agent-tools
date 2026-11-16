@@ -141,6 +141,9 @@ def judge(result, limit=CLEAN_LIMIT):
         return False, "lap not completed (%s)" % result.get("outcome")
     if result.get("pit_impacts", 0) > 0:
         return False, "the garage exit hit the wall (%d impacts, first %s)" % (result["pit_impacts"], result["impacts"][0] if result.get("impacts") else "?")
+    hits = [i for i in result.get("impacts", []) if not i.get("pit")]
+    if hits:       # a hit on the track counts like one in the garage exit (the garage-mouth lip is already left out by the driver as a BUMP)
+        return False, "%d impact(s) on the track, peak %.0f m/s^2, first %s" % (len(hits), result.get("peak_accel", 0), hits[0])
     share = result.get("off_road_share", 1.0)
     if share >= limit:
         return False, "%.2f%% of samples off the road (limit %.2f%%)" % (share * 100, limit * 100)

@@ -13,6 +13,7 @@ import math
 import re
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "gtr2_ui"))
@@ -123,6 +124,33 @@ class Track:
             total += math.hypot(chain[nj].x - chain[j].x, chain[nj].z - chain[j].z)
             j = nj
         return chain[j]
+
+    def ahead_point(self, chain, k, metres, x, z):
+        """The point exactly `metres` along the chain from the car's own position (x, z), interpolated between waypoints.
+
+        `ahead()` returns whole waypoints, so the aim point jumped by one waypoint spacing each time the nearest waypoint
+        advanced (and the wheel with it); this one moves continuously with the car. Returns an object with the fields the
+        driver reads (x, z, hx, hz, left, right, dist)."""
+        n = len(chain)
+        a = chain[k]
+        s0 = (x - a.x) * a.hx + (z - a.z) * a.hz      # the car's distance past waypoint k along the line's heading (negative: before it)
+        want = max(0.0, metres + s0)
+        j, total = k, 0.0
+        while True:
+            nj = (j + 1) % n if chain is self.main else min(j + 1, n - 1)
+            if nj == j:
+                return chain[j]
+            seg = math.hypot(chain[nj].x - chain[j].x, chain[nj].z - chain[j].z)
+            if total + seg >= want:
+                f = (want - total) / seg if seg > 1e-6 else 0.0
+                p, q = chain[j], chain[nj]
+                hx, hz = p.hx + f * (q.hx - p.hx), p.hz + f * (q.hz - p.hz)
+                hn = math.hypot(hx, hz) or 1.0
+                d = p.dist + f * (q.dist - p.dist) if q.dist >= p.dist else p.dist
+                return SimpleNamespace(x=p.x + f * (q.x - p.x), z=p.z + f * (q.z - p.z), hx=hx / hn, hz=hz / hn,
+                                       left=p.left + f * (q.left - p.left), right=p.right + f * (q.right - p.right), dist=d)
+            total += seg
+            j = nj
 
     def curvature_ahead(self, chain, k, metres=45.0):
         """Largest |turn rate| (rad per metre) over the next `metres` of the chain, and the distance to where it peaks."""
