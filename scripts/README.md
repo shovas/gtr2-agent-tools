@@ -39,3 +39,4 @@ av_paths	our_options_main.txt`.
 - `gtr2-garage-map.py TRK X Z YAW`: prints the predicted clearance for yaw biases -12..12 for a garage start (offline, no game); `test_garage_map.py`: offline checks of the readers and of the Anderstorp 3 pillar prediction.
 - `gtr2_driving/boxplan.py`: picks the garage-exit heading bias from the wall meshes (`--box-yaw-bias auto`, cached under `runs/box_cache/`); `gtr2_driving/box_starts.json`: every garage start the lap runner has seen, per layout and car.
 - `changelog.py`: release notes from git history by day (highlights, improvements, fixes, documentation) from commit-subject tags and `changelog_overrides.json`; `--write` regenerates `CHANGES.md`, `--check` lists untagged commits.
+- `publish-check.py`: pre-push privacy/safety scan of tracked files and unpushed commits (personal paths, e-mails, secrets, game file types, pictures, author identities); read-only, exit 1 on a BLOCK (see docs/publishing.md)

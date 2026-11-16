@@ -11,6 +11,7 @@ This file is the short, always-loaded core. The long history of what was measure
 - **Dependencies are allowed** when they earn their place: pin the exact version in `scripts/requirements.txt`, install into `scripts/.venv`, and say in the script header what it adds. Keep optional extras optional (import inside a try). "Standard library only" in a header describes today, not a rule; only `gtr2-setup.py` (runs before the venv exists) must stay stdlib-only.
 - Prefer deterministic local tooling over inference (section below). Commit confident changes to git (this repo and the game folder separately); never push unless the user asks.
 - **Start every commit subject with a changelog tag:** `highlight:` (something users of the tools will value: a new ability, faster, easier), `improve:` (mostly agents and tests), `fix:`, `docs:`, or `chore:` (left out of the notes). `CHANGES.md` is generated: run `scripts\.venv\Scripts\python.exe -I scripts\changelog.py --write` before a release (it groups by day, ordered highlights, improvements, fixes, documentation) and `--check` lists untagged commits; older commits are sorted in `scripts/changelog_overrides.json`. Commit the regenerated file with a `changelog:` subject.
+- **Never push without the user's explicit go-ahead for that push, and follow `docs/publishing.md` first** (what may and must not be published, the pre-push procedure, `python -I scripts\publish-check.py`). Committing is not pushing.
 - Treat the user's personal details as private: no names, e-mail addresses or absolute user paths in files of this public repo (use `<game folder>`, `<profile>`, relative paths).
 
 ## Fresh clone? Start here (no `gtr2-tools.json` in the repository root)
@@ -88,6 +89,7 @@ Always run Python tools with `-I` (isolated). Run one test file/tour: `gtr2-nav.
 | `docs/analog-driving.md` | vJoy, analog control, tuning, garage/pit exit, all-layout results, focus-loss findings, to-dos, vJoy note |
 | `docs/crash-and-compat-layer.md` | start-up crash and the compatibility layer, crash dump reader and what the dump showed |
 | `docs/setup-and-config.md` | the setup script and `gtr2-tools.json` |
+| `docs/publishing.md` | what may be pushed to GitHub, privacy and safety rules, the pre-push procedure and scanner |
 
 ## Working notes (game files)
 
