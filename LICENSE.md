@@ -1,3 +1,18 @@
+# License
+
+This project's code, tests, notes and documentation are licensed under the **Creative Commons Attribution-NonCommercial 4.0 International** license (CC BY-NC 4.0), whose full, unmodified text follows the notice below. The game and its assets belong to their owners and are not covered by this license; this repository contains no game files.
+
+## Notice: no warranty, use at your own risk
+
+This is an unofficial fan project, and almost all of it was written by an AI coding agent. It is provided "as is" and "as available", without warranties or conditions of any kind, express or implied, including accuracy, completeness, fitness for a particular purpose and non-infringement. The authors and contributors are not liable for any damage or loss arising from its use, including (without limitation) changes to or loss of game files, profiles or other data, unintended mouse and keyboard input, system instability or crashes.
+
+These tools start a game, send real mouse and keyboard input, and change files on your computer. You use them entirely at your own risk. Run them under a dedicated, non-administrator account, keep backups of anything you care about, and review what a script does before you run it. The license text below (Section 5, "Disclaimer of Warranties and Limitation of Liability") applies in addition to this notice. This notice is not legal advice.
+
+## License text (CC BY-NC 4.0, unmodified)
+
+The text is shown as plain preformatted text so that it is exactly as published by Creative Commons (https://creativecommons.org/licenses/by-nc/4.0/legalcode).
+
+```text
 Attribution-NonCommercial 4.0 International
 
 =======================================================================
@@ -405,4 +420,4 @@ the avoidance of doubt, this paragraph does not form part of the
 public licenses.
 
 Creative Commons may be contacted at creativecommons.org.
-
+```
