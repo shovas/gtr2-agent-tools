@@ -180,5 +180,25 @@
    "highlight",
    "Imola 4 laps are 5% faster again (the car accelerates harder out of slow corners); the gap to real GT1 lap times has been measured"
   ]
+ ],
+ "e2204df": [
+  [
+   "highlight",
+   "Laps are judged by real track limits (all four wheels beyond the white line), not by touching grass"
+  ],
+  [
+   "highlight",
+   "Imola 4 flying lap in the Maserati: 2:32.9 down to 2:06 (real GT1 pole about 1:46)"
+  ]
+ ],
+ "f570480": [
+  [
+   "highlight",
+   "The driver watches the wheels while driving: it eases the throttle on wheelspin and the brake on a locking wheel, so top speed and braking are no longer capped"
+  ],
+  [
+   "improve",
+   "Shift points are worked out from each car's own engine and gear files (gtr2-shift-points.py)"
+  ]
  ]
 }
