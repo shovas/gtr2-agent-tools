@@ -490,6 +490,7 @@ def main():
         off_samples = samples = 0
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
+        pending = None      # the last impact on the main line, judged one sample later: a single-sample spike on plain road is a seam in the track mesh, not a collision
         steer_travel, last_steer = 0.0, 0.0      # sum of |change of the steering command| per loop on the main line: a jerkiness measure
         off_buckets = {}
         off_lat = {}
@@ -556,6 +557,13 @@ def main():
             peak_all = max(peak_all, a_h)
             if chain is track.pit:
                 peak_pit = max(peak_pit, a_h)
+            if pending is not None and now > pending[2]:
+                entry, peak, _t, kerb = pending
+                pending = None
+                if a_h < 0.3 * peak and not kerb and entry in impacts:     # gone by the next sample, nothing but road under the wheels: Donington's start/finish joins (44 to 92 m/s^2 at 52 m/s, steering 0) and Spa's (35 to 46 braking), one 20 ms spike each; the Monza Junior bollard hit lasts two samples
+                    impacts.remove(entry)
+                    bumps += 1
+                    print("t=%5.1f BUMP (single-sample seam, %.1f m/s^2 at (%.1f, %.1f)): not counted as an impact" % (entry["t"], peak, entry["x"], entry["z"]), flush=True)
             if a_h > args.impact_accel and now - last_impact > 0.3 and (box_target is not None or merging) and abs(tel["accel"][1]) >= 0.3 * a_h:
                 last_impact = now      # in the garage exit only: a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
                 bumps += 1
@@ -563,6 +571,8 @@ def main():
             elif a_h > args.impact_accel and now - last_impact > 0.3:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
+                if chain is track.main:
+                    pending = (impacts[-1], a_h, now, any(any(k in sf for k in ("BRICK", "RMBL", "RMBB", "CURB", "KERB")) or any(bad in sf for bad in OFF_ROAD) for sf in tel["surfaces"]))
                 print("t=%5.1f IMPACT %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f) yaw %.1f" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2], tel["yaw"]), flush=True)
             if any(any(bad in s for bad in OFF_ROAD) for s in tel["surfaces"]):
                 off_samples += 1
