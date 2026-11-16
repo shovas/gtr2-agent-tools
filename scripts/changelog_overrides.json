@@ -162,5 +162,17 @@
    "docs",
    "Rules for what may be published, and a privacy check to run before pushing"
   ]
+ ],
+ "77029d0": [
+  [
+   "improve",
+   "Laps no longer count the car's own hard braking and cornering as a crash"
+  ]
+ ],
+ "b11f3c6": [
+  [
+   "highlight",
+   "Imola 4 laps are about 4% faster: later, harder braking into the chicane and quicker cornering"
+  ]
  ]
 }
