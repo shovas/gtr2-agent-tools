@@ -135,6 +135,9 @@ def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
     return values
 
 
+KERB_BUDGET = 3     # kerb strikes allowed on a lap (real racing has them; see gtr2-drive-lap.py --kerb-max-accel)
+
+
 def judge(result, limit=CLEAN_LIMIT):
     """(clean, why) for one gtr2-drive-lap RESULT."""
     if result.get("outcome") != "completed":
@@ -144,10 +147,12 @@ def judge(result, limit=CLEAN_LIMIT):
     hits = [i for i in result.get("impacts", []) if not i.get("pit")]
     if hits:       # a hit on the track counts like one in the garage exit (the garage-mouth lip is already left out by the driver as a BUMP)
         return False, "%d impact(s) on the track, peak %.0f m/s^2, first %s" % (len(hits), result.get("peak_accel", 0), hits[0])
+    if result.get("kerb_count", 0) > KERB_BUDGET:
+        return False, "%d kerb strikes (budget %d), first %s" % (result["kerb_count"], KERB_BUDGET, (result.get("kerbs") or ["?"])[0])
     share = result.get("off_road_share", 1.0)
     if share >= limit:
         return False, "%.2f%% of samples off the road (limit %.2f%%)" % (share * 100, limit * 100)
-    return True, "clean, %.2f%% off the road, largest offset %s m, %s s" % (share * 100, result.get("max_offset"), result.get("seconds"))
+    return True, "clean, %.2f%% off the road, largest offset %s m, %s s%s" % (share * 100, result.get("max_offset"), result.get("seconds"), (", %d kerb strike(s)" % result["kerb_count"]) if result.get("kerb_count") else "")
 
 
 def run_path(lines, *flags, timeout=300):

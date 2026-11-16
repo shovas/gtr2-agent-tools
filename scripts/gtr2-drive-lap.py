@@ -155,6 +155,7 @@ def main():
     ap.add_argument("--steer-period", type=float, default=0.4)
     ap.add_argument("--brake-gain", type=float, default=0.25, help="brake pedal per m/s over the target speed (default 0.25)")
     ap.add_argument("--impact-spike", type=float, default=0.0, help="m/s^2 an impact must rise above the median of the last six samples (0: off, the plain threshold alone). Use about 6 with high cornering limits (--lat-accel 9+), where the car itself pulls over 14 m/s^2 in a corner")
+    ap.add_argument("--kerb-max-accel", type=float, default=45.0, help="a jolt on the racing line that looks like a kerb strike (mostly vertical, or kerb/rumble surfaces) counts as a kerb strike up to this many m/s^2; above it, or with no kerb sign, it is an impact (default 45)")
     ap.add_argument("--brake-allow", type=float, default=12.0, help="m/s^2 of longitudinal acceleration that our own braking explains on the main line and that impact detection ignores (0 counts it all; default 12)")
     ap.add_argument("--brake-max",type=float, default=0.9, help="brake pedal ceiling (default 0.9)")
     ap.add_argument("--brake-deadband", type=float, default=0.7, help="m/s over the target before braking starts (default 0.7)")
@@ -496,6 +497,7 @@ def main():
         off_samples = samples = 0
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
+        kerbs = []
         pending = None      # the last impact on the main line, judged one sample later: a single-sample spike on plain road is a seam in the track mesh, not a collision
         steer_travel, last_steer = 0.0, 0.0      # sum of |change of the steering command| per loop on the main line: a jerkiness measure
         off_buckets = {}
@@ -584,6 +586,10 @@ def main():
                 last_impact = now      # in the garage exit only: a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
                 bumps += 1
                 print("t=%5.1f BUMP %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
+            elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky and chain is track.main and a_h <= args.kerb_max_accel and (abs(tel["accel"][1]) >= 0.5 * a_h or any(any(k in sf for k in ("BRICK", "RMBL", "RMBB", "CURB", "KERB")) for sf in tel["surfaces"])):
+                last_impact = now      # a kerb strike (real racing has them): a vertical-dominated jolt, or kerb/rumble surfaces under a wheel, on the racing line and below --kerb-max-accel; counted apart from impacts, the lap check allows a few
+                kerbs.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "speed": round(speed, 1)})
+                print("t=%5.1f KERB %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
             elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
@@ -696,7 +702,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0
