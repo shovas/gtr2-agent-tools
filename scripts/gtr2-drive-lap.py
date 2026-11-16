@@ -153,6 +153,12 @@ def main():
     ap.add_argument("--steer-gain", type=float, default=25.0)
     ap.add_argument("--damping", type=float, default=90.0)
     ap.add_argument("--steer-period", type=float, default=0.4)
+    ap.add_argument("--brake-gain", type=float, default=0.25, help="brake pedal per m/s over the target speed (default 0.25)")
+    ap.add_argument("--impact-spike", type=float, default=0.0, help="m/s^2 an impact must rise above the median of the last six samples (0: off, the plain threshold alone). Use about 6 with high cornering limits (--lat-accel 9+), where the car itself pulls over 14 m/s^2 in a corner")
+    ap.add_argument("--brake-allow", type=float, default=12.0, help="m/s^2 of longitudinal acceleration that our own braking explains on the main line and that impact detection ignores (0 counts it all; default 12)")
+    ap.add_argument("--brake-max",type=float, default=0.9, help="brake pedal ceiling (default 0.9)")
+    ap.add_argument("--brake-deadband", type=float, default=0.7, help="m/s over the target before braking starts (default 0.7)")
+    ap.add_argument("--throttle-gain", type=float, default=0.25, help="throttle change per m/s under the target speed (default 0.25)")
     ap.add_argument("--guard-deg", type=float, default=18.0)
     ap.add_argument("--guard-span", type=float, default=50.0)
     ap.add_argument("--guard-floor", type=float, default=0.3)
@@ -553,8 +559,16 @@ def main():
                 prev_dist = w.dist
             lat = track.lateral(w, x, z)
             samples += 1
-            a_h = math.hypot(tel["accel"][0], tel["accel"][2])
+            a_long = abs(tel["accel"][2])
+            if shared.get("brake", 0.0) > 0.1 and chain is track.main and args.brake_allow > 0:
+                a_long = max(0.0, a_long - args.brake_allow)     # our own braking (a GT car stops at 11 to 15 m/s^2 with 1.0 g of grip and downforce) is not a collision: only what is beyond it counts
+            a_h = math.hypot(tel["accel"][0], a_long)
             peak_all = max(peak_all, a_h)
+            hist = shared.setdefault("a_hist", [])
+            base = sorted(hist[-6:])[len(hist[-6:]) // 2] if hist else a_h
+            hist.append(a_h)
+            del hist[:-12]
+            spiky = args.impact_spike <= 0 or a_h - base >= args.impact_spike or a_h > 2 * args.impact_accel      # a sustained load (cornering at 1.3 g, braking) is not a collision: only a jump over the last half second counts
             if chain is track.pit:
                 peak_pit = max(peak_pit, a_h)
             if pending is not None and now > pending[2]:
@@ -568,7 +582,7 @@ def main():
                 last_impact = now      # in the garage exit only: a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
                 bumps += 1
                 print("t=%5.1f BUMP %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
-            elif a_h > args.impact_accel and now - last_impact > 0.3:
+            elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
                 if chain is track.main:
@@ -647,8 +661,8 @@ def main():
             over = abs(herr) - args.guard_deg
             if over > 0:
                 target_v = max(4.0, target_v * max(args.guard_floor, 1.0 - over / args.guard_span))
-            shared["duty"] = max(0.0, min(1.0, 0.45 + 0.25 * (target_v - speed))) if speed > 1.5 else 1.0
-            shared["brake"] = max(0.0, min(0.9, 0.25 * (speed - target_v - 0.7)))
+            shared["duty"] = max(0.0, min(1.0, 0.45 + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
+            shared["brake"] = max(0.0, min(args.brake_max, args.brake_gain * (speed - target_v - args.brake_deadband)))
             if box_target is not None or merging:       # creeping out of the box: gentle throttle (a full launch reached 6.5 m/s in 3 m)
                 cap = args.box_throttle
                 if box_target is not None and not (speed < 0.4 and now - t0 > 2.5):      # the straight run out of the box: a walking-pace roll over the sill at the garage mouth (0.4 reached it at 3.5 to 4 m/s and jolted 15 to 54 m/s^2); 0.15 gives 2 m/s, no jolt. A car that has not moved after 2.5 s gets the old ceiling
