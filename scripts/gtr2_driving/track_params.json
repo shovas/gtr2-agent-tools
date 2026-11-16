@@ -6,5 +6,5 @@
   "sanderstorp": "--pit-speed 10 --lat-accel 5.0",
   "4zhuhai": "--guard-deg 12 --guard-span 25 --guard-floor 0.15 --lat-accel 5.5",
   "jnmonza": "--guard-deg 12 --guard-span 25 --guard-floor 0.15",
-  "4imol": "--decel 12 --lat-accel 10 --brake-gain 0.45 --brake-deadband 0.3 --brake-max 1.0 --throttle-gain 0.5 --impact-spike 6"
+  "4imol": "--decel 10 --lat-accel 9 --brake-gain 0.45 --brake-deadband 0.3 --brake-max 1.0 --throttle-gain 0.5 --impact-spike 6"
 }

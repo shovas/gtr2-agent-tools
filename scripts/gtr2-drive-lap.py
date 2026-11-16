@@ -560,7 +560,9 @@ def main():
             lat = track.lateral(w, x, z)
             samples += 1
             a_long = abs(tel["accel"][2])
-            if shared.get("brake", 0.0) > 0.1 and chain is track.main and args.brake_allow > 0:
+            if shared.get("brake", 0.0) > 0.1:
+                shared["brake_t"] = now
+            if now - shared.get("brake_t", -9.0) < 0.5 and chain is track.main and args.brake_allow > 0:     # braking now or within the last half second (the pedal eases off before the load does)
                 a_long = max(0.0, a_long - args.brake_allow)     # our own braking (a GT car stops at 11 to 15 m/s^2 with 1.0 g of grip and downforce) is not a collision: only what is beyond it counts
             a_h = math.hypot(tel["accel"][0], a_long)
             peak_all = max(peak_all, a_h)
