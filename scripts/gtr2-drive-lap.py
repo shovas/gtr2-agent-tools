@@ -109,7 +109,7 @@ def main():
     ap.add_argument("--wheel-hand-dps", type=float, default=1000.0, help="wheel device: fastest hand rotation of the rim, degrees per second (a quick sawing hand is about 1000)")
     ap.add_argument("--wheel-bits", type=int, default=14, help="wheel device: steering axis resolution in bits (14 for a G27 in its native mode, from memory, not verified; vJoy itself has 15)")
     ap.add_argument("--wheel-pedal-bits", type=int, default=8, help="wheel device: throttle/brake/clutch pedal resolution in bits (stock G25/G27 potentiometer pedals: about 8 per community sources, not verified; a Leo Bodnar adapter gives 10, Hall sensor mods 12)")
-    ap.add_argument("--analog-slew", type=float, default=3.0, help="analog only: top steering speed in full-lock units per second; 0 = no smoothing (the control loop runs at about 12 Hz; a 100 Hz writer ramps between its commands)")
+    ap.add_argument("--analog-slew", type=float, default=3.0, help="analog only: top steering speed in full-lock units per second; 0 = no smoothing (the control loop runs at about 40 Hz measured 2026-11-17; a 100 Hz writer ramps between its commands)")
     ap.add_argument("--analog-accel", type=float, default=20.0, help="analog only: steering acceleration limit, units/s^2 (ramp up to speed, ramp down onto the new position)")
     ap.add_argument("--analog-inertia", type=float, default=1.0, help="analog only: steering rack/hand inertia (resists slowing down and reversing: the wheel carries on; 2.0 = twice as heavy, slower response). 0 = use the plain acceleration-limited follower instead of the rack model")
     ap.add_argument("--analog-friction", type=float, default=1.0, help="analog only: steering rack sliding friction, units/s^2 (drains speed while moving)")
@@ -159,7 +159,7 @@ def main():
     ap.add_argument("--steer-period", type=float, default=0.4)
     ap.add_argument("--brake-gain", type=float, default=0.25, help="brake pedal per m/s over the target speed (default 0.25)")
     ap.add_argument("--impact-spike", type=float, default=0.0, help="m/s^2 an impact must rise above the median of the last six samples (0: off, the plain threshold alone). Use about 6 with high cornering limits (--lat-accel 9+), where the car itself pulls over 14 m/s^2 in a corner")
-    ap.add_argument("--kerb-max-accel", type=float, default=45.0, help="a jolt on the racing line that looks like a kerb strike (mostly vertical, or kerb/rumble surfaces) counts as a kerb strike up to this many m/s^2; above it, or with no kerb sign, it is an impact (default 45)")
+    ap.add_argument("--kerb-max-accel", type=float, default=60.0, help="a jolt on the racing line that looks like a kerb strike (mostly vertical, or kerb/rumble surfaces) counts as a kerb strike up to this many m/s^2; above it, or with no kerb sign, it is an impact (default 60: kerb strikes can be hard in real racing; garage wall hits read 72)")
     ap.add_argument("--tc-gain", type=float, default=0.0, help="traction-aware throttle: cut the throttle cap by this much per m/s^2 of measured lateral load above --tc-free (0: off)")
     ap.add_argument("--tc-free", type=float, default=6.0, help="lateral load (m/s^2) below which --tc-gain does nothing")
     ap.add_argument("--tc-floor", type=float, default=0.3, help="lowest throttle cap --tc-gain can reach")
@@ -201,6 +201,7 @@ def main():
     ap.add_argument("--edge-room", type=float, default=1.0, help="--edge-guard: distance in metres from the car's side to the white line where the guard starts")
     ap.add_argument("--edge-slow", type=float, default=0.1, help="--edge-guard: target speed cut per metre inside the guard distance")
     ap.add_argument("--car-half-width", type=float, default=1.0, help="half the car's width in metres, for the white-line distance")
+    ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
     ap.add_argument("--kerb-hold", type=float, default=0.4)
     ap.add_argument("--kerb-throttle", type=float, default=0.5, help="--kerb-mode: throttle ceiling on a kerb")
@@ -575,6 +576,8 @@ def main():
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
         kerbs = []
+        contacts = []
+        last_contact = -9.0
         KERB_STR = ("BRICK", "RMBL", "RMBB", "CURB", "KERB")
         kerb_until = -1.0
         rec = {"phase": None, "n": 0, "t": 0.0, "x": 0.0, "z": 0.0, "shift": 0.0, "still": None}
@@ -692,6 +695,10 @@ def main():
                     impacts.remove(entry)
                     bumps += 1
                     print("t=%5.1f BUMP (single-sample seam, %.1f m/s^2 at (%.1f, %.1f)): not counted as an impact" % (entry["t"], peak, entry["x"], entry["z"]), flush=True)
+            if chain is track.main and a_h >= args.contact_min and now - last_contact > 0.3 and (a_h - base >= 3.0 or abs(tel["accel"][1]) >= 0.5 * args.contact_min):
+                last_contact = now      # measure every jolt (also the small ones under the hit limits) with what is under the wheels, to set the limits from data (gtr2-contact-stats.py)
+                kind_c = "impact" if (a_h > args.impact_accel and (a_h > args.kerb_max_accel or not (abs(tel["accel"][1]) >= 0.5 * a_h or any(any(k in sf for k in KERB_STR) for sf in tel["surfaces"])))) else ("kerb" if a_h > args.impact_accel else "jolt")
+                contacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "lat": round(abs(tel["accel"][0]), 1), "long": round(abs(tel["accel"][2]), 1), "speed": round(speed, 1), "kind": kind_c, "surfaces": sorted(set(tel["surfaces"]))})
             if a_h > args.impact_accel and now - last_impact > 0.3 and (box_target is not None or merging) and abs(tel["accel"][1]) >= 0.3 * a_h:
                 last_impact = now      # in the garage exit only: a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
                 bumps += 1
@@ -970,7 +977,7 @@ def main():
                         last_shift = now; shift(True)
                     elif want < gear:
                         last_shift = now; shift(False)
-            elif now - last_shift > 1.2 and not in_lane:
+            elif now - last_shift > 0.35 and not in_lane:      # only a debounce (the gear read-back lags the button); the game enforces the shift time
                 gear, rpm = tel["gear"], tel["rpm"]
                 if gear < args.max_gear and rpm > (args.shift_rpms[gear - 1] if args.shift_rpms and gear <= len(args.shift_rpms) else args.shift_rpm):
                     last_shift = now; shift(True)
@@ -1026,7 +1033,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), recoveries=rec["n"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0

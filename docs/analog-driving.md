@@ -152,3 +152,15 @@ What it needs before it can pay: a path follower that tracks a line precisely at
 **Next (asked for): analyse the slowest sections of the fastest laps** (per section time against what the planner model allows, ranked by time lost, with the cause: corner speed, braking, acceleration, off the line) and brainstorm how to speed them up.
 
 **To do later (asked): audit the input realism limits.** Check that the limits that make the simulated input less than instant are still realistically fast compared with human race car drivers: steering hand speed (1000 deg/s over 900 deg) and rack model, pedal slew (5 units/s) and acceleration, pedal and steering resolution, shift pulse and the gap between shifts, clutch hold. List them against real-driver figures first, change nothing before that, and check any change with `gtr2-follower-sim.py` and a lap.
+
+## Dynamic Imola lap without the hand-placed zone, and contact measurements (2026-11-17)
+
+- The Imola entry in `track_params.json` lost `--slow-zone 3040 3220 0.65` and gained `--learn-hits --learn-min 14 --kerb-max-accel 60`. Two laps (outlap + one flying lap, Maserati, wheel): flying laps 126.4 s and 126.0 s, both clean (0 track-limit events, 0 impacts, 3 to 4 kerb strikes). Gap to the real pole (about 105.8 s) is still about 20 s.
+- The shift gap without `--gear-opt` fell from 1.2 s to a 0.35 s debounce (the game enforces the real shift time). The control loop runs at about 43 Hz (status lines every 60 loops are 1.4 s apart), the old "12 Hz" was stale.
+- New `--contact-min` (default 10) records every jolt with the surfaces under the wheels in the result's `contacts`; `scripts/gtr2-contact-stats.py` summarises them per surface. Findings at Imola 4 (the same spots repeat on both laps, to the metre):
+  - Jolts of 10 to 14 m/s^2 on plain road are our own pedals and gear changes: longitudinal, vertical under 2. They are not contacts.
+  - Rumble-strip crossings (BRICK, RMBL, RMBB) give vertical 5 to 6 at 20 m/s (about 11 m/s^2 total).
+  - Lap distance 3120 (x -5, z -1, 13 to 16 m/s): 46 m/s^2 on both laps, mostly longitudinal (58) with vertical 16 to 19, kerb surfaces under a wheel: a hard kerb strike at a chicane. Learning slows that stretch.
+  - Lap distance 3619 (65 m/s, plain road surface): vertical 18 to 22, 13 to 31 m/s^2 total: a road bump, not a kerb surface.
+  - So the vertical component, not the surface name alone, separates kerbs and bumps (vertical 5 and more) from walls (garage wall hits read 72 with vertical 0.5).
+- Next: use measured vertical vs horizontal parts in the hit rules and the learning, check other layouts and cars with `contacts`.
