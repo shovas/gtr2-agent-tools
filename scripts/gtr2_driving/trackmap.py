@@ -188,7 +188,7 @@ class Track:
                 x0, z0, hx, hz, left, right = base[i]
                 want = (mx - x0) * -hz + (mz - z0) * hx
                 o = off[i] + alpha * (want - off[i])
-                off[i] = 0.0 if pinned[i] else (max(-(left - margin), min(right - margin, o)) if left > margin and right > margin else 0.0)
+                off[i] = 0.0 if pinned[i] else (max(-(right - margin), min(left - margin, o)) if left > margin and right > margin else 0.0)      # positive = the car's physical left, limited by the left width
         for w, b, o in zip(chain, base, off):
             w.x, w.z = b[0] + o * -b[3], b[1] + o * b[2]
             w.off = o

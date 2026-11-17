@@ -105,8 +105,9 @@ def optimise(track, ph=None, margin=1.2, every=6, steps=(3.0, 1.5, 0.75, 0.35), 
     c0, r0, left, right = geometry(track)
     n = len(c0)
     # offsets are measured from the line the file gives; limits keep the car's side margin metres inside each white line
-    lo = np.minimum(-(left - margin), 0.0)
-    hi = np.maximum(right - margin, 0.0)
+    # positive offsets are towards the car's physical left (the lateral() sign) and are limited by the LEFT width (measured: 70 off-road events, scatter 0.96 m against 1.72 m the other way round)
+    lo = np.minimum(-(right - margin), 0.0)
+    hi = np.maximum(left - margin, 0.0)
     k = n // every + (1 if n % every else 0)
     z = np.zeros(k)
     dsm = np.hypot(*(np.roll(c0, -1, axis=0) - c0).T)
@@ -160,7 +161,7 @@ def optimise(track, ph=None, margin=1.2, every=6, steps=(3.0, 1.5, 0.75, 0.35), 
 def cache_key(track, ph, margin):
     h = hashlib.sha1()
     h.update(json.dumps(asdict(ph), sort_keys=True).encode())
-    h.update(("%.2f|%d|" % (margin, len(track.main))).encode())
+    h.update(("v2|%.2f|%d|" % (margin, len(track.main))).encode())
     for w in track.main[:: max(1, len(track.main) // 40)]:
         h.update(("%.1f,%.1f,%.1f,%.1f;" % (w.x - w.off * -w.hz, w.z - w.off * w.hx, w.left, w.right)).encode())
     return h.hexdigest()[:16]

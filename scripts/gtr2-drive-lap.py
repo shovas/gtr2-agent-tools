@@ -34,6 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "gtr2_driving"))
 import pitzones  # noqa: E402
 import cargears  # noqa: E402
 import racingline  # noqa: E402
+import follower  # noqa: E402
 import telemetry  # noqa: E402
 import vjoy  # noqa: E402
 import trackmap  # noqa: E402
@@ -164,6 +165,16 @@ def main():
     ap.add_argument("--tc-floor", type=float, default=0.3, help="lowest throttle cap --tc-gain can reach")
     ap.add_argument("--line-opt", action="store_true", help="drive a time-optimal racing line found from the track's widths and the grip/braking/power numbers (gtr2_driving/racingline.py; cached per layout); replaces --line-smooth")
     ap.add_argument("--line-opt-margin", type=float, default=1.2, help="--line-opt: metres the car's side stays inside each white line")
+    ap.add_argument("--follower", choices=("pursuit", "stanley", "designed"), default="pursuit", help="how the steering follows the line: pursuit (aim at a point look-ahead metres ahead, the proven default) or stanley (cross-track and heading error at the car plus curvature feed-forward, with a steering gain learned from the car's own yaw response)")
+    ap.add_argument("--st-learn", action="store_true", help="--follower stanley: adapt the steering gain per speed bin from the yaw response (off: use the measured table)")
+    ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
+    ap.add_argument("--st-zeta", type=float, default=0.8, help="--follower designed: damping ratio")
+    ap.add_argument("--st-k", type=float, default=1.0, help="--follower stanley: cross-track gain (1/s)")
+    ap.add_argument("--st-ks", type=float, default=3.0, help="--follower stanley: speed softening of the cross-track term (m/s)")
+    ap.add_argument("--st-ff", type=float, default=1.0, help="--follower stanley: scale of the curvature feed-forward")
+    ap.add_argument("--st-preview", type=float, default=0.45, help="--follower stanley: seconds ahead the curvature is read for the feed-forward")
+    ap.add_argument("--st-damp", type=float, default=90.0, help="--follower stanley: yaw-rate error damping, degrees per second per unit of steering")
+    ap.add_argument("--wheelbase", type=float, default=2.7, help="wheelbase in metres, for --follower stanley")
     ap.add_argument("--line-smooth", type=int, default=0, help="passes of racing-line smoothing (0 = follow the AIW line as it is); a smoother line has lower curvature, so the speed planner allows more speed")
     ap.add_argument("--line-pin", type=float, default=0.0, help="with --line-smooth: keep the AIW line where the corner radius is under this many metres (tight chicanes have kerbs and bollards inside; 0 = smooth everywhere)")
     ap.add_argument("--line-margin", type=float, default=1.8, help="metres to stay inside the road edges when --line-smooth moves the line")
@@ -190,6 +201,21 @@ def main():
     ap.add_argument("--edge-room", type=float, default=1.0, help="--edge-guard: distance in metres from the car's side to the white line where the guard starts")
     ap.add_argument("--edge-slow", type=float, default=0.1, help="--edge-guard: target speed cut per metre inside the guard distance")
     ap.add_argument("--car-half-width", type=float, default=1.0, help="half the car's width in metres, for the white-line distance")
+    ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
+    ap.add_argument("--kerb-hold", type=float, default=0.4)
+    ap.add_argument("--kerb-throttle", type=float, default=0.5, help="--kerb-mode: throttle ceiling on a kerb")
+    ap.add_argument("--kerb-brake", type=float, default=0.6, help="--kerb-mode: brake scale on a kerb")
+    ap.add_argument("--kerb-steer", type=float, default=1.0, help="--kerb-mode: steering scale on a kerb (1 = unchanged)")
+    ap.add_argument("--recover", action="store_true", help="when the car has stopped (against a wall, spun) for --recover-after seconds while trying to drive, reverse out towards the line (neutral, reverse), then shift back up and carry on")
+    ap.add_argument("--recover-after", type=float, default=2.0)
+    ap.add_argument("--recover-dist", type=float, default=7.0, help="metres to back up")
+    ap.add_argument("--brake-ctl", action="store_true", help="regulate the brake pedal by measured front-wheel slip: it rises towards the full pedal while the front wheels slip less than --brake-slip and falls fast when they slip more, so braking runs at the lock-up threshold")
+    ap.add_argument("--brake-slip", type=float, default=0.12, help="--brake-ctl: front wheel slip to hold (fraction of the speed of the car)")
+    ap.add_argument("--brake-ki", type=float, default=8.0, help="--brake-ctl: pedal change per second per unit of slip error")
+    ap.add_argument("--brake-adapt", action="store_true", help="the braking number of the planner follows the deceleration the car achieves at the lock-up threshold, per speed bin (starts at --decel)")
+    ap.add_argument("--learn-hits", action="store_true", help="a hard hit (impact or kerb strike over --learn-min m/s^2) makes the planner take that stretch of the lap slower from then on (the out lap teaches the flying lap); nothing is set per track")
+    ap.add_argument("--learn-min", type=float, default=20.0)
+    ap.add_argument("--debug-stop", type=float, nargs=2, metavar=("AT", "SECONDS"), default=None, help="test hook: at AT seconds brake to a stop and hold for SECONDS, to exercise --recover")
     ap.add_argument("--live-lat", type=float, default=10.0, help="--live: starting cornering grip at rest, m/s^2")
     ap.add_argument("--live-brake", type=float, default=11.0, help="--live: starting braking grip at rest, m/s^2")
     ap.add_argument("--live-k", type=float, default=1.8e-4, help="--live: starting downforce coefficient (extra grip fraction per (m/s)^2); fitted live from tyre load against speed")
@@ -549,6 +575,34 @@ def main():
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
         kerbs = []
+        KERB_STR = ("BRICK", "RMBL", "RMBB", "CURB", "KERB")
+        kerb_until = -1.0
+        rec = {"phase": None, "n": 0, "t": 0.0, "x": 0.0, "z": 0.0, "shift": 0.0, "still": None}
+        bcap = {"cap": 1.0}
+        padec = {}
+        learned = []        # (from lap distance, to lap distance, factor)
+
+        def learn_hit(a, dist):
+            if not args.learn_hits or a < args.learn_min:
+                return
+            for i, (lo, hi, f) in enumerate(learned):
+                if abs((lo + hi) / 2 - (dist - 60)) < 90:
+                    learned[i] = (lo, hi, max(0.55, f * 0.85))
+                    print("hit learned again at lap distance %d: zone factor %.2f" % (dist, learned[i][2]), flush=True)
+                    return
+            learned.append((dist - 150, dist + 30, 0.85 if a < 40 else 0.7))
+            print("hit learned at lap distance %d (%.0f m/s^2): zone %d..%d factor %.2f" % (dist, a, dist - 150, dist + 30, learned[-1][2]), flush=True)
+
+        def zone_factor(w):
+            f = 1.0
+            for lo, hi, ff in args.slow_zone:
+                if lo <= w.dist <= hi:
+                    f = min(f, ff)
+            for lo, hi, ff in learned:
+                if lo <= w.dist <= hi:
+                    f = min(f, ff)
+            return f
+        stn = {"g": {}, "last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
         gearcar = cargears.load(args.car_key) if args.gear_opt and args.car_key else None
         print("gear optimisation: %s (car key %r, option %s)" % ("on, gears %s, limit %.0f" % ([round(x, 2) for x in gearcar["gears"]], gearcar["limit"]) if gearcar else "off", args.car_key, args.gear_opt), flush=True)
         live = {"a_lat": args.live_lat, "a_brk": args.live_brake, "kk": args.live_k, "sx": 0.0, "sy": 0.0, "sxx": 0.0, "sxy": 0.0, "n": 0, "t": 0.0, "lat_lo": 99.0, "lat_hi": 0.0, "brk_lo": 99.0, "brk_hi": 0.0, "pen": 0}
@@ -645,10 +699,13 @@ def main():
             elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky and chain is track.main and a_h <= args.kerb_max_accel and (abs(tel["accel"][1]) >= 0.5 * a_h or any(any(k in sf for k in ("BRICK", "RMBL", "RMBB", "CURB", "KERB")) for sf in tel["surfaces"])):
                 last_impact = now      # a kerb strike (real racing has them): a vertical-dominated jolt, or kerb/rumble surfaces under a wheel, on the racing line and below --kerb-max-accel; counted apart from impacts, the lap check allows a few
                 kerbs.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "speed": round(speed, 1)})
+                learn_hit(a_h, w.dist)
                 print("t=%5.1f KERB %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
             elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
+                if chain is track.main:
+                    learn_hit(a_h, w.dist)
                 if args.live and args.live_adapt:
                     live["a_lat"] *= 0.93
                     live["a_brk"] *= 0.93
@@ -691,8 +748,8 @@ def main():
                 # live track-limit guard: the distance from the car's side to each white line (road width either side of the file's line,
                 # corrected for the racing line's own sideways shift); inside the guard distance, steer back towards the line and ease off
                 half = args.car_half_width
-                right_room = (w.right - w.off) - lat - half
-                left_room = (w.left + w.off) + lat - half
+                left_room = (w.left - w.off) - lat - half          # positive lat and w.off point to the car's physical left
+                right_room = (w.right + w.off) + lat - half
                 room = min(right_room, left_room)
                 if room < args.edge_room:
                     edge_over = args.edge_room - room
@@ -734,17 +791,46 @@ def main():
             if args.stop_at_merge and merged_at is not None and now - merged_at >= args.stop_at_merge:
                 result["outcome"] = "merged"; break
             shared["scale"] = args.merge_steer if (merging or box_target is not None or chain is track.pit) else args.analog_steer   # slow in the pit lane: full lock (Anderstorp's 90 degree bend, 5 to 6 m wide)
-            shared["steer"] = max(-1.0, min(1.0, herr / args.steer_gain - yawrate / args.damping))
+            if args.follower in ("stanley", "designed") and chain is track.main and not merging and box_target is None:
+                # Stanley follower with curvature feed-forward (gtr2_driving/follower.py, tuned offline in gtr2-follower-sim.py): the steering gain is the
+                # measured per speed table; --st-learn adapts it per speed bin from the car's own yaw response (it collapsed once while the car was oscillating)
+                sp = max(speed, 1.0)
+                gl = follower.steer_gain(sp)
+                if args.st_learn:
+                    b = int(min(sp, 79.0) // 10)
+                    gl = stn["g"].get(b, gl)
+                    cmd = shared["steer"]
+                    stn["hist"].append(cmd)
+                    del stn["hist"][:-8]
+                    if abs(cmd) > 0.08 and speed > 8.0 and abs(tel["accel"][0]) < 9.0 and len(stn["hist"]) >= 8 and max(stn["hist"]) - min(stn["hist"]) < 0.05 and shared["brake"] < 0.1 and abs(lat) < 1.5:
+                        meas = math.atan2(args.wheelbase * math.radians(yawrate), sp) / cmd
+                        if 0.5 * gl < meas < 1.5 * gl:
+                            stn["g"][b] = gl + 0.02 * (meas - gl)
+                            gl = stn["g"][b]
+                if args.follower == "designed":
+                    shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl)
+                else:
+                    shared["steer"] = follower.stanley(track, chain, k, x, z, yaw, speed, yawrate, lat, k_cross=args.st_k, ks=args.st_ks, ff=args.st_ff, preview=args.st_preview, damp=args.st_damp, wheelbase=args.wheelbase, gain=gl)
+            else:
+                shared["steer"] = max(-1.0, min(1.0, herr / args.steer_gain - yawrate / args.damping))
+            if chain is track.main and speed > 10.0:
+                stn["lat2"] += lat * lat
+                stn["lat_n"] += 1
+                stn["lats"].append(abs(lat))
             if chain is track.main:
                 steer_travel += abs(shared["steer"] - last_steer)
             last_steer = shared["steer"]
 
-            window = 25.0 + speed * speed / (2.0 * args.decel)
+            decel_plan = args.decel
+            if args.brake_adapt and padec:
+                db = lambda sp_: int(min(sp_, 79.0) // 10)
+                decel_plan = min(padec.get(db(speed), args.decel), padec.get(db(speed / 2.0), args.decel))
+            window = 25.0 + speed * speed / (2.0 * decel_plan)
             if args.live and chain is track.main:
                 window = 25.0 + speed * speed / (2.0 * live["a_brk"] * (1.0 + args.live_brake_k * speed * speed))
-                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], live["a_brk"], kb=args.live_brake_k, scale=(lambda w: next((f for lo, hi, f in args.slow_zone if lo <= w.dist <= hi), 1.0)) if args.slow_zone else None)
+                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], live["a_brk"], kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned) else None)
             else:
-                corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * next((f for lo, hi, f in args.slow_zone if lo <= w.dist <= hi), 1.0)) if args.slow_zone else args.lat_accel)), args.decel, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
+                corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             in_lane = chain is track.pit and (lane_end_k is None or k <= lane_end_k)
             if chain is track.pit and not in_lane and not lane_end_said:
                 lane_end_said = True
@@ -806,6 +892,27 @@ def main():
                     dyn["brk_n"] += 1
                 shared["duty"] *= dyn["tc"]
                 shared["brake"] *= dyn["abs"]
+            if args.brake_ctl and chain is track.main and analog:
+                dt_b = max(0.001, min(0.2, now - bcap.get("t", now - 0.02)))
+                bcap["t"] = now
+                wl_b = tel["wheels"]
+                rad = sorted(dyn["radius"])[len(dyn["radius"]) // 2] if len(dyn["radius"]) >= 20 else 0.322
+                sf = max(1.0 - abs(w_["rot"]) * rad / max(speed, 0.1) for w_ in wl_b[:2]) if speed > 8.0 else 0.0
+                if shared["brake"] > 0.05:
+                    bcap["cap"] = max(0.25, min(1.0, bcap["cap"] + args.brake_ki * (args.brake_slip - sf) * dt_b))
+                    if args.brake_adapt and shared["brake"] >= 0.9 * bcap["cap"] and speed > 12.0 and 0.5 * args.brake_slip < sf < 1.6 * args.brake_slip:
+                        bb = int(min(speed, 79.0) // 10)
+                        cur = padec.get(bb, args.decel)
+                        padec[bb] = max(8.0, min(20.0, cur + 0.04 * (0.92 * tel["accel"][2] - cur)))
+                    shared["brake"] = min(shared["brake"], bcap["cap"])
+                else:
+                    bcap["cap"] = min(1.0, bcap["cap"] + 2.0 * dt_b)
+            if any(any(k_ in sf_ for k_ in KERB_STR) for sf_ in tel["surfaces"]):
+                kerb_until = now + args.kerb_hold
+            if args.kerb_mode and now < kerb_until and chain is track.main:
+                shared["duty"] = min(shared["duty"], args.kerb_throttle)
+                shared["brake"] *= args.kerb_brake
+                shared["steer"] *= args.kerb_steer
             if args.live and chain is track.main and speed > 8.0:
                 wl = tel["wheels"]
                 dtl = max(0.001, min(0.2, now - live["t"]))
@@ -849,7 +956,9 @@ def main():
                     print("R %5.2f v=%.2f %s" % (now - t0, speed, tel["dump"].hex()), flush=True)
                 wl = tel["wheels"]
                 print("W %5.2f rpm=%5.0f rot=%s grip=%s load=%s lat=%s defl=%s" % (now - t0, tel["rpm"], ",".join("%.1f" % w["rot"] for w in wl), ",".join("%.2f" % w["grip"] for w in wl), ",".join("%.0f" % w["load"] for w in wl), ",".join("%.0f" % w["lat"] for w in wl), ",".join("%.3f" % w["defl"] for w in wl)), flush=True)
-            if gearcar is not None and now - last_shift > 0.35 and not in_lane and chain is track.main and shared["brake"] < 0.05 and abs(tel["accel"][0]) < 8.0:
+            if rec["phase"] is not None or (args.kerb_mode and now < kerb_until):
+                pass
+            elif gearcar is not None and now - last_shift > 0.35 and not in_lane and chain is track.main and shared["brake"] < 0.05 and abs(tel["accel"][0]) < 8.0:
                 gear, rpm = tel["gear"], tel["rpm"]
                 if gear >= 1:
                     scale = 1.04 if shared["duty"] > 0.5 else 1.0      # accelerating: the revs are about to rise. No gear change under braking or in a hard corner: a downshift without a rev-matching blip locks the rear wheels (tried: a spin at (-512, -401))
@@ -867,6 +976,43 @@ def main():
                     last_shift = now; shift(True)
                 elif gear > 1 and rpm < args.down_rpm:
                     last_shift = now; shift(False)
+            if args.debug_stop and args.debug_stop[0] <= now - t0 <= args.debug_stop[0] + args.debug_stop[1]:
+                shared["duty"], shared["brake"] = 0.0, 1.0      # test hook: hold the car still to exercise the stall recovery
+            if args.recover and chain is track.main and not merging and box_target is None:
+                if speed < 1.0:
+                    if rec["still"] is None:
+                        rec["still"] = now
+                else:
+                    rec["still"] = None
+                if rec["phase"] is None and rec["still"] is not None and now - rec["still"] > args.recover_after and now - t0 > 20.0 and rec["n"] < 6:
+                    rec.update(phase="reverse", n=rec["n"] + 1, t=now, x=x, z=z, shift=0.0)
+                    print("t=%5.1f stopped at (%.0f, %.0f): reversing out (attempt %d)" % (now - t0, x, z, rec["n"]), flush=True)
+                if rec["phase"] == "reverse":
+                    g_now = tel["gear"]
+                    if g_now > -1:
+                        if now - rec["shift"] > 0.5:
+                            rec["shift"] = now
+                            shift(False)
+                        shared["duty"], shared["brake"], shared["steer"] = 0.0, 0.0, 0.0
+                    else:
+                        shared["duty"], shared["brake"] = 0.6, 0.0
+                        shared["steer"] = -max(-1.0, min(1.0, herr / 25.0))      # backing up: the wheel works the other way round
+                        if math.hypot(x - rec["x"], z - rec["z"]) > args.recover_dist or now - rec["t"] > 6.0:
+                            rec["phase"] = "forward"
+                            rec["shift"] = 0.0
+                    if rec["phase"] == "reverse" and now - rec["t"] > 9.0:
+                        rec["phase"] = "forward"
+                elif rec["phase"] == "forward":
+                    shared["duty"], shared["brake"] = 0.0, 0.0
+                    if tel["gear"] < 1:
+                        if now - rec["shift"] > 0.5:
+                            rec["shift"] = now
+                            shift(True)
+                    else:
+                        rec["phase"] = None
+                        rec["still"] = None
+                        last_move = now
+                        print("t=%5.1f back in gear %d, driving on" % (now - t0, tel["gear"]), flush=True)
             if n % args.every == 0:
                 print("t=%5.1f %s k=%3d lat=%+5.1f herr=%+6.1f v=%4.1f->%4.1f gear=%d lap=%d" % (
                     now - t0, "main" if chain is track.main else "pit ", k, lat, herr, speed, target_v, tel["gear"], tel["lap"]), flush=True)
@@ -880,7 +1026,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], kerb_count=len(kerbs), recoveries=rec["n"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0
