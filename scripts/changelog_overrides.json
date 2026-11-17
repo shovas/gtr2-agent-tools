@@ -200,5 +200,11 @@
    "improve",
    "Shift points are worked out from each car's own engine and gear files (gtr2-shift-points.py)"
   ]
+ ],
+ "a9d1307": [
+  [
+   "improve",
+   "A lap-time estimator and several new driving options (live grip, gear choice, edge guard) for chasing real lap times; Imola 4 stays clean at 2:07"
+  ]
  ]
 }
