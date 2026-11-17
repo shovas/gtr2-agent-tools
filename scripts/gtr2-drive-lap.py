@@ -201,6 +201,14 @@ def main():
     ap.add_argument("--edge-room", type=float, default=1.0, help="--edge-guard: distance in metres from the car's side to the white line where the guard starts")
     ap.add_argument("--edge-slow", type=float, default=0.1, help="--edge-guard: target speed cut per metre inside the guard distance")
     ap.add_argument("--car-half-width", type=float, default=1.0, help="half the car's width in metres, for the white-line distance")
+    ap.add_argument("--grip-map", action="store_true", help="live cornering grip map: the grip the planner uses is a factor per 20 m of lap distance that the car itself moves while driving: up a little where it carried the load near the limit with every tyre gripping and stayed on the line, down at once (on the stretch before, too) where an outer tyre slid, the car ran wide or hit something; the out lap teaches the flying lap, nothing is set per track")
+    ap.add_argument("--gm-up", type=float, default=0.04, help="--grip-map: factor gain per clean pass of a 20 m bin near the limit")
+    ap.add_argument("--gm-down", type=float, default=0.06, help="--grip-map: factor loss when the car slides in a bin")
+    ap.add_argument("--gm-max", type=float, default=1.6)
+    ap.add_argument("--gm-min", type=float, default=0.6)
+    ap.add_argument("--gm-use", type=float, default=0.85, help="--grip-map: share of the planned lateral load the car must reach in a bin before the factor may rise")
+    ap.add_argument("--gm-slide", type=float, default=0.70, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
+    ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
     ap.add_argument("--kerb-hold", type=float, default=0.4)
@@ -584,6 +592,9 @@ def main():
         bcap = {"cap": 1.0}
         padec = {}
         learned = []        # (from lap distance, to lap distance, factor)
+        gm = {}             # --grip-map: 20 m bin of lap distance -> factor on the planner's cornering grip
+        gmh = {}
+        gms = {"bin": None, "use": 0.0, "slid": False, "wide": False, "up": 0, "down": 0, "t_dn": -9.0}
 
         def learn_hit(a, dist):
             if not args.learn_hits or a < args.learn_min:
@@ -597,7 +608,7 @@ def main():
             print("hit learned at lap distance %d (%.0f m/s^2): zone %d..%d factor %.2f" % (dist, a, dist - 150, dist + 30, learned[-1][2]), flush=True)
 
         def zone_factor(w):
-            f = 1.0
+            f = gm.get(int(w.dist // 20), 1.0) if args.grip_map else 1.0
             for lo, hi, ff in args.slow_zone:
                 if lo <= w.dist <= hi:
                     f = min(f, ff)
@@ -835,9 +846,9 @@ def main():
             window = 25.0 + speed * speed / (2.0 * decel_plan)
             if args.live and chain is track.main:
                 window = 25.0 + speed * speed / (2.0 * live["a_brk"] * (1.0 + args.live_brake_k * speed * speed))
-                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], live["a_brk"], kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned) else None)
+                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], live["a_brk"], kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None)
             else:
-                corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
+                corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             in_lane = chain is track.pit and (lane_end_k is None or k <= lane_end_k)
             if chain is track.pit and not in_lane and not lane_end_said:
                 lane_end_said = True
@@ -920,6 +931,34 @@ def main():
                 shared["duty"] = min(shared["duty"], args.kerb_throttle)
                 shared["brake"] *= args.kerb_brake
                 shared["steer"] *= args.kerb_steer
+            if args.grip_map and chain is track.main and speed > 8.0:
+                wl_g = tel["wheels"]
+                b_now = int(w.dist // 20)
+                cap_g = args.lat_accel * zone_factor(w)
+                if gms["bin"] is not None and b_now != gms["bin"]:      # a 20 m bin is done: raise its factor if the car used the grip cleanly
+                    if not gms["slid"] and not gms["wide"] and gms["use"] >= args.gm_use:
+                        gm[gms["bin"]] = min(args.gm_max, gm.get(gms["bin"], 1.0) + args.gm_up)
+                        gms["up"] += 1
+                    gms.update(use=0.0, slid=False, wide=False)
+                gms["bin"] = b_now
+                gms["use"] = max(gms["use"], abs(tel["accel"][0]) / max(cap_g, 1.0))
+                front = wl_g[0] if wl_g[0]["load"] >= wl_g[1]["load"] else wl_g[1]
+                rear = wl_g[2] if wl_g[2]["load"] >= wl_g[3]["load"] else wl_g[3]
+                loaded = abs(tel["accel"][0]) > 0.5 * cap_g
+                if loaded:      # distribution of the outer tyres' grip fraction against the lateral load (what "sliding" looks like on this car)
+                    for nm_, wh_ in (("f", front), ("r", rear)):
+                        hb = gmh.setdefault("%s%d" % (nm_, min(9, max(0, int(wh_["grip"] * 10)))), [0, 0.0])
+                        hb[0] += 1
+                        hb[1] += abs(tel["accel"][0])
+                if abs(lat) > args.gm_line:
+                    gms["wide"] = True
+                if loaded and min(front["grip"], rear["grip"]) < args.gm_slide:
+                    gms["slid"] = True
+                    if gms.get("dn_bin") != b_now:      # once per 20 m bin and pass: this bin and the two before it (entered too fast)
+                        gms["dn_bin"] = b_now
+                        gms["down"] += 1
+                        for bb in range(b_now - 2, b_now + 1):
+                            gm[bb] = max(args.gm_min, gm.get(bb, 1.0) * (1.0 - args.gm_down))
             if args.live and chain is track.main and speed > 8.0:
                 wl = tel["wheels"]
                 dtl = max(0.001, min(0.2, now - live["t"]))
@@ -1033,7 +1072,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], grip_map=({str(k_ * 20): round(v_, 2) for k_, v_ in sorted(gm.items()) if abs(v_ - 1.0) > 0.01} if args.grip_map else None), grip_map_hist={k_: [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(gmh.items())}, grip_map_up=gms["up"], grip_map_down=gms["down"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0
