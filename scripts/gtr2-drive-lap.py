@@ -250,13 +250,17 @@ def main():
     ap.add_argument("--total", type=float, default=900.0, help="give up after this many seconds")
     ap.add_argument("--every", type=int, default=60, help="print a status line every N loops")
     ap.add_argument("--dry-run", action="store_true", help="read the telemetry and the track, print the plan, press no keys")
+    ap.add_argument("--fixed", action="store_true", help="fixed-limit mode: the planner uses --lat-accel and --decel as given (and the per-track \"<stem>:fixed\" numbers of track_params.json) and none of the live systems start by themselves. The default for --fast is live: the cornering grip map, the braking map (--brake-ctl --brake-adapt), wheel control (--dyn), contact learning and stall recovery, starting from generic priors and adapting to what the car does")
     ap.add_argument("--no-track-params", action="store_true", help="ignore scripts/gtr2_driving/track_params.json")
     args = ap.parse_args()
     # Per-track settings (gtr2_driving/track_params.json): maps an AIW file stem (lower case) to extra options for a
     # layout whose tight corners need something the others don't. They replace the same options given on the command line and
     # are applied before the --fast/slow preset fills in what is still unset.
     params_file = Path(__file__).resolve().parent / "gtr2_driving" / "track_params.json"
-    extra = None if args.no_track_params or not params_file.exists() else json.loads(params_file.read_text()).get(Path(args.aiw).stem.lower())
+    all_params = {} if args.no_track_params or not params_file.exists() else json.loads(params_file.read_text())
+    extra = all_params.get(Path(args.aiw).stem.lower())
+    if args.fixed and all_params.get(Path(args.aiw).stem.lower() + ":fixed"):
+        extra = ((extra or "") + " " + all_params[Path(args.aiw).stem.lower() + ":fixed"]).strip()
     if extra:
         ap._option_string_actions["--aiw"].required = False       # re-parsing only the extras must not demand --aiw again
         keep = args.aiw
@@ -273,8 +277,12 @@ def main():
         ap.parse_known_args(entry["args"].split(), namespace=args)
         args.aiw = keep
         print("tuned settings for %s: %s" % (Path(args.aiw).stem.lower(), entry["args"]), flush=True)
+    if args.fast and not args.fixed:      # the default: live, dynamic, feedback driven; the numbers below are only the starting priors the maps adapt from
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover"):
+            setattr(args, name, True)
+        print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
-    fast = dict(speed=60.0, pit_speed=16.0, lat_accel=7.5, decel=6.0, max_gear=6, shift_rpm=6300.0, down_rpm=3000.0)
+    fast = dict(speed=60.0 if args.fixed else 150.0, pit_speed=16.0, lat_accel=7.5 if args.fixed else 9.0, decel=6.0 if args.fixed else 10.0, max_gear=6, shift_rpm=6300.0, down_rpm=3000.0)
     for name, value in (fast if args.fast else slow).items():
         if getattr(args, name) is None:      # an explicit option always wins over the preset
             setattr(args, name, value)
@@ -591,6 +599,8 @@ def main():
         rec = {"phase": None, "n": 0, "t": 0.0, "x": 0.0, "z": 0.0, "shift": 0.0, "still": None}
         bcap = {"cap": 1.0}
         padec = {}
+        bslip = {}
+        bev = {"on": False, "peak": 0.0, "lock": False, "bands": set()}
         learned = []        # (from lap distance, to lap distance, factor)
         gm = {}             # --grip-map: 20 m bin of lap distance -> factor on the planner's cornering grip
         gmh = {}
@@ -925,6 +935,23 @@ def main():
                     shared["brake"] = min(shared["brake"], bcap["cap"])
                 else:
                     bcap["cap"] = min(1.0, bcap["cap"] + 2.0 * dt_b)
+                if args.brake_adapt:      # probe: after each braking zone, if the pedal never needed to go near full and no wheel locked, the planner was braking earlier than the car needs: raise its braking number for the speed bands passed; if a wheel locked, lower it
+                    if shared["brake"] > 0.05:
+                        bev["on"] = True
+                        bev["peak"] = max(bev["peak"], shared["brake"])
+                        hb_ = bslip.setdefault(int(min(sf, 0.6) * 20), [0, 0.0])      # front slip histogram while braking (0.05 steps) with the mean deceleration
+                        hb_[0] += 1
+                        hb_[1] += -tel["accel"][2]
+                        bev["lock"] = bev["lock"] or sf > 1.6 * args.brake_slip      # a front wheel well past the slip the brake holds (the rear axle runs slow in every stop, so only the front counts)
+                        bev["bands"].add(int(min(speed, 79.0) // 10))
+                    elif bev["on"] and shared["brake"] < 0.02:
+                        if bev["lock"]:
+                            for bb in bev["bands"]:
+                                padec[bb] = max(8.0, padec.get(bb, args.decel) * 0.92)
+                        elif bev["peak"] < 0.9 and len(bev["bands"]) >= 2:
+                            for bb in bev["bands"]:
+                                padec[bb] = min(22.0, padec.get(bb, args.decel) * 1.04)
+                        bev.update(on=False, peak=0.0, lock=False, bands=set())
             if any(any(k_ in sf_ for k_ in KERB_STR) for sf_ in tel["surfaces"]):
                 kerb_until = now + args.kerb_hold
             if args.kerb_mode and now < kerb_until and chain is track.main:
@@ -1072,7 +1099,7 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], grip_map=({str(k_ * 20): round(v_, 2) for k_, v_ in sorted(gm.items()) if abs(v_ - 1.0) > 0.01} if args.grip_map else None), grip_map_hist={k_: [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(gmh.items())}, grip_map_up=gms["up"], grip_map_down=gms["down"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], grip_map=({str(k_ * 20): round(v_, 2) for k_, v_ in sorted(gm.items()) if abs(v_ - 1.0) > 0.01} if args.grip_map else None), grip_map_hist={k_: [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(gmh.items())}, brake_slip_hist={str(round(k_ / 20.0, 2)): [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(bslip.items())}, grip_map_up=gms["up"], grip_map_down=gms["down"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0
