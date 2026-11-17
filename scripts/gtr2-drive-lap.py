@@ -207,6 +207,7 @@ def main():
     ap.add_argument("--gm-max", type=float, default=1.6)
     ap.add_argument("--gm-min", type=float, default=0.6)
     ap.add_argument("--gm-use", type=float, default=0.85, help="--grip-map: share of the planned lateral load the car must reach in a bin before the factor may rise")
+    ap.add_argument("--gm-heal", type=float, default=0.04, help="--grip-map: a clean pass of a bin below 1.0 raises its factor by this much even when the grip was not used to the limit")
     ap.add_argument("--gm-limit", type=float, default=0.08, help="--grip-map: factor loss on the six 20 m bins before a track-limit event (all four tyres beyond the white line)")
     ap.add_argument("--gm-slide", type=float, default=0.60, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
     ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
@@ -220,6 +221,7 @@ def main():
     ap.add_argument("--meta-step", type=float, default=0.02, help="--session-laps: starting push step")
     ap.add_argument("--meta-max", type=float, default=1.25)
     ap.add_argument("--meta-min", type=float, default=0.85)
+    ap.add_argument("--line-seed-dry", action="store_true", help="with --line-opt: the optimiser starts from the game's own dry line (wp_path in the AIW) and refines it with the driver's own physics; the result is the driver's line, not the file's")
     ap.add_argument("--dry-line", action="store_true", help="drive the game's own dry racing line stored in the AIW (wp_path, the line the in-game AI follows) instead of the smoothed file line; the margin to the white lines is --line-margin")
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
@@ -307,7 +309,7 @@ def main():
     track = trackmap.Track(args.aiw)
     if args.line_opt:
         ph = racingline.Physics(lat=args.lat_accel, decel=args.decel, kk=args.live_k if args.live else 0.0)
-        offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True))
+        offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True), seed=([-w_.dry for w_ in track.main] if args.line_seed_dry else None))
         racingline.apply(track, offs)
         print("racing line applied: offsets %.1f to %.1f m (mean %.1f)" % (offs.min(), offs.max(), abs(offs).mean()), flush=True)
     if args.dry_line:
@@ -1074,6 +1076,8 @@ def main():
                     if not gms["slid"] and not gms["wide"] and gms["use"] >= args.gm_use:
                         gm[gms["bin"]] = min(args.gm_max, gm.get(gms["bin"], 1.0) + args.gm_up)
                         gms["up"] += 1
+                    elif not gms["slid"] and not gms["wide"] and gm.get(gms["bin"], 1.0) < 1.0:      # a clean pass heals an earlier penalty even where the grip was not used fully
+                        gm[gms["bin"]] = min(1.0, gm[gms["bin"]] + args.gm_heal)
                     gms.update(use=0.0, slid=False, wide=False)
                 gms["bin"] = b_now
                 gms["use"] = max(gms["use"], abs(tel["accel"][0]) / max(cap_g, 1.0))

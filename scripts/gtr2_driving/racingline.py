@@ -100,7 +100,7 @@ def _knot_offsets(z, n, every):
     return np.interp(xs, np.append(xk, k * every), np.append(z, z[0]))
 
 
-def optimise(track, ph=None, margin=1.2, every=6, steps=(3.0, 1.5, 0.75, 0.35), max_sweeps=6, smooth=5, log=print, deadline=None):
+def optimise(track, ph=None, margin=1.2, every=6, steps=(3.0, 1.5, 0.75, 0.35), max_sweeps=6, smooth=5, log=print, deadline=None, seed=None):
     ph = ph or Physics()
     c0, r0, left, right = geometry(track)
     n = len(c0)
@@ -110,6 +110,8 @@ def optimise(track, ph=None, margin=1.2, every=6, steps=(3.0, 1.5, 0.75, 0.35), 
     hi = np.maximum(left - margin, 0.0)
     k = n // every + (1 if n % every else 0)
     z = np.zeros(k)
+    if seed is not None:      # start from a given line (the game's dry line) instead of the file line; the search refines it with our own physics
+        z = np.clip(np.array([seed[min(j * every, n - 1)] for j in range(k)]), lo[np.minimum(np.arange(k) * every, n - 1)], hi[np.minimum(np.arange(k) * every, n - 1)])
     dsm = np.hypot(*(np.roll(c0, -1, axis=0) - c0).T)
 
     def offsets(zv):
@@ -158,10 +160,10 @@ def optimise(track, ph=None, margin=1.2, every=6, steps=(3.0, 1.5, 0.75, 0.35), 
     return offsets(z)
 
 
-def cache_key(track, ph, margin):
+def cache_key(track, ph, margin, seeded=False):
     h = hashlib.sha1()
     h.update(json.dumps(asdict(ph), sort_keys=True).encode())
-    h.update(("v2|%.2f|%d|" % (margin, len(track.main))).encode())
+    h.update(("v2|%.2f|%d|%s|" % (margin, len(track.main), "seed" if seeded else "")).encode())
     for w in track.main[:: max(1, len(track.main) // 40)]:
         h.update(("%.1f,%.1f,%.1f,%.1f;" % (w.x - w.off * -w.hz, w.z - w.off * w.hx, w.left, w.right)).encode())
     return h.hexdigest()[:16]
@@ -169,7 +171,7 @@ def cache_key(track, ph, margin):
 
 def cached_offsets(track, aiw_stem, ph=None, margin=1.2, log=print, **kw):
     ph = ph or Physics()
-    key = cache_key(track, ph, margin)
+    key = cache_key(track, ph, margin, kw.get("seed") is not None)
     CACHE.mkdir(exist_ok=True)
     f = CACHE / ("%s_%s.json" % (aiw_stem.lower(), key))
     if f.exists():
