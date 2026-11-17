@@ -207,6 +207,7 @@ def main():
     ap.add_argument("--gm-max", type=float, default=1.6)
     ap.add_argument("--gm-min", type=float, default=0.6)
     ap.add_argument("--gm-use", type=float, default=0.85, help="--grip-map: share of the planned lateral load the car must reach in a bin before the factor may rise")
+    ap.add_argument("--gm-limit", type=float, default=0.08, help="--grip-map: factor loss on the six 20 m bins before a track-limit event (all four tyres beyond the white line)")
     ap.add_argument("--gm-slide", type=float, default=0.60, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
     ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
     ap.add_argument("--outlap-scale", type=float, default=0.97, help="live mode: the out lap (before the first lap change) is driven at this share of the planned corner and braking speeds: it is not a valid lap (cold tyres), it only teaches the maps")
@@ -214,6 +215,11 @@ def main():
     ap.add_argument("--geo-limits", action="store_true", help="experiment: also test the track limits geometrically (each tyre's position against the white lines from the waypoint widths) next to the surface rule, and record both in the result (geo_*)")
     ap.add_argument("--wheel-track", type=float, default=1.65, help="--geo-limits: distance between the left and right wheels, metres")
     ap.add_argument("--tyre-half", type=float, default=0.15, help="--geo-limits: half the tyre width, metres: a tyre is over the line when its whole width is beyond it")
+    ap.add_argument("--session-laps", type=int, default=0, help="keep lapping: the out lap plus this many timed laps in one session, and adjust a push factor on the planned corner speeds lap by lap (--meta-*): a clean lap that is faster than the best raises it, an unclean lap or a slower one takes it back and shrinks the step. Raise --total and the lap check's --timeout with it")
+    ap.add_argument("--meta-start", type=float, default=1.0, help="--session-laps: starting push factor")
+    ap.add_argument("--meta-step", type=float, default=0.02, help="--session-laps: starting push step")
+    ap.add_argument("--meta-max", type=float, default=1.25)
+    ap.add_argument("--meta-min", type=float, default=0.85)
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
     ap.add_argument("--kerb-hold", type=float, default=0.4)
@@ -258,6 +264,8 @@ def main():
     ap.add_argument("--fixed", action="store_true", help="fixed-limit mode: the planner uses --lat-accel and --decel as given (and the per-track \"<stem>:fixed\" numbers of track_params.json) and none of the live systems start by themselves. The default for --fast is live: the cornering grip map, the braking map (--brake-ctl --brake-adapt), wheel control (--dyn), contact learning and stall recovery, starting from generic priors and adapting to what the car does")
     ap.add_argument("--no-track-params", action="store_true", help="ignore scripts/gtr2_driving/track_params.json")
     args = ap.parse_args()
+    if args.session_laps > 0:
+        args.laps_crossed = args.session_laps + 1
     # Per-track settings (gtr2_driving/track_params.json): maps an AIW file stem (lower case) to extra options for a
     # layout whose tight corners need something the others don't. They replace the same options given on the command line and
     # are applied before the --fast/slow preset fills in what is still unset.
@@ -283,7 +291,7 @@ def main():
         args.aiw = keep
         print("tuned settings for %s: %s" % (Path(args.aiw).stem.lower(), entry["args"]), flush=True)
     if args.fast and not args.fixed:      # the default: live, dynamic, feedback driven; the numbers below are only the starting priors the maps adapt from
-        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit"):
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt"):
             setattr(args, name, True)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
@@ -608,6 +616,7 @@ def main():
         bslip = {}
         bev = {"on": False, "peak": 0.0, "lock": False, "bands": set()}
         learned = []        # (from lap distance, to lap distance, factor)
+        meta = {"push": args.meta_start, "step": args.meta_step, "best": None, "best_push": args.meta_start, "t": None, "imp": 0, "lim": 0, "kerb": 0, "laps": []}
         mem_file = Path(__file__).resolve().parent / "gtr2_driving" / "learned" / ("%s_%s.json" % (Path(args.aiw).stem.lower(), (args.car_key or "car").replace("/", "_").lower()))
         gm = {}             # --grip-map: 20 m bin of lap distance -> factor on the planner's cornering grip
         gmh = {}
@@ -695,6 +704,26 @@ def main():
                 result["lap_changes"].append({"t": round(now - t0, 1), "lap": tel["lap"]})
                 print("t=%5.1f lap counter %d -> %d" % (now - t0, last_lap, tel["lap"]), flush=True)
                 last_lap = tel["lap"]
+                if args.session_laps > 0:      # a lap is done: judge it and adjust the push for the next one
+                    n_imp = len([i_ for i_ in impacts if not i_.get("pit")])
+                    n_lim = len([e_ for e_ in limit_events if e_["seconds"] >= 0.06])
+                    if meta["t"] is not None:      # the first change only ends the out lap
+                        lt_ = now - meta["t"]
+                        d_imp, d_lim, d_kerb = n_imp - meta["imp"], n_lim - meta["lim"], len(kerbs) - meta["kerb"]
+                        clean_ = d_imp == 0 and d_lim == 0 and d_kerb <= 5
+                        used_ = meta["push"]
+                        if clean_ and (meta["best"] is None or lt_ < meta["best"]):
+                            meta["best"], meta["best_push"] = lt_, used_
+                            meta["push"] = min(args.meta_max, used_ + meta["step"])
+                        elif clean_:
+                            meta["push"] = min(args.meta_max, meta["best_push"] + 0.5 * meta["step"])
+                            meta["step"] = max(0.004, meta["step"] * 0.7)
+                        else:
+                            meta["push"] = max(args.meta_min, min(used_, meta["best_push"] if meta["best"] is not None else used_) - meta["step"])
+                            meta["step"] = max(0.004, meta["step"] * 0.7)
+                        meta["laps"].append({"lap": tel["lap"] - 1, "time": round(lt_, 2), "clean": clean_, "impacts": d_imp, "track_limits": d_lim, "kerbs": d_kerb, "push": round(used_, 3), "next_push": round(meta["push"], 3)})
+                        print("SESSION lap %d: %.2f s, %s (impacts %d, track limits %d, kerb strikes %d) push %.3f -> %.3f, best %s" % (tel["lap"] - 1, lt_, "clean" if clean_ else "NOT clean", d_imp, d_lim, d_kerb, used_, meta["push"], ("%.2f" % meta["best"]) if meta["best"] else "none"), flush=True)
+                    meta["t"], meta["imp"], meta["lim"], meta["kerb"] = now, n_imp, n_lim, len(kerbs)
             if finish_at is None and last_lap == start_lap and accum >= 1.1 * args.laps_crossed * track.lap_length:
                 by_distance = True
                 result["lap_changes"].append({"t": round(now - t0, 1), "lap": start_lap + 1, "by_distance": True})     # a time for the tuner, from the distance rule
@@ -811,6 +840,10 @@ def main():
                     if limit_open is None or now - limit_last > 0.5:
                         limit_open = {"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "seconds": 0.0, "surface": ",".join(sorted(set(tel["surfaces"])))}
                         limit_events.append(limit_open)
+                        if args.grip_map:      # live response: the corners before this point were taken too fast to stay inside the white lines; take their grip factor down now and for the next pass
+                            for bb in range(int(w.dist // 20) - 6, int(w.dist // 20) + 1):
+                                gm[bb] = max(args.gm_min, gm.get(bb, 1.0) * (1.0 - args.gm_limit))
+                            gms["down"] += 1
                     limit_open["seconds"] = round(now - t0 - limit_open["t"], 2)
                     limit_last = now
             if chain is track.main:
@@ -921,6 +954,8 @@ def main():
                 corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             if args.grip_map and chain is track.main and last_lap == start_lap:
                 corner_v *= args.outlap_scale
+            elif args.session_laps > 0 and chain is track.main:
+                corner_v *= meta["push"]
             in_lane = chain is track.pit and (lane_end_k is None or k <= lane_end_k)
             if chain is track.pit and not in_lane and not lane_end_said:
                 lane_end_said = True
@@ -1161,6 +1196,8 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
+        if args.session_laps > 0:
+            result["session_laps"] = meta["laps"]
         if args.geo_limits:
             mg = sorted(geo["margins"])
             result["geo"] = {"samples": geo["n"], "both": geo["both"], "geometric_only": geo["geo_only"], "surface_only": geo["surf_only"],

@@ -136,6 +136,7 @@ def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
 
 
 TRACK_LIMIT_BUDGET = 0     # laps with all four wheels over the white line: none allowed
+RUN_TIMEOUT = 1500      # seconds one driver run may take (--timeout; a long session needs more)
 LIMIT_RULE = "surface"     # "surface": all four tyres off a ROAD or DRAIN surface (default); "geo": all four beyond the white lines by the waypoint widths (--limit-rule geo)
 KERB_BUDGET = 5     # kerb strikes allowed on a lap (real racing has them; see gtr2-drive-lap.py --kerb-max-accel)
 
@@ -201,7 +202,7 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
         t_spawn = time.time()
         LAST_OUT[0] = ""
         STAGE_TEXT = "".join("STAGE %s epoch=%.3f" % (n, v) + chr(10) for n, v in (("drive_step_begin", t_drive), ("drive_step_done", t_cockpit), ("driver_spawned", t_spawn)))
-        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=1500)
+        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=RUN_TIMEOUT)
         (SCRIPTS / "gtr2_ui" / "runs" / "lap_drive.log").write_text(STAGE_TEXT + r.stdout + r.stderr, encoding="utf-8")
         with (SCRIPTS / "gtr2_ui" / "runs" / "start_timing.log").open("a", encoding="utf-8") as f:      # every run's start-up stages, for comparing changes
             f.write("# %s %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), Path(trk).stem) + "".join(l + "\n" for l in (STAGE_TEXT + r.stdout).splitlines() if l.startswith("STAGE ") or l.startswith("gear before")))
@@ -272,6 +273,7 @@ def main():
     ap.add_argument("--input", choices=("keyboard", "analog", "wheel"), default="keyboard", help="analog: drive through the vJoy virtual joystick; wheel: the same with the profile as after selecting the wheel in the game (Basic Controls 2; run gtr2-select-wheel.py first)")
     ap.add_argument("--profile", default="", help="extra profile values for the run, e.g. \"Speed Sensitive Steering=0,Steer Ratio Speed=40\" (reverted afterwards); separate with ; when a key contains a comma (Axis [00, 00] Dead Zone=0.1)")
     ap.add_argument("--limit-rule", choices=("surface", "geo"), default="surface", help="track-limit rule: surface (default, the tyres' surface names) or geo (geometric white-line test from the waypoint widths; adds --geo-limits to the driver)")
+    ap.add_argument("--timeout", type=int, default=1500, help="seconds one driver run may take (raise it for --drive-args=\"--session-laps 20 --total 3600\")")
     ap.add_argument("--quick", action="store_true", help="stop at the first start/finish crossing: the out lap from the pits (about 3 min) instead of out lap plus a timed lap (about 5.5 min)")
     ap.add_argument("--drive-args", default="", help="extra options for gtr2-drive-lap.py, e.g. \"--analog-steer 0.3\"")
     ap.add_argument("--no-fast", action="store_true", help="drive at the slow default settings instead of --fast")
@@ -283,7 +285,8 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--list-cars", action="store_true")
     a = ap.parse_args()
-    global LIMIT_RULE
+    global LIMIT_RULE, RUN_TIMEOUT
+    RUN_TIMEOUT = a.timeout
     LIMIT_RULE = a.limit_rule
     if a.limit_rule == "geo":
         a.drive_args = (a.drive_args + " --geo-limits").strip()
