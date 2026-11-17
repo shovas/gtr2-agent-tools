@@ -42,5 +42,6 @@ av_paths	our_options_main.txt`.
 - `publish-check.py`: pre-push privacy/safety scan of tracked files and unpushed commits (personal paths, e-mails, secrets, game file types, pictures, author identities); read-only, exit 1 on a BLOCK (see docs/publishing.md)
 - `gtr2-follower-sim.py`: offline bicycle-model simulator of the path followers (`gtr2_driving/follower.py`: pursuit, stanley, designed); reports cross-track error in seconds, calibrated to the game (0.30 s steering lag plus transport delay).
 - `gtr2-contact-stats.py`: summarises the jolts the lap runner measured (`contacts`, `--contact-min`) per surface under the wheels and kind (jolt, kerb strike, impact): size, vertical part, speed; for setting hit limits from data.
+- `gtr2-lap-sections.py`: where a lap loses time: sections of lap distance from a lap log compared with the offline speed model on the same line, worst first; also shows what the model says for other grip/braking numbers.
 - `gtr2-lap-estimate.py`: offline lap-time estimate of planner settings on a layout (power limited acceleration, downforce grip), within 2 to 3 s of real laps; `gtr2-shift-points.py`: best upshift rpm per gear from a car's own engine and gear files.
 - `gtr2_driving/racingline.py`: generic time-optimal racing line from road widths and grip numbers (numpy, cached per layout); `--line-opt` in `gtr2-drive-lap.py`.
