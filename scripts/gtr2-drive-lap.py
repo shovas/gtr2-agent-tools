@@ -202,12 +202,12 @@ def main():
     ap.add_argument("--edge-slow", type=float, default=0.1, help="--edge-guard: target speed cut per metre inside the guard distance")
     ap.add_argument("--car-half-width", type=float, default=1.0, help="half the car's width in metres, for the white-line distance")
     ap.add_argument("--grip-map", action="store_true", help="live cornering grip map: the grip the planner uses is a factor per 20 m of lap distance that the car itself moves while driving: up a little where it carried the load near the limit with every tyre gripping and stayed on the line, down at once (on the stretch before, too) where an outer tyre slid, the car ran wide or hit something; the out lap teaches the flying lap, nothing is set per track")
-    ap.add_argument("--gm-up", type=float, default=0.04, help="--grip-map: factor gain per clean pass of a 20 m bin near the limit")
-    ap.add_argument("--gm-down", type=float, default=0.06, help="--grip-map: factor loss when the car slides in a bin")
+    ap.add_argument("--gm-up", type=float, default=0.10, help="--grip-map: factor gain per clean pass of a 20 m bin near the limit")
+    ap.add_argument("--gm-down", type=float, default=0.04, help="--grip-map: factor loss when the car slides in a bin")
     ap.add_argument("--gm-max", type=float, default=1.6)
     ap.add_argument("--gm-min", type=float, default=0.6)
     ap.add_argument("--gm-use", type=float, default=0.85, help="--grip-map: share of the planned lateral load the car must reach in a bin before the factor may rise")
-    ap.add_argument("--gm-slide", type=float, default=0.70, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
+    ap.add_argument("--gm-slide", type=float, default=0.60, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
     ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
@@ -278,11 +278,11 @@ def main():
         args.aiw = keep
         print("tuned settings for %s: %s" % (Path(args.aiw).stem.lower(), entry["args"]), flush=True)
     if args.fast and not args.fixed:      # the default: live, dynamic, feedback driven; the numbers below are only the starting priors the maps adapt from
-        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover"):
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit"):
             setattr(args, name, True)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
-    fast = dict(speed=60.0 if args.fixed else 150.0, pit_speed=16.0, lat_accel=7.5 if args.fixed else 9.0, decel=6.0 if args.fixed else 10.0, max_gear=6, shift_rpm=6300.0, down_rpm=3000.0)
+    fast = dict(speed=60.0 if args.fixed else 150.0, pit_speed=16.0, lat_accel=7.5 if args.fixed else 10.0, decel=6.0 if args.fixed else 12.0, max_gear=6, shift_rpm=6300.0, down_rpm=3000.0)
     for name, value in (fast if args.fast else slow).items():
         if getattr(args, name) is None:      # an explicit option always wins over the preset
             setattr(args, name, value)
@@ -617,6 +617,15 @@ def main():
             learned.append((dist - 150, dist + 30, 0.85 if a < 40 else 0.7))
             print("hit learned at lap distance %d (%.0f m/s^2): zone %d..%d factor %.2f" % (dist, a, dist - 150, dist + 30, learned[-1][2]), flush=True)
 
+        def hit_braking(sp_):
+            """a hard hit while braking: the braking number of the speed band (and the next one up) was too bold there; take it down for the rest of the run"""
+            if args.brake_adapt and shared.get("brake", 0.0) > 0.3 and padec:
+                bb = int(min(sp_, 79.0) // 10)
+                for b_ in (bb, bb + 1):
+                    if b_ in padec:
+                        padec[b_] = max(8.0, padec[b_] * 0.88)
+                print("hit under braking at %.0f m/s: braking numbers of the bands %d and %d lowered" % (sp_, bb * 10, bb * 10 + 10), flush=True)
+
         def zone_factor(w):
             f = gm.get(int(w.dist // 20), 1.0) if args.grip_map else 1.0
             for lo, hi, ff in args.slow_zone:
@@ -699,7 +708,7 @@ def main():
             if shared.get("brake", 0.0) > 0.1:
                 shared["brake_t"] = now
             if now - shared.get("brake_t", -9.0) < 0.5 and chain is track.main and args.brake_allow > 0:     # braking now or within the last half second (the pedal eases off before the load does)
-                a_long = max(0.0, a_long - args.brake_allow)     # our own braking (a GT car stops at 11 to 15 m/s^2 with 1.0 g of grip and downforce) is not a collision: only what is beyond it counts
+                a_long = max(0.0, a_long - max(args.brake_allow, 1.1 * padec.get(int(min(speed, 79.0) // 10), 0.0) if (args.brake_adapt and padec) else args.brake_allow))      # live: the braking the car has shown it can do is not a collision either     # our own braking (a GT car stops at 11 to 15 m/s^2 with 1.0 g of grip and downforce) is not a collision: only what is beyond it counts
             a_h = math.hypot(tel["accel"][0], a_long)
             peak_all = max(peak_all, a_h)
             hist = shared.setdefault("a_hist", [])
@@ -728,12 +737,15 @@ def main():
                 last_impact = now      # a kerb strike (real racing has them): a vertical-dominated jolt, or kerb/rumble surfaces under a wheel, on the racing line and below --kerb-max-accel; counted apart from impacts, the lap check allows a few
                 kerbs.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "speed": round(speed, 1)})
                 learn_hit(a_h, w.dist)
+                if a_h >= args.learn_min:
+                    hit_braking(speed)
                 print("t=%5.1f KERB %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
             elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
                 if chain is track.main:
                     learn_hit(a_h, w.dist)
+                    hit_braking(speed)
                 if args.live and args.live_adapt:
                     live["a_lat"] *= 0.93
                     live["a_brk"] *= 0.93
@@ -855,8 +867,9 @@ def main():
                 decel_plan = min(padec.get(db(speed), args.decel), padec.get(db(speed / 2.0), args.decel))
             window = 25.0 + speed * speed / (2.0 * decel_plan)
             if args.live and chain is track.main:
-                window = 25.0 + speed * speed / (2.0 * live["a_brk"] * (1.0 + args.live_brake_k * speed * speed))
-                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], live["a_brk"], kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None)
+                a_brk_p = decel_plan if args.brake_adapt else live["a_brk"]      # the braking map's number when it is on
+                window = 25.0 + speed * speed / (2.0 * a_brk_p * (1.0 + args.live_brake_k * speed * speed))
+                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None)
             else:
                 corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             in_lane = chain is track.pit and (lane_end_k is None or k <= lane_end_k)
@@ -942,15 +955,15 @@ def main():
                         hb_ = bslip.setdefault(int(min(sf, 0.6) * 20), [0, 0.0])      # front slip histogram while braking (0.05 steps) with the mean deceleration
                         hb_[0] += 1
                         hb_[1] += -tel["accel"][2]
-                        bev["lock"] = bev["lock"] or sf > 1.6 * args.brake_slip      # a front wheel well past the slip the brake holds (the rear axle runs slow in every stop, so only the front counts)
+                        bev["lock"] = bev["lock"] or sf > 2.5 * args.brake_slip      # a front wheel well past the slip the brake holds (the rear axle runs slow in every stop, so only the front counts)
                         bev["bands"].add(int(min(speed, 79.0) // 10))
                     elif bev["on"] and shared["brake"] < 0.02:
                         if bev["lock"]:
                             for bb in bev["bands"]:
-                                padec[bb] = max(8.0, padec.get(bb, args.decel) * 0.92)
+                                padec[bb] = max(8.0, padec.get(bb, args.decel) * 0.95)
                         elif bev["peak"] < 0.9 and len(bev["bands"]) >= 2:
                             for bb in bev["bands"]:
-                                padec[bb] = min(22.0, padec.get(bb, args.decel) * 1.04)
+                                padec[bb] = min(22.0, padec.get(bb, args.decel) * 1.08)
                         bev.update(on=False, peak=0.0, lock=False, bands=set())
             if any(any(k_ in sf_ for k_ in KERB_STR) for sf_ in tel["surfaces"]):
                 kerb_until = now + args.kerb_hold
