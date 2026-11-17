@@ -150,6 +150,11 @@ def judge(result, limit=CLEAN_LIMIT):
         return False, "%d impact(s) on the track, peak %.0f m/s^2, first %s" % (len(hits), result.get("peak_accel", 0), hits[0])
     if result.get("kerb_count", 0) > KERB_BUDGET:
         return False, "%d kerb strikes (budget %d), first %s" % (result["kerb_count"], KERB_BUDGET, (result.get("kerbs") or ["?"])[0])
+    if "track_limit_events" in result:
+        if result.get("lap_changes"):      # the out lap is not a valid lap (cold tyres): its track limits do not count, only the timed lap's
+            t_fly = result["lap_changes"][0]["t"]
+            fly = [e for e in (result.get("track_limit_list") or []) if e.get("t", 0) >= t_fly]
+            result = dict(result, track_limit_events=len(fly), track_limit_seconds=sum(e.get("seconds", 0) for e in fly), track_limit_list=fly)
     if "track_limit_events" in result:      # real-racing rule: a lap is void when all four wheels are beyond the white line; touching grass with one to three wheels is allowed
         if result["track_limit_events"] > TRACK_LIMIT_BUDGET:
             return False, "exceeded track limits %d time(s) (all four wheels beyond the white line, %.1f s), first %s" % (result["track_limit_events"], result.get("track_limit_seconds", 0), (result.get("track_limit_list") or ["?"])[0])

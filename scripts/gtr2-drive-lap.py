@@ -209,6 +209,11 @@ def main():
     ap.add_argument("--gm-use", type=float, default=0.85, help="--grip-map: share of the planned lateral load the car must reach in a bin before the factor may rise")
     ap.add_argument("--gm-slide", type=float, default=0.60, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
     ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
+    ap.add_argument("--outlap-scale", type=float, default=0.9, help="live mode: the out lap (before the first lap change) is driven at this share of the planned corner and braking speeds: it is not a valid lap (cold tyres), it only teaches the maps")
+    ap.add_argument("--no-memory", action="store_true", help="live mode: do not load or save what the maps learned (scripts/gtr2_driving/learned/<layout>_<car>.json)")
+    ap.add_argument("--geo-limits", action="store_true", help="experiment: also test the track limits geometrically (each tyre's position against the white lines from the waypoint widths) next to the surface rule, and record both in the result (geo_*)")
+    ap.add_argument("--wheel-track", type=float, default=1.65, help="--geo-limits: distance between the left and right wheels, metres")
+    ap.add_argument("--tyre-half", type=float, default=0.15, help="--geo-limits: half the tyre width, metres: a tyre is over the line when its whole width is beyond it")
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
     ap.add_argument("--kerb-hold", type=float, default=0.4)
@@ -588,6 +593,7 @@ def main():
         start_lap, last_lap, finish_at = first["lap"], first["lap"], None
         accum, prev_dist, by_distance = 0.0, None, False     # distance covered along the racing line: a fallback when the game's lap counter never moves (Hockenheim Short)
         off_samples = samples = 0
+        geo = {"events": [], "open": None, "last": -9.0, "n": 0, "surf_only": 0, "geo_only": 0, "both": 0, "margins": []}
         limit_events, limit_open, limit_last = [], None, -9.0      # track limits: all four wheels beyond the white line (no wheel on a ROAD or DRAIN surface)
         peak_pit = peak_all = 0.0
         impacts, last_impact, bumps = [], -1.0, 0
@@ -602,8 +608,17 @@ def main():
         bslip = {}
         bev = {"on": False, "peak": 0.0, "lock": False, "bands": set()}
         learned = []        # (from lap distance, to lap distance, factor)
+        mem_file = Path(__file__).resolve().parent / "gtr2_driving" / "learned" / ("%s_%s.json" % (Path(args.aiw).stem.lower(), (args.car_key or "car").replace("/", "_").lower()))
         gm = {}             # --grip-map: 20 m bin of lap distance -> factor on the planner's cornering grip
         gmh = {}
+        if args.grip_map and not args.no_memory and mem_file.exists():
+            try:
+                mem = json.loads(mem_file.read_text())
+                gm.update({int(k_): float(v_) for k_, v_ in mem.get("gm", {}).items()})
+                padec.update({int(k_): float(v_) for k_, v_ in mem.get("padec", {}).items()})
+                print("memory loaded from %s: %d grip bins, %d braking bands" % (mem_file.name, len(gm), len(padec)), flush=True)
+            except Exception as e_:
+                print("memory not read (%s)" % e_, flush=True)
         gms = {"bin": None, "use": 0.0, "slid": False, "wide": False, "up": 0, "down": 0, "t_dn": -9.0}
 
         def learn_hit(a, dist):
@@ -759,6 +774,38 @@ def main():
                     key = "%d %s" % (int(w.dist // 20) * 20, ",".join(sorted({s for s in tel["surfaces"] if any(b in s for b in OFF_ROAD)})))
                     off_buckets[key] = off_buckets.get(key, 0) + 1
                     off_lat.setdefault(key, []).append(lat)      # lateral offset from the line at those samples (sign: see trackmap.lateral)
+            if args.geo_limits and chain is track.main and speed > 3.0:
+                yr_ = math.radians(tel["yaw"])
+                hxc, hzc = -math.sin(yr_), -math.cos(yr_)
+                px_, pz_ = -hzc, hxc      # the lateral direction of Track.lateral, for the car's heading
+                side_out = {"l": 0, "r": 0}
+                gap_min = 99.0
+                for fa_, fb_ in ((1.35, 1), (1.35, -1), (-1.35, 1), (-1.35, -1)):      # four tyres: 1.35 m ahead or behind the centre, either side
+                    wx_, wz_ = x + fa_ * hxc + fb_ * args.wheel_track / 2 * px_, z + fa_ * hzc + fb_ * args.wheel_track / 2 * pz_
+                    wp_ = chain[track.nearest(chain, wx_, wz_, near=k, window=40)]
+                    lt_ = track.lateral(wp_, wx_, wz_)
+                    left_edge, right_edge = wp_.left - wp_.off, wp_.right + wp_.off      # the white lines, from the (shifted) line
+                    if lt_ - args.tyre_half > left_edge:
+                        side_out["l"] += 1
+                    if lt_ + args.tyre_half < -right_edge:
+                        side_out["r"] += 1
+                    gap_min = min(gap_min, left_edge - lt_, lt_ + right_edge)      # least distance from a tyre centre to a white line (negative: beyond it)
+                geo_out = side_out["l"] == 4 or side_out["r"] == 4
+                surf_out = all(not any(k_ in sf.upper() for k_ in ("ROAD", "DRAIN")) for sf in tel["surfaces"])
+                geo["n"] += 1
+                geo["both"] += 1 if (geo_out and surf_out) else 0
+                geo["geo_only"] += 1 if (geo_out and not surf_out) else 0
+                geo["surf_only"] += 1 if (surf_out and not geo_out) else 0
+                any_off = any(not any(k_ in sf.upper() for k_ in ("ROAD", "DRAIN")) for sf in tel["surfaces"])
+                geo.setdefault("m_off" if any_off else "m_on", []).append(round(gap_min, 2))      # nearest white line (tyre centre) while a tyre is off the road surface / while all are on it
+                if surf_out:
+                    geo["margins"].append(round(gap_min, 2))      # where the white line is, in tyre metres, when the surface rule says off
+                if geo_out:
+                    if geo["open"] is None or now - geo["last"] > 0.5:
+                        geo["open"] = {"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "seconds": 0.0, "surface": ",".join(sorted(set(tel["surfaces"])))}
+                        geo["events"].append(geo["open"])
+                    geo["open"]["seconds"] = round(geo["open"]["seconds"] + (now - geo["last"] if geo["last"] > 0 and now - geo["last"] < 0.2 else 0.02), 3)
+                    geo["last"] = now
             if chain is track.main:
                 if all(not any(k in sf.upper() for k in ("ROAD", "DRAIN")) for sf in tel["surfaces"]):
                     if limit_open is None or now - limit_last > 0.5:
@@ -872,6 +919,8 @@ def main():
                 corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None)
             else:
                 corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
+            if args.grip_map and chain is track.main and last_lap == start_lap:
+                corner_v *= args.outlap_scale
             in_lane = chain is track.pit and (lane_end_k is None or k <= lane_end_k)
             if chain is track.pit and not in_lane and not lane_end_said:
                 lane_end_said = True
@@ -974,7 +1023,7 @@ def main():
             if args.grip_map and chain is track.main and speed > 8.0:
                 wl_g = tel["wheels"]
                 b_now = int(w.dist // 20)
-                cap_g = args.lat_accel * zone_factor(w)
+                cap_g = args.lat_accel * zone_factor(w) * (args.outlap_scale ** 2 if last_lap == start_lap else 1.0)      # the out lap plans less: the use is measured against that
                 if gms["bin"] is not None and b_now != gms["bin"]:      # a 20 m bin is done: raise its factor if the car used the grip cleanly
                     if not gms["slid"] and not gms["wide"] and gms["use"] >= args.gm_use:
                         gm[gms["bin"]] = min(args.gm_max, gm.get(gms["bin"], 1.0) + args.gm_up)
@@ -1112,6 +1161,19 @@ def main():
             print("FOCUS TEST sim rate (1.0 = real time): before %s, Notepad in front %s, after %s" % tuple(
                 ("%.2f" % (a / b) if b > 1 else "n/a") for a, b in ft["sum"]), flush=True)
         result["lap_counter_missing"] = by_distance
+        if args.geo_limits:
+            mg = sorted(geo["margins"])
+            result["geo"] = {"samples": geo["n"], "both": geo["both"], "geometric_only": geo["geo_only"], "surface_only": geo["surf_only"],
+                             "events": [e_ for e_ in geo["events"] if e_["seconds"] >= 0.06][:10], "surface_off_margin_m": ([mg[0], mg[len(mg) // 10], mg[len(mg) // 2], mg[-1]] if mg else None),
+                             "gap_any_tyre_off_road_surface(min,p5,p50,p95,n)": (lambda v_: [v_[0], v_[len(v_) // 20], v_[len(v_) // 2], v_[-1 - len(v_) // 20], len(v_)] if v_ else None)(sorted(geo.get("m_off", []))),
+                             "gap_all_tyres_on_road_surface(min,p5,p50,p95,n)": (lambda v_: [v_[0], v_[len(v_) // 20], v_[len(v_) // 2], v_[-1 - len(v_) // 20], len(v_)] if v_ else None)(sorted(geo.get("m_on", [])))}
+        if args.grip_map and not args.no_memory and len(result["lap_changes"]) >= 2 and not [i_ for i_ in impacts if not i_.get("pit")]:      # a completed lap without impacts: remember what the maps learned
+            try:
+                mem_file.parent.mkdir(exist_ok=True)
+                mem_file.write_text(json.dumps({"gm": {str(k_): round(v_, 3) for k_, v_ in gm.items()}, "padec": {str(k_): round(v_, 2) for k_, v_ in padec.items()}}))
+                print("memory saved to %s" % mem_file.name, flush=True)
+            except Exception as e_:
+                print("memory not saved (%s)" % e_, flush=True)
         result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], grip_map=({str(k_ * 20): round(v_, 2) for k_, v_ in sorted(gm.items()) if abs(v_ - 1.0) > 0.01} if args.grip_map else None), grip_map_hist={k_: [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(gmh.items())}, brake_slip_hist={str(round(k_ / 20.0, 2)): [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(bslip.items())}, grip_map_up=gms["up"], grip_map_down=gms["down"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False

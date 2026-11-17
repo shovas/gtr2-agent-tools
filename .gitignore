@@ -9,3 +9,4 @@ scripts/gtr2_ui/baselines/local/*
 scripts/gtr2_ui/pair_scores_*.json
 !scripts/gtr2_ui/pair_scores_1280x720.json
 scripts/gtr2_driving/line_cache/
+scripts/gtr2_driving/learned/
