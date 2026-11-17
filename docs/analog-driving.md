@@ -207,3 +207,8 @@ Where the fixed model is ahead (about 3 s on Imola 4 in live mode): every corner
 7. Speed target noise: the corner speed comes from the curvature over 12 m of line; a rolling minimum over the next 40 m with one shared speed per corner stops the small slow-fast-slow changes through a corner.
 8. Gear choice for the exit (cargears) in live mode, and one gear lower for traction in slow corners.
 9. Tyre warm-up: out lap with weaving only on straights, so the timed lap starts with warm tyres (laps 2 and 3 are the fastest in the game).
+
+### Out lap sweep and the optimised line in live mode (2026-11-17)
+
+- Out lap sweep (`gtr2-outlap-sweep.py`, Imola 4, Maserati, no memory, out lap only): 100%: an impact (29 m/s^2); 99%: a 0.5 s track-limit event; 98%: a 0.4 s event; 97%: clean twice in a row (2 kerb strikes each). `--outlap-scale` default is now 0.97.
+- `--line-opt` in live mode (flying lap, no memory, outlap at 0.97): 127.9 s, the best live lap so far (the smoothed line gave 129.3 to 130.3 s), but not clean: 8 kerb strikes (budget 5) and one impact of 57.8 m/s^2 (peak 83) at (-315, 405), 0.7 s after the lap counter turned (the start straight, 58 m/s; vertical 24.6 and longitudinal 56.6, the same spot gives 14 to 19 m/s^2 kerb-type jolts on other crossings): a seam or bump in the start line, probably hit at a sideways offset the optimised line chose. The optimiser's offsets run from -4.7 to +5.9 m. The offline model said this line should be about 5 s faster; the lap is 1.4 to 2.4 s faster. Next: keep the optimised line off the start-line seam (a keep-out of the lap-line stretch or a contact-learned lateral penalty), check the kerb count at the 8 strikes, re-run.
