@@ -33,6 +33,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "gtr2_driving"))
 import pitzones  # noqa: E402
 import cargears  # noqa: E402
+import racingline  # noqa: E402
 import telemetry  # noqa: E402
 import vjoy  # noqa: E402
 import trackmap  # noqa: E402
@@ -161,6 +162,8 @@ def main():
     ap.add_argument("--tc-gain", type=float, default=0.0, help="traction-aware throttle: cut the throttle cap by this much per m/s^2 of measured lateral load above --tc-free (0: off)")
     ap.add_argument("--tc-free", type=float, default=6.0, help="lateral load (m/s^2) below which --tc-gain does nothing")
     ap.add_argument("--tc-floor", type=float, default=0.3, help="lowest throttle cap --tc-gain can reach")
+    ap.add_argument("--line-opt", action="store_true", help="drive a time-optimal racing line found from the track's widths and the grip/braking/power numbers (gtr2_driving/racingline.py; cached per layout); replaces --line-smooth")
+    ap.add_argument("--line-opt-margin", type=float, default=1.2, help="--line-opt: metres the car's side stays inside each white line")
     ap.add_argument("--line-smooth", type=int, default=0, help="passes of racing-line smoothing (0 = follow the AIW line as it is); a smoother line has lower curvature, so the speed planner allows more speed")
     ap.add_argument("--line-pin", type=float, default=0.0, help="with --line-smooth: keep the AIW line where the corner radius is under this many metres (tight chicanes have kerbs and bollards inside; 0 = smooth everywhere)")
     ap.add_argument("--line-margin", type=float, default=1.8, help="metres to stay inside the road edges when --line-smooth moves the line")
@@ -245,6 +248,11 @@ def main():
     STAGE = lambda name: print("STAGE %s epoch=%.3f" % (name, time.time()), flush=True)      # start-up timing: compared with gtr2-lap-check.py's own stamps
     STAGE("script_started")
     track = trackmap.Track(args.aiw)
+    if args.line_opt:
+        ph = racingline.Physics(lat=args.lat_accel, decel=args.decel, kk=args.live_k if args.live else 0.0)
+        offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True))
+        racingline.apply(track, offs)
+        print("racing line applied: offsets %.1f to %.1f m (mean %.1f)" % (offs.min(), offs.max(), abs(offs).mean()), flush=True)
     if args.line_smooth > 0:
         print("racing line smoothed (%d passes, margin %.1f m): largest move %.1f m" % (args.line_smooth, args.line_margin, track.smooth_line(track.main, args.line_smooth, args.line_margin, pin_radius=args.line_pin)), flush=True)
     tm = telemetry.Telemetry()
