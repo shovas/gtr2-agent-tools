@@ -24,7 +24,7 @@ NUM = r"[-+0-9.eE]+"
 
 
 class Waypoint:
-    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz")
+    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz", "off")
 
 
 def parse(path=DEFAULT):
@@ -36,6 +36,7 @@ def parse(path=DEFAULT):
         line = line.split("//")[0].strip()
         if line.startswith("wp_pos="):
             cur = Waypoint()
+            cur.off = 0.0       # sideways shift of the racing line from the file's line (smooth_line), positive to the road's right
             cur.i = len(wps)
             cur.x, cur.y, cur.z = map(float, re.findall(NUM, line.split("=", 1)[1])[:3])
             wps.append(cur)
@@ -190,6 +191,7 @@ class Track:
                 off[i] = 0.0 if pinned[i] else (max(-(left - margin), min(right - margin, o)) if left > margin and right > margin else 0.0)
         for w, b, o in zip(chain, base, off):
             w.x, w.z = b[0] + o * -b[3], b[1] + o * b[2]
+            w.off = o
         for k, w in enumerate(chain):
             nx = chain[(k + 1) % n]
             dx, dz = nx.x - w.x, nx.z - w.z
@@ -213,6 +215,40 @@ class Track:
                 best, at = c, total
             total += seg
             j = nj
+        return best, at
+
+    def speed_limit_live(self, chain, k, metres, a_lat, kk, a_brk, span=12.0, kb=0.0, scale=None):
+        """Like speed_limit, with grip that grows with speed (downforce): cornering grip a_lat * (1 + kk v^2) and braking grip
+        a_brk * (1 + kk v^2). A corner of curvature c is taken at v^2 c = a_lat (1 + kk v^2), i.e. v = sqrt(a_lat / (c - a_lat kk));
+        braking towards it from further back follows v^2 + 1/kk = (v_c^2 + 1/kk) exp(2 a_brk kk d). Returns (speed now, distance)."""
+        n = len(chain)
+        pts, total, j = [], 0.0, k
+        while total < metres + span:
+            pts.append((total, chain[j]))
+            nj = (j + 1) % n if chain is self.main else min(j + 1, n - 1)
+            if nj == j:
+                break
+            total += math.hypot(chain[nj].x - chain[j].x, chain[nj].z - chain[j].z)
+            j = nj
+        best, at, m = 150.0, 0.0, 0
+        inv = 1.0 / max(kk, 1e-9)
+        for d, a in pts:
+            if d > metres:
+                break
+            while m < len(pts) - 1 and pts[m][0] < d + span:
+                m += 1
+            b = pts[m][1]
+            ds = max(pts[m][0] - d, 1.0)
+            c = abs(math.atan2(a.hx * b.hz - a.hz * b.hx, a.hx * b.hx + a.hz * b.hz)) / ds
+            al = a_lat * (scale(a) if scale else 1.0)      # a slow zone scales the cornering grip at this waypoint
+            den = c - al * kk
+            vc = math.sqrt(al / den) if c > 1e-4 and den > 1e-6 else 150.0
+            if kb > 1e-9:
+                v = math.sqrt((vc * vc + 1.0 / kb) * math.exp(min(2.0 * a_brk * kb * d, 50.0)) - 1.0 / kb)
+            else:
+                v = math.sqrt(vc * vc + 2.0 * a_brk * d)       # braking grip constant with speed (measured: about 12 to 13 m/s^2 at every speed)
+            if v < best:
+                best, at = v, d
         return best, at
 
     def speed_limit(self, chain, k, metres, lat_accel, decel, span=12.0, tight_radius=0.0, tight_speed=99.0):

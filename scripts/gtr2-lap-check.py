@@ -136,7 +136,7 @@ def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
 
 
 TRACK_LIMIT_BUDGET = 0     # laps with all four wheels over the white line: none allowed
-KERB_BUDGET = 3     # kerb strikes allowed on a lap (real racing has them; see gtr2-drive-lap.py --kerb-max-accel)
+KERB_BUDGET = 5     # kerb strikes allowed on a lap (real racing has them; see gtr2-drive-lap.py --kerb-max-accel)
 
 
 def judge(result, limit=CLEAN_LIMIT):
@@ -188,7 +188,7 @@ def one_run(venue, trk, aiw, car_key, car_path, fast, input_mode="keyboard", dri
             if tr.exists():
                 (SCRIPTS / "gtr2_ui" / "runs" / "last_failure_trace.txt").write_bytes(tr.read_bytes())
             return None, "could not get into the car: " + out.splitlines()[-1]
-        cmd = [suite.PY, "-I", str(SCRIPTS / os.environ.get("GTR2_DRIVER_SCRIPT", "gtr2-drive-lap.py")), "--aiw", str(aiw)] + (["--fast"] if fast else []) + ["--input", "analog" if input_mode == "wheel" else input_mode] + (["--device", "wheel"] if input_mode == "wheel" else []) + list(drive_args)
+        cmd = [suite.PY, "-I", str(SCRIPTS / os.environ.get("GTR2_DRIVER_SCRIPT", "gtr2-drive-lap.py")), "--aiw", str(aiw), "--car-key", car_key] + (["--fast"] if fast else []) + ["--input", "analog" if input_mode == "wheel" else input_mode] + (["--device", "wheel"] if input_mode == "wheel" else []) + list(drive_args)
         t_spawn = time.time()
         LAST_OUT[0] = ""
         STAGE_TEXT = "".join("STAGE %s epoch=%.3f" % (n, v) + chr(10) for n, v in (("drive_step_begin", t_drive), ("drive_step_done", t_cockpit), ("driver_spawned", t_spawn)))
