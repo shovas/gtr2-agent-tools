@@ -625,6 +625,9 @@ def main():
                 mem = json.loads(mem_file.read_text())
                 gm.update({int(k_): float(v_) for k_, v_ in mem.get("gm", {}).items()})
                 padec.update({int(k_): float(v_) for k_, v_ in mem.get("padec", {}).items()})
+                if args.session_laps > 0 and mem.get("meta"):      # a later session (fresh tyres) starts from the push that worked, with a small step
+                    meta["push"] = meta["best_push"] = min(args.meta_max, max(args.meta_min, float(mem["meta"].get("push", args.meta_start))))
+                    meta["step"] = max(0.004, min(args.meta_step, float(mem["meta"].get("step", args.meta_step))))
                 print("memory loaded from %s: %d grip bins, %d braking bands" % (mem_file.name, len(gm), len(padec)), flush=True)
             except Exception as e_:
                 print("memory not read (%s)" % e_, flush=True)
@@ -1204,10 +1207,10 @@ def main():
                              "events": [e_ for e_ in geo["events"] if e_["seconds"] >= 0.06][:10], "surface_off_margin_m": ([mg[0], mg[len(mg) // 10], mg[len(mg) // 2], mg[-1]] if mg else None),
                              "gap_any_tyre_off_road_surface(min,p5,p50,p95,n)": (lambda v_: [v_[0], v_[len(v_) // 20], v_[len(v_) // 2], v_[-1 - len(v_) // 20], len(v_)] if v_ else None)(sorted(geo.get("m_off", []))),
                              "gap_all_tyres_on_road_surface(min,p5,p50,p95,n)": (lambda v_: [v_[0], v_[len(v_) // 20], v_[len(v_) // 2], v_[-1 - len(v_) // 20], len(v_)] if v_ else None)(sorted(geo.get("m_on", [])))}
-        if args.grip_map and not args.no_memory and len(result["lap_changes"]) >= 2 and not [i_ for i_ in impacts if not i_.get("pit")]:      # a completed lap without impacts: remember what the maps learned
+        if args.grip_map and not args.no_memory and len(result["lap_changes"]) >= 2 and (args.session_laps > 0 or not [i_ for i_ in impacts if not i_.get("pit")]):      # a completed lap without impacts: remember what the maps learned
             try:
                 mem_file.parent.mkdir(exist_ok=True)
-                mem_file.write_text(json.dumps({"gm": {str(k_): round(v_, 3) for k_, v_ in gm.items()}, "padec": {str(k_): round(v_, 2) for k_, v_ in padec.items()}}))
+                mem_file.write_text(json.dumps({"gm": {str(k_): round(v_, 3) for k_, v_ in gm.items()}, "padec": {str(k_): round(v_, 2) for k_, v_ in padec.items()}, "meta": ({"push": round(meta["best_push"], 4), "step": round(meta["step"], 4)} if args.session_laps > 0 and meta["best"] is not None else None)}))
                 print("memory saved to %s" % mem_file.name, flush=True)
             except Exception as e_:
                 print("memory not saved (%s)" % e_, flush=True)
