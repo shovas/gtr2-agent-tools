@@ -24,7 +24,7 @@ NUM = r"[-+0-9.eE]+"
 
 
 class Waypoint:
-    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz", "off")
+    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz", "off", "dry")
 
 
 def parse(path=DEFAULT):
@@ -36,6 +36,7 @@ def parse(path=DEFAULT):
         line = line.split("//")[0].strip()
         if line.startswith("wp_pos="):
             cur = Waypoint()
+            cur.dry = 0.0       # the game's own dry racing line: lateral offset from the file line (wp_path, first number); the line is the file line shifted by MINUS this along the positive-lateral direction (measured: that sign keeps every waypoint inside the road, the other leaves it at 36 of 947)
             cur.off = 0.0       # sideways shift of the racing line from the file's line (smooth_line), positive to the road's right
             cur.i = len(wps)
             cur.x, cur.y, cur.z = map(float, re.findall(NUM, line.split("=", 1)[1])[:3])
@@ -48,6 +49,8 @@ def parse(path=DEFAULT):
         elif line.startswith("wp_width="):
             v = list(map(float, re.findall(NUM, line.split("=", 1)[1])))
             cur.left, cur.right = v[0], v[1]
+        elif line.startswith("wp_path="):
+            cur.dry = float(re.findall(NUM, line.split("=", 1)[1])[0])
         elif line.startswith("wp_score="):
             cur.dist = float(re.findall(NUM, line.split("=", 1)[1])[1])
         elif line.startswith("wp_branchID="):

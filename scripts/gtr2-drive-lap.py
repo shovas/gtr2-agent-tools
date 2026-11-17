@@ -220,6 +220,7 @@ def main():
     ap.add_argument("--meta-step", type=float, default=0.02, help="--session-laps: starting push step")
     ap.add_argument("--meta-max", type=float, default=1.25)
     ap.add_argument("--meta-min", type=float, default=0.85)
+    ap.add_argument("--dry-line", action="store_true", help="drive the game's own dry racing line stored in the AIW (wp_path, the line the in-game AI follows) instead of the smoothed file line; the margin to the white lines is --line-margin")
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
     ap.add_argument("--kerb-hold", type=float, default=0.4)
@@ -309,7 +310,14 @@ def main():
         offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True))
         racingline.apply(track, offs)
         print("racing line applied: offsets %.1f to %.1f m (mean %.1f)" % (offs.min(), offs.max(), abs(offs).mean()), flush=True)
-    if args.line_smooth > 0:
+    if args.dry_line:
+        import numpy as np_
+        c0_, r0_, left_, right_ = racingline.geometry(track)
+        offs_ = np_.array([-w_.dry for w_ in track.main])
+        offs_ = np_.minimum(np_.maximum(offs_, -(right_ - args.line_margin)), left_ - args.line_margin)
+        racingline.apply(track, offs_)
+        print("the game's dry line applied: offsets %.1f to %.1f m (mean abs %.1f)" % (offs_.min(), offs_.max(), abs(offs_).mean()), flush=True)
+    if args.line_smooth > 0 and not args.dry_line:
         print("racing line smoothed (%d passes, margin %.1f m): largest move %.1f m" % (args.line_smooth, args.line_margin, track.smooth_line(track.main, args.line_smooth, args.line_margin, pin_radius=args.line_pin)), flush=True)
     tm = telemetry.Telemetry()
     first = tm.read()
