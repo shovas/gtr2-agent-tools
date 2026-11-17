@@ -212,5 +212,15 @@
    "improve",
    "A racing-line optimiser that finds a fast line from any track's width and the car's grip (off by default: the driver cannot follow its lines precisely enough yet)"
   ]
+ ],
+ "243dade": [
+  [
+   "highlight",
+   "The car can reverse out when it gets stuck against a wall and carries on"
+  ],
+  [
+   "improve",
+   "A better steering follower (about 40% less drift from the racing line) and a simulator to tune it; kerb and braking options for chasing faster laps"
+  ]
  ]
 }
