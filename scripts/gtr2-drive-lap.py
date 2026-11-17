@@ -637,7 +637,8 @@ def main():
                 padec.update({int(k_): float(v_) for k_, v_ in mem.get("padec", {}).items()})
                 if args.session_laps > 0 and mem.get("meta"):      # a later session (fresh tyres) starts from the push that worked, with a small step
                     meta["push"] = meta["best_push"] = min(args.meta_max, max(args.meta_min, float(mem["meta"].get("push", args.meta_start))))
-                    meta["step"] = max(0.004, min(args.meta_step, float(mem["meta"].get("step", args.meta_step))))
+                    meta["step"] = args.meta_step      # a new session starts with the full step again (the tyres are fresh)
+                    meta["prev_best"] = mem["meta"].get("best_time")
                 print("memory loaded from %s: %d grip bins, %d braking bands" % (mem_file.name, len(gm), len(padec)), flush=True)
             except Exception as e_:
                 print("memory not read (%s)" % e_, flush=True)
@@ -1222,7 +1223,9 @@ def main():
         if args.grip_map and not args.no_memory and len(result["lap_changes"]) >= 2 and (args.session_laps > 0 or not [i_ for i_ in impacts if not i_.get("pit")]):      # a completed lap without impacts: remember what the maps learned
             try:
                 mem_file.parent.mkdir(exist_ok=True)
-                mem_file.write_text(json.dumps({"gm": {str(k_): round(v_, 3) for k_, v_ in gm.items()}, "padec": {str(k_): round(v_, 2) for k_, v_ in padec.items()}, "meta": ({"push": round(meta["best_push"], 4), "step": round(meta["step"], 4)} if args.session_laps > 0 and meta["best"] is not None else None)}))
+                if args.session_laps > 0 and (meta["best"] is None or (meta.get("prev_best") is not None and meta["best"] >= meta["prev_best"] - 0.05)):
+                    raise RuntimeError("this session was not faster than the remembered one (%s s): memory kept" % meta.get("prev_best"))
+                mem_file.write_text(json.dumps({"gm": {str(k_): round(v_, 3) for k_, v_ in gm.items()}, "padec": {str(k_): round(v_, 2) for k_, v_ in padec.items()}, "meta": ({"push": round(meta["best_push"], 4), "step": round(meta["step"], 4), "best_time": round(meta["best"], 2)} if args.session_laps > 0 and meta["best"] is not None else None)}))
                 print("memory saved to %s" % mem_file.name, flush=True)
             except Exception as e_:
                 print("memory not saved (%s)" % e_, flush=True)
