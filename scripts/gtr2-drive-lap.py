@@ -237,6 +237,7 @@ def main():
     ap.add_argument("--brake-ki", type=float, default=8.0, help="--brake-ctl: pedal change per second per unit of slip error")
     ap.add_argument("--brake-adapt", action="store_true", help="the braking number of the planner follows the deceleration the car achieves at the lock-up threshold, per speed bin (starts at --decel)")
     ap.add_argument("--learn-hits", action="store_true", help="a hard hit (impact or kerb strike over --learn-min m/s^2) makes the planner take that stretch of the lap slower from then on (the out lap teaches the flying lap); nothing is set per track")
+    ap.add_argument("--learn-heal", type=float, default=0.05, help="--learn-hits in a lap session: each lap gives the zones learned from hits this much of their factor back")
     ap.add_argument("--learn-min", type=float, default=20.0)
     ap.add_argument("--debug-stop", type=float, nargs=2, metavar=("AT", "SECONDS"), default=None, help="test hook: at AT seconds brake to a stop and hold for SECONDS, to exercise --recover")
     ap.add_argument("--live-lat", type=float, default=10.0, help="--live: starting cornering grip at rest, m/s^2")
@@ -738,6 +739,8 @@ def main():
                         meta["laps"].append({"lap": tel["lap"] - 1, "time": round(lt_, 2), "clean": clean_, "impacts": d_imp, "track_limits": d_lim, "kerbs": d_kerb, "push": round(used_, 3), "next_push": round(meta["push"], 3)})
                         print("SESSION lap %d: %.2f s, %s (impacts %d, track limits %d, kerb strikes %d) push %.3f -> %.3f, best %s" % (tel["lap"] - 1, lt_, "clean" if clean_ else "NOT clean", d_imp, d_lim, d_kerb, used_, meta["push"], ("%.2f" % meta["best"]) if meta["best"] else "none"), flush=True)
                     meta["t"], meta["imp"], meta["lim"], meta["kerb"] = now, n_imp, n_lim, len(kerbs)
+                    if learned:      # zones learned from hits heal with the laps: a clean lap gives 5% back, a hit again takes it away
+                        learned[:] = [(lo_, hi_, min(1.0, f_ + args.learn_heal)) for lo_, hi_, f_ in learned if f_ + args.learn_heal < 1.0]
             if finish_at is None and last_lap == start_lap and accum >= 1.1 * args.laps_crossed * track.lap_length:
                 by_distance = True
                 result["lap_changes"].append({"t": round(now - t0, 1), "lap": start_lap + 1, "by_distance": True})     # a time for the tuner, from the distance rule
