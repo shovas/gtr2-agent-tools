@@ -50,7 +50,40 @@ class WallIndex:
                             self.cells.setdefault((cx, cz), []).append(item)
                     self.count += 1
 
-    def clearance(self, x, y, z, yaw, width=2.0, length=4.8, front=2.6, below=0.15, above=1.0, reach=6.0):
+    def point_gap(self, x, y, z, below=0.15, above=1.0, reach=4.0):
+        """Distance from the point to the nearest wall face meeting the height band [y - below, y + above] (None when none within `reach`)."""
+        best = None
+        for cx in range(int((x - reach) // CELL), int((x + reach) // CELL) + 1):
+            for cz in range(int((z - reach) // CELL), int((z + reach) // CELL) + 1):
+                for poly, inst, lo, hi in self.cells.get((cx, cz), ()):
+                    if hi < y - below or lo > y + above:
+                        continue
+                    d = 0.0 if garage._inside((x, z), poly) else min(garage._seg_dist((x, z), poly[a], poly[(a + 1) % 3]) for a in range(3))
+                    if best is None or d < best:
+                        best = d
+        return best if best is not None and best < reach else None
+
+    def free_widths(self, chain, step=0.5, need=1.5, max_width=40.0):
+        """[(left, right)] metres each side of every waypoint of `chain` that a car centre can use before a wall face comes within `need` m
+        (the car's half width plus a margin); the waypoints' own road widths are the upper limit. Left/right: physical sides of the direction of travel; trackmap.lateral() is positive to the LEFT."""
+        out = []
+        for w in chain:
+            res = []
+            for sign, road in ((1.0, w.left), (-1.0, w.right)):      # (-hz, hx) is the car's physical left, limited by wp_width's left (as in trackmap.smooth_line)
+                free = min(road, max_width)
+                off = step
+                while off <= free + 1e-9:
+                    px, pz = w.x + sign * off * (-w.hz), w.z + sign * off * w.hx
+                    g = self.point_gap(px, w.y, pz)
+                    if g is not None and g < need:
+                        free = max(0.0, off - step)
+                        break
+                    off += step
+                res.append(free)
+            out.append((res[0], res[1]))
+        return out
+
+    def clearance(self,x, y, z, yaw, width=2.0, length=4.8, front=2.6, below=0.15, above=1.0, reach=6.0):
         """(gap m, instance) to the nearest wall face within `reach` m whose height range meets [y - below, y + above]; (None, None) when none is near."""
         here = garage.footprint(x, z, yaw, width, length, front)
         xs, zs = [p[0] for p in here], [p[1] for p in here]

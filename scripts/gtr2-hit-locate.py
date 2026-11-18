@@ -53,7 +53,7 @@ def place(track, cums, x, z, pit_hint):
     w = chain[k]
     lat = track.lateral(w, x, z)
     return {"chain": name, "k": k, "of": len(chain), "dist_m": cums[name][k], "length_m": cums[name][-1], "lat": lat, "left": w.left, "right": w.right,
-            "off_centre_edge_m": (w.right - lat) if lat >= 0 else (w.left + lat), "wp_dist": d}
+            "off_centre_edge_m": (w.left - lat) if lat >= 0 else (w.right + lat), "wp_dist": d}
 
 
 def near_structures(trk, pts, radius):
@@ -117,7 +117,7 @@ def main():
         p = place(track, cums, h["x"], h["z"], bool(h.get("pit")))
         print("t=%6.1f s  a=%5.1f  (%.1f, %.1f)  %s waypoint %d/%d, %.0f m along (%.0f%% of %.0f m), %.1f m %s of the centre line (road %.1f left / %.1f right), %.1f m to the road edge" % (
             h.get("t", 0), h.get("a", 0), h["x"], h["z"], p["chain"], p["k"], p["of"], p["dist_m"], 100.0 * p["dist_m"] / max(p["length_m"], 1.0), p["length_m"],
-            abs(p["lat"]), "right" if p["lat"] >= 0 else "left", p["left"], p["right"], p["off_centre_edge_m"]))
+            abs(p["lat"]), "left" if p["lat"] >= 0 else "right", p["left"], p["right"], p["off_centre_edge_m"]))
         walls = sorted(((d, i, hr) for i, (d, hr, st) in s.items() if st), key=lambda r: r[0])[:3]
         floors = sorted(((d, i, hr) for i, (d, hr, st) in s.items() if not st), key=lambda r: r[0])[:2]
         for d, inst, hr in walls:
