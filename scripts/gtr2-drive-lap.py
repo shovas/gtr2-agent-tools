@@ -168,7 +168,8 @@ def main():
     ap.add_argument("--line-opt-margin", type=float, default=1.2, help="--line-opt: metres the car's side stays inside each white line")
     ap.add_argument("--follower", choices=("pursuit", "stanley", "designed"), default="pursuit", help="how the steering follows the line: pursuit (aim at a point look-ahead metres ahead, the proven default) or stanley (cross-track and heading error at the car plus curvature feed-forward, with a steering gain learned from the car's own yaw response)")
     ap.add_argument("--steer-id", action="store_true", help="identify the steering while driving (yaw rate per steering command per m/s, per 10 m/s speed bin, steady stretches only) and record it in the result; does not change the steering yet. On in live mode")
-    ap.add_argument("--steer-live", action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
+    ap.add_argument("--brake-ff", type=float, default=0.0, help="brake feedforward share (0 = off): the brake follows the deceleration the planned speed curve asks for (as a share of the planned deceleration) plus the speed-error term")
+    ap.add_argument("--steer-live",action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
     ap.add_argument("--steer-live-ref", type=float, default=0.8, help="--steer-live: reference yaw response, rad/s per unit of steering command")
     ap.add_argument("--steer-live-min", type=float, default=0.7)
     ap.add_argument("--steer-live-max", type=float, default=1.4)
@@ -693,6 +694,7 @@ def main():
                 if lo <= w.dist <= hi:
                     f = min(f, ff)
             return f
+        bff = {"t": 0.0, "tv": 0.0, "a": 0.0}      # brake feedforward state (--brake-ff)
         sid = {"hist": [], "k": {}}      # steering identification (--steer-id): samples of yaw rate per steering command per m/s, by speed bin
         stn = {"g": {},"last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
         gearcar = cargears.load(args.car_key) if args.gear_opt and args.car_key else None
@@ -1046,6 +1048,19 @@ def main():
                 target_v = max(4.0, target_v * max(args.guard_floor, 1.0 - over / args.guard_span))
             shared["duty"] = max(0.0, min(1.0, 0.45 + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
             shared["brake"] = max(0.0, min(args.brake_max, args.brake_gain * (speed - target_v - args.brake_deadband)))
+            if args.brake_ff > 0.0 and chain is track.main and box_target is None and not merging:
+                # feedforward: the deceleration the speed curve asks for right now (falling target speed x speed), as a share of what the braking map says the car can do,
+                # added to the speed-error brake so the brake starts with the curve instead of after the error has built up
+                dt_f = now - bff["t"]
+                if 0.0 < dt_f < 0.2:
+                    a_raw = max(0.0, (bff["tv"] - target_v) / dt_f) * 1.0
+                    bff["a"] += min(1.0, dt_f / 0.15) * (a_raw - bff["a"])
+                else:
+                    bff["a"] = 0.0
+                bff["t"], bff["tv"] = now, target_v
+                if speed > target_v - 1.5 and bff["a"] > 0.5:
+                    ff_ = min(1.0, args.brake_ff * bff["a"] / max(decel_plan, 4.0))
+                    shared["brake"] = min(args.brake_max, max(shared["brake"], ff_ + shared["brake"] * 0.5))
             if box_target is not None or merging:       # creeping out of the box: gentle throttle (a full launch reached 6.5 m/s in 3 m)
                 cap = args.box_throttle
                 if box_target is not None and not (speed < 0.4 and now - t0 > 2.5):      # the straight run out of the box: a walking-pace roll over the sill at the garage mouth (0.4 reached it at 3.5 to 4 m/s and jolted 15 to 54 m/s^2); 0.15 gives 2 m/s, no jolt. A car that has not moved after 2.5 s gets the old ceiling
