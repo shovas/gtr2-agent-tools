@@ -290,3 +290,35 @@ One live flying lap each (Maserati, `--no-memory`, no per-track tuning): Monza 4
 Look-ahead slope (`--lookahead 5.0 S`, Spa 4 out lap, lateral rms / p95 / largest offset / track-limit events): 0.6: 2.8 / 4.4 / 17.6 m / 3 and a 228 m/s^2 wall hit; 0.9: 3.3 / 6.0 / 29.9 m / 6; 1.2 (current): 1.8 / 3.6 / 6.1 m / 3; 1.5: 2.4 / 5.0 / 9.1 m / 4 and the Wall02 hit; 1.8: 3.0 / 6.4 / 11 m / 13. The default 1.2 is at the optimum for the pursuit follower; the chicane swings need another approach (a look-ahead that follows the curvature, or the Stanley/designed followers with a gain from steering identification).
 
 Wall-limited road widths (`hitgeom.WallIndex.free_widths`, offline only, 8 to 47 s per track): walls inside the AIW road widths narrow 116 of 1360 waypoints at Spa (by 1 to 1.5 m, up to 3 m) and 55 of 947 at Imola; not wired into the line smoothing yet. Side convention: (-hz, hx) is the car's physical left and is limited by wp_width's left (`trackmap.smooth_line`); `lateral()` is positive to the left, the docstrings that say "right" are wrong.
+
+## Signal-driven driving: what the maps and the follower are, and how to make them respond like a driver (strategy, 2026-11-18)
+
+**What exists now.** *Grip map*: one factor per 20 m of lap distance that multiplies the planned cornering speed (priors: 10 m/s^2 lateral). It rises 10% when the car used at least 85% of the planned lateral load cleanly, falls 2% on a slide (tyre grip fraction under 0.5), 8% on six bins after a track-limit event, and heals 4% per clean lap. *Braking map*: the deceleration the car has shown it can do, one number per 10 m/s speed band (prior 12 m/s^2): probed up 8% when clean, down 5% when the front slips over 2.5 times the target (lock), down 12% after a hit under braking, healing 3% per lap. *Steering follower*: pure pursuit: aim at a point 5 m + 1.2 s of speed ahead on the line, steering = heading error / 25 degrees - yaw rate / 90, with fixed gains (and a hand-speed limit); the pedals are a proportional law on speed error (gain 0.45, deadband 0.3 m/s). The maps learn a *number* from outcomes lap by lap; the follower and pedal laws learn nothing.
+
+**The ideal.** Respond to the cues a driver feels, in the moment, with a small bounded correction, and keep what worked for next lap. Signals the driver already has: per-wheel grip fraction, wheel speed (slip), load, lateral/longitudinal/vertical acceleration, yaw rate, velocity direction against heading (sideslip), steering command, surface, tyre temperature and wear.
+
+**Steering, from cues**
+1. Understeer / scrub: measured yaw rate against what the identified response predicts for the steering given (`--steer-id`), plus a low front grip fraction while steering is large. Response: stop adding lock (clamp steering at the angle the front tyres have shown they can use at this speed: the measured peak of lateral force against steering), ease throttle or brake, and let the car run the wider arc.
+2. Oversteer / spin: sideslip angle (velocity direction against heading) and rear grip fraction. Response: steer towards the velocity vector (counter-steer proportional to the slip angle and its rate), ease throttle.
+3. Pursuit in velocity terms: aim the velocity vector, not the heading, at the look-ahead point, so a slide is corrected by the same law.
+4. Gains from the car: identify gain and lag online (recursive least squares on yaw rate against command history, only with enough excitation), set the loop gain by pole placement for a chosen closed-loop time constant; fall back to the fixed gains when the estimate is not confident or a divergence monitor trips (the earlier `--st-learn` collapsed because its estimate fed itself). The static scaling tried today (`--steer-live`) ignored the lag.
+5. Look-ahead from error: hill-climb the look-ahead time lap by lap against the lateral-error cost (like the session push), per section.
+
+**Braking, from cues**
+1. Brake points like a driver's markers: for each braking zone record the entry-speed error at the corner (arrived 3 m/s over: brake earlier by that distance next lap; arrived under with no lock: later). Harder and shorter without lock is the goal, so the cost is stopping distance at no lock.
+2. Peak-seeking pedal: raise the pedal until deceleration stops rising or slip passes the tyre's peak (measure the decel-against-slip curve per speed band and hold the slip at its top); the braking map becomes a result, not a probe.
+3. Trail braking: release the brake as lateral load rises (friction circle: brake share about sqrt(1 - (ay/ay_max)^2)).
+4. Rear slip and traction on exit: the `--dyn` wheel-slip control already does the simple version; seek the throttle that holds drive-wheel slip at its best value.
+
+**Grip map, from cues.** Replace probing with an estimate of the tyre limit from the grip fractions against load (downforce is fitted already), share information between neighbouring bins, keep a confidence per bin, track tyre temperature and wear as slow drifts.
+
+**Experiments for open windows** (each opt-in, judged by a low-noise metric, not lap time alone; bisect any scalar; two runs; results recorded here):
+- E1 Instrument only: log sideslip, yaw ratio, front and rear grip fractions over 10 laps; check whether they lead track-limit events and spins by a useful time. No control change.
+- E2 Steering clamp at the measured useful angle (Spa Bus Stop swings; metric lateral rms and largest offset on the out lap).
+- E3 Velocity-vector pursuit against heading pursuit (same metric).
+- E4 Online gain-and-lag identification with pole placement and a divergence monitor (Spa, Imola, Monza out laps).
+- E5 Per-corner brake-point learner (metric: entry-speed error, then lap time over a 10-lap session).
+- E6 Peak-seeking pedal on a straight with repeated stops from 60 m/s (metric: stopping distance, no lock).
+- E7 Trail braking by friction circle.
+- E8 Grip map with confidence and neighbour sharing (metric: laps to the first clean fast lap).
+Safeguards for all: bounded corrections, a fallback to the fixed prior when confidence is low, a divergence monitor, and the garage/pit/merge paths keep the fixed laws.
