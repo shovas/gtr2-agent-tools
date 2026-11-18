@@ -322,3 +322,11 @@ Wall-limited road widths (`hitgeom.WallIndex.free_widths`, offline only, 8 to 47
 - E7 Trail braking by friction circle.
 - E8 Grip map with confidence and neighbour sharing (metric: laps to the first clean fast lap).
 Safeguards for all: bounded corrections, a fallback to the fixed prior when confidence is low, a divergence monitor, and the garage/pit/merge paths keep the fixed laws.
+
+## Gravel-trap escape (2026-11-18)
+
+Cause found in a Monza 4 live session (lap 4: 169.8 s, 40 s lost): the car arrived at the first chicane wide of the line, ran through into the gravel (30 m from the line) and crept out at 0 to 2.5 m/s for 37 s: the wheel-slip control (`--dyn`) cuts the throttle to 25% of its value whenever the driven wheels spin, which in gravel is always, and the stall recovery reversed again and again. User tip: in a trap use 1st gear and a steady, high but not maximum engine speed; some wheel spin is useful.
+
+Test harness `--trap-test DIST` (Monza 4, DIST 1230, `--quick`): slow to 18 m/s, steer left off the road until stopped (all four tyres off the road, under 2 m/s for 1 s: 12.6 m from the line), then drive normally and time the escape to the first tyre on the road. Very repeatable (baseline 27.9 s and 28.3 s; the two 0.8 runs both 15.5 s). `--trap-escape` skips the throttle cut and holds the engine at `--trap-rpm` of the rev limit (duty = 0.5 + 3 (target - rpm share), 0.15 to 1.0) while all four tyres are off the road below 8 m/s. Escape time by held engine speed: 0.4 74 s (6 reversals), 0.6 24.9 and 34.6 s, 0.7 22.9 s, 0.8 15.5 s, 0.9 18.0 s, 1.0 17.0 s; baseline 28 s. Default 0.8, on in live mode. A steering limit of 0.35 while crawling (`--trap-steer`) was worse (52 s: the car rolls along its heading and stalls); off (1.0). Longer patience before reversing (`--trap-patience`) is untested: 1.0. Next: a wheel-spin ceiling (some spin, not maximum), other traps and gravel types, other cars.
+
+Also added (live mode, untested): `--lat-guard` (target speed falls as the sideways error beyond 2.5 m grows: floor 0.5, span 8 m) and `--limit-brake-pen 0.10` (a track-limit event within 4 s of hard braking lowers the braking numbers of the speed bands between the limit speed and the braking start speed by 10%).

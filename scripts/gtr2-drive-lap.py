@@ -169,6 +169,18 @@ def main():
     ap.add_argument("--follower", choices=("pursuit", "stanley", "designed"), default="pursuit", help="how the steering follows the line: pursuit (aim at a point look-ahead metres ahead, the proven default) or stanley (cross-track and heading error at the car plus curvature feed-forward, with a steering gain learned from the car's own yaw response)")
     ap.add_argument("--steer-id", action="store_true", help="identify the steering while driving (yaw rate per steering command per m/s, per 10 m/s speed bin, steady stretches only) and record it in the result; does not change the steering yet. On in live mode")
     ap.add_argument("--brake-ff", type=float, default=0.0, help="brake feedforward share (0 = off): the brake follows the deceleration the planned speed curve asks for (as a share of the planned deceleration) plus the speed-error term")
+    ap.add_argument("--trap-escape", action="store_true", help="stuck in a gravel or sand trap (all four tyres off the road, below 8 m/s): hold a steady engine speed (--trap-rpm of the rev limit) in the lowest gear instead of the wheel-slip control's throttle cuts; a driver's technique, to be proven by --trap-test. On in live mode when proven")
+    ap.add_argument("--trap-rpm", type=float, default=0.8, help="--trap-escape: engine speed to hold, share of the rev limit")
+    ap.add_argument("--trap-steer", type=float, default=1.0, help="--trap-escape: largest steering (1 = full lock) while crawling in a trap (1 = no limit)")
+    ap.add_argument("--trap-patience", type=float, default=1.0, help="--trap-escape: the stall recovery waits this many times longer before reversing out of a trap (the car is creeping, not stuck)")
+    ap.add_argument("--trap-test",type=float, default=0.0, help="experiment: at this lap distance (m) on the first lap slow to --trap-speed, steer off to the left until stopped in the trap (all four tyres off the road, below 2 m/s for 1 s), then drive normally and time the escape back onto the road (result trap_test); the run ends after it")
+    ap.add_argument("--trap-speed", type=float, default=18.0)
+    ap.add_argument("--trap-pull", type=float, default=35.0, help="--trap-test: degrees of heading offset towards the left while running off")
+    ap.add_argument("--lat-guard", action="store_true", help="a driver who is running wide slows: the target speed falls as the sideways error from the line grows beyond --lat-free (floor --lat-floor); on in live mode")
+    ap.add_argument("--lat-free", type=float, default=2.5)
+    ap.add_argument("--lat-span", type=float, default=8.0)
+    ap.add_argument("--lat-floor", type=float, default=0.5)
+    ap.add_argument("--limit-brake-pen", type=float, default=0.10, help="live braking map: a track-limit event within 4 s of hard braking lowers the braking numbers of the speed bands from the limit speed up to the braking start speed by this share (0 = off)")
     ap.add_argument("--hit-geometry", action="store_true", help="classify a jolt by distance: it is an impact only when a near-vertical face of the track's own collision meshes (wall, barrier, fence) is within --hit-gap of the car's outline; with no structure there it is a bump (seam, kerb, dip). Every jolt over the limit is recorded with its distance and the structure's name (result geo_hits). On in live mode")
     ap.add_argument("--hit-gap", type=float, default=0.4, help="--hit-geometry: gap in metres to a structure that still counts as touching (position and heading are measured to about this much)")
     ap.add_argument("--steer-live", action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
@@ -316,7 +328,7 @@ def main():
             args.kerb_vert_share = 0.35
         if args.impact_track <= 0:
             args.impact_track = 20.0
-        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id", "hit_geometry"):
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id", "hit_geometry", "lat_guard", "trap_escape"):
             setattr(args, name, True)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
@@ -708,6 +720,8 @@ def main():
             except Exception as e:      # never stop a run for it: the acceleration rules stay
                 walls = None
                 print("hit geometry unavailable (%s: %s): acceleration rules only" % (type(e).__name__, e), flush=True)
+        tt = {"phase": 0, "stuck_since": None, "t_stuck": None, "escape_s": None, "dist0": None}      # --trap-test state
+        bz = {"t": -99.0, "v0": 0.0}      # the last hard braking: when it was last on and the speed it began from
         geo_hits = []      # every jolt over the limit with its distance to the nearest structure (result geo_hits)
         bff = {"t": 0.0, "tv": 0.0, "a": 0.0}      # brake feedforward state (--brake-ff)
         sid = {"hist": [], "k": {}}      # steering identification (--steer-id): samples of yaw rate per steering command per m/s, by speed bin
@@ -922,6 +936,12 @@ def main():
                     if limit_open is None or now - limit_last > 0.5:
                         limit_open = {"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "seconds": 0.0, "surface": ",".join(sorted(set(tel["surfaces"])))}
                         limit_events.append(limit_open)
+                        if args.brake_adapt and padec and args.limit_brake_pen > 0 and now - bz["t"] < 4.0 and tt["phase"] == 0 and last_lap != start_lap:      # off the road soon after hard braking: the braking numbers of the bands braked from were too bold (Monza 4, first chicane: ran through into the gravel)
+                            lo_b, hi_b = int(min(speed, 79.0) // 10), int(min(bz["v0"], 79.0) // 10)
+                            for b_ in range(lo_b, hi_b + 1):
+                                if b_ in padec:
+                                    padec[b_] = max(8.0, padec[b_] * (1.0 - args.limit_brake_pen))
+                            print("t=%5.1f off the road after braking from %.0f m/s: braking numbers of the bands %d to %d lowered" % (now - t0, bz["v0"], lo_b * 10, hi_b * 10), flush=True)
                         if args.grip_map:      # live response: the corners before this point were taken too fast to stay inside the white lines; take their grip factor down now and for the next pass
                             for bb in range(int(w.dist // 20) - 6, int(w.dist // 20) + 1):
                                 gm[bb] = max(args.gm_min, gm.get(bb, 1.0) * (1.0 - args.gm_limit))
@@ -971,6 +991,30 @@ def main():
             want = track.yaw_of(target.x - target.hz * lat_t - x, target.z + target.hx * lat_t - z)
             lat = lat - lat_here
             pull = 0.0 if chain is track.pit else max(-20.0, min(20.0, args.center_gain * lat))
+            off4 = chain is track.main and all(not any(k_ in sf.upper() for k_ in ("ROAD", "DRAIN")) for sf in tel["surfaces"])      # all four tyres off the road surface
+            on_road = any(any(k_ in sf.upper() for k_ in ("ROAD", "DRAIN")) for sf in tel["surfaces"])
+            if args.trap_test > 0 and chain is track.main and tt["phase"] < 3 and not merging and box_target is None:
+                if tt["phase"] == 0 and now - t0 > 20.0 and abs(w.dist - args.trap_test) < 12.0 and last_lap == start_lap:
+                    tt["phase"], tt["dist0"] = 1, w.dist
+                    print("t=%5.1f trap test: running off to the left at lap distance %d, speed %.1f" % (now - t0, w.dist, speed), flush=True)
+                if tt["phase"] == 1:
+                    pull = -args.trap_pull
+                    if off4 and speed < 2.0:
+                        tt["stuck_since"] = tt["stuck_since"] or now
+                        if now - tt["stuck_since"] > 1.0:
+                            tt["phase"], tt["t_stuck"] = 2, now
+                            print("t=%5.1f trap test: stopped in the trap at (%.0f, %.0f), %.1f m from the line: escaping (trap-escape %s)" % (now - t0, x, z, abs(lat), "on" if args.trap_escape else "off"), flush=True)
+                    else:
+                        tt["stuck_since"] = None
+                elif tt["phase"] == 2:
+                    if on_road:
+                        tt["phase"], tt["escape_s"] = 3, round(now - tt["t_stuck"], 2)
+                        print("t=%5.1f trap test: back on the road after %.1f s" % (now - t0, tt["escape_s"]), flush=True)
+                    elif now - tt["t_stuck"] > 90.0:
+                        tt["phase"] = 3
+                        print("t=%5.1f trap test: not out after 90 s" % (now - t0), flush=True)
+                if tt["phase"] == 3:
+                    result["outcome"] = "trap_test"; break
             if box_target is not None:
                 if box_target == "heading":
                     done = chain is not track.pit or abs(track.lateral(w, x, z)) <= box_stop_lat or math.hypot(x - box_start[0], z - box_start[1]) > args.box_max
@@ -1032,6 +1076,8 @@ def main():
                 del sid["hist"][:-12]
                 if abs(cmd_) > 0.06 and speed > 6.0 and len(sid["hist"]) >= 12 and max(sid["hist"]) - min(sid["hist"]) < 0.04 and shared["brake"] < 0.1 and abs(tel["accel"][0]) < 9.0:
                     sid["k"].setdefault(int(min(speed, 79.0) // 10), []).append(math.radians(yawrate) / (cmd_ * speed))
+            if args.trap_escape and off4 and speed < 6.0 and tt["phase"] != 1 and args.trap_steer < 1.0:
+                shared["steer"] = max(-args.trap_steer, min(args.trap_steer, shared["steer"]))      # full lock at a crawl in gravel only scrubs the front tyres sideways; a driver straightens the wheels and drives out
             if chain is track.main and speed > 10.0:
                 stn["lat2"] += lat * lat
                 stn["lat_n"] += 1
@@ -1072,6 +1118,12 @@ def main():
             over = abs(herr) - args.guard_deg
             if over > 0:
                 target_v = max(4.0, target_v * max(args.guard_floor, 1.0 - over / args.guard_span))
+            if args.lat_guard and chain is track.main and not merging and box_target is None and speed > 12.0 and tt["phase"] == 0:
+                over_l = abs(lat) - args.lat_free      # running wide of the line: a driver lifts and brakes at once
+                if over_l > 0:
+                    target_v = max(4.0, target_v * max(args.lat_floor, 1.0 - over_l / args.lat_span))
+            if args.trap_test > 0 and chain is track.main and tt["phase"] in (0, 1) and (tt["phase"] == 1 or abs(w.dist - args.trap_test) < 250.0 and now - t0 > 20.0 and last_lap == start_lap):
+                target_v = min(target_v, args.trap_speed)      # trap test: arrive and run off slowly
             shared["duty"] = max(0.0, min(1.0, 0.45 + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
             shared["brake"] = max(0.0, min(args.brake_max, args.brake_gain * (speed - target_v - args.brake_deadband)))
             if args.brake_ff > 0.0 and chain is track.main and box_target is None and not merging:
@@ -1127,8 +1179,19 @@ def main():
                 if shared["brake"] > 0.1:
                     dyn["abs_n"] += 1 if dyn["abs"] < 0.9 else 0
                     dyn["brk_n"] += 1
-                shared["duty"] *= dyn["tc"]
+                if not (args.trap_escape and off4 and speed < 8.0 and tt["phase"] != 1):
+                    shared["duty"] *= dyn["tc"]      # in a trap the slip control would cut the throttle on every spin of the wheels: the escape holds the engine speed instead (below)
                 shared["brake"] *= dyn["abs"]
+            if chain is track.main and off4 and tt["phase"] == 1:
+                shared["duty"], shared["brake"] = 0.0, 0.4      # trap test: let the trap stop the car
+            elif args.trap_escape and chain is track.main and off4 and speed < 8.0 and tel["gear"] >= 1:
+                lim_ = gearcar["limit"] if gearcar else 7500.0
+                shared["duty"] = max(0.15, min(1.0, 0.5 + 3.0 * (args.trap_rpm - tel["rpm"] / lim_)))      # steady engine speed, not a flat throttle: the wheels dig in when the throttle is high and stall when it is low
+                shared["brake"] = 0.0
+            if shared["brake"] > 0.3:
+                if now - bz["t"] > 1.0:
+                    bz["v0"] = speed      # a braking zone starts
+                bz["t"] = now
             if args.brake_ctl and chain is track.main and analog:
                 dt_b = max(0.001, min(0.2, now - bcap.get("t", now - 0.02)))
                 bcap["t"] = now
@@ -1274,7 +1337,7 @@ def main():
                         rec["still"] = now
                 else:
                     rec["still"] = None
-                if rec["phase"] is None and rec["still"] is not None and now - rec["still"] > args.recover_after and now - t0 > 20.0 and rec["n"] < 6:
+                if rec["phase"] is None and rec["still"] is not None and now - rec["still"] > args.recover_after * (args.trap_patience if (args.trap_escape and off4) else 1.0) and now - t0 > 20.0 and rec["n"] < 6:
                     rec.update(phase="reverse", n=rec["n"] + 1, t=now, x=x, z=z, shift=0.0)
                     print("t=%5.1f stopped at (%.0f, %.0f): reversing out (attempt %d)" % (now - t0, x, z, rec["n"]), flush=True)
                 if rec["phase"] == "reverse":
@@ -1318,6 +1381,8 @@ def main():
         result["lap_counter_missing"] = by_distance
         if args.session_laps > 0:
             result["session_laps"] = meta["laps"]
+        if args.trap_test > 0:
+            result["trap_test"] = {"phase": tt["phase"], "escape_s": tt["escape_s"], "dist": tt["dist0"], "trap_escape": args.trap_escape, "trap_rpm": args.trap_rpm}
         if args.hit_geometry:
             result["geo_hits"] = geo_hits[:60]
         if args.steer_id:
