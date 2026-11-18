@@ -224,6 +224,9 @@ def main():
     ap.add_argument("--meta-min", type=float, default=0.85)
     ap.add_argument("--line-seed-dry", action="store_true", help="with --line-opt: the optimiser starts from the game's own dry line (wp_path in the AIW) and refines it with the driver's own physics; the result is the driver's line, not the file's")
     ap.add_argument("--dry-line", action="store_true", help="drive the game's own dry racing line stored in the AIW (wp_path, the line the in-game AI follows) instead of the smoothed file line; the margin to the white lines is --line-margin")
+    ap.add_argument("--limit-guard", action="store_true", help="track-limit prevention: when three tyres are already off the road surface (the fourth would void the lap), cut the throttle and steer back towards the line until a tyre is back on the road. Live mode turns it on")
+    ap.add_argument("--limit-guard-throttle", type=float, default=0.3, help="--limit-guard: throttle ceiling while three tyres are off the road")
+    ap.add_argument("--limit-guard-steer", type=float, default=0.15, help="--limit-guard: extra steering towards the line (units of the steering command) while three tyres are off the road, four times that if all four")
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
     ap.add_argument("--kerb-hold", type=float, default=0.4)
@@ -300,7 +303,7 @@ def main():
     if args.fast and not args.fixed:      # the default: live, dynamic, feedback driven; the numbers below are only the starting priors the maps adapt from
         if args.impact_track <= 0:
             args.impact_track = 20.0
-        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt"):
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard"):
             setattr(args, name, True)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
@@ -636,6 +639,7 @@ def main():
         mem_file = Path(__file__).resolve().parent / "gtr2_driving" / "learned" / ("%s_%s.json" % (Path(args.aiw).stem.lower(), (args.car_key or "car").replace("/", "_").lower()))
         gm = {}             # --grip-map: 20 m bin of lap distance -> factor on the planner's cornering grip
         gmh = {}
+        guard_n = 0
         if args.grip_map and not args.no_memory and mem_file.exists():
             try:
                 mem = json.loads(mem_file.read_text())
@@ -1091,6 +1095,12 @@ def main():
                         bev.update(on=False, peak=0.0, lock=False, bands=set())
             if any(any(k_ in sf_ for k_ in KERB_STR) for sf_ in tel["surfaces"]):
                 kerb_until = now + args.kerb_hold
+            if args.limit_guard and chain is track.main and speed > 8.0:
+                n_off = sum(1 for sf_ in tel["surfaces"] if not any(k_ in sf_.upper() for k_ in ("ROAD", "DRAIN")))
+                if n_off >= 3:
+                    shared["duty"] = min(shared["duty"], args.limit_guard_throttle)
+                    shared["steer"] = max(-1.0, min(1.0, shared["steer"] + math.copysign(args.limit_guard_steer * (1 if n_off == 3 else 4), lat)))
+                    guard_n += 1
             if args.kerb_mode and now < kerb_until and chain is track.main:
                 shared["duty"] = min(shared["duty"], args.kerb_throttle)
                 shared["brake"] *= args.kerb_brake
@@ -1255,7 +1265,7 @@ def main():
                 print("memory saved to %s" % mem_file.name, flush=True)
             except Exception as e_:
                 print("memory not saved (%s)" % e_, flush=True)
-        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], grip_map=({str(k_ * 20): round(v_, 2) for k_, v_ in sorted(gm.items()) if abs(v_ - 1.0) > 0.01} if args.grip_map else None), grip_map_hist={k_: [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(gmh.items())}, brake_slip_hist={str(round(k_ / 20.0, 2)): [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(bslip.items())}, grip_map_up=gms["up"], grip_map_down=gms["down"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
+        result.update(off_road_at=[[k, n, round(sum(off_lat[k]) / len(off_lat[k]), 1)] for k, n in sorted(off_buckets.items(), key=lambda kv: -kv[1])[:8]], impacts=impacts[:10], kerbs=kerbs[:10], contacts=contacts[:300],kerb_count=len(kerbs), recoveries=rec["n"], grip_map=({str(k_ * 20): round(v_, 2) for k_, v_ in sorted(gm.items()) if abs(v_ - 1.0) > 0.01} if args.grip_map else None), grip_map_hist={k_: [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(gmh.items())}, brake_slip_hist={str(round(k_ / 20.0, 2)): [v_[0], round(v_[1] / max(v_[0], 1), 1)] for k_, v_ in sorted(bslip.items())}, limit_guard_samples=guard_n, grip_map_up=gms["up"], grip_map_down=gms["down"], learned_zones=[[int(a_), int(b_), round(f_, 2)] for a_, b_, f_ in learned], plan_decel={str(k_ * 10): round(v_, 1) for k_, v_ in sorted(padec.items())}, lat_rms=round(math.sqrt(stn["lat2"] / max(stn["lat_n"], 1)), 2), lat_p95=round(sorted(stn["lats"])[int(len(stn["lats"]) * 0.95)], 2) if stn["lats"] else 0.0, st_gain=[round(stn["g"].get(i, 0.0), 3) for i in range(8)], live_final=[round(live["a_lat"], 2), round(live["a_brk"], 2), round(live["kk"] * 1e4, 2)], live_range=[round(live["lat_lo"], 1), round(live["lat_hi"], 1), round(live["brk_lo"], 1), round(live["brk_hi"], 1)], live_penalties=live["pen"], track_limit_events=len([e for e in limit_events if e['seconds'] >= 0.06]), track_limit_seconds=round(sum(e['seconds'] for e in limit_events if e['seconds'] >= 0.06), 2), track_limit_list=[e for e in limit_events if e['seconds'] >= 0.06][:10], dyn_throttle_cut_share=round(dyn["tc_n"] / max(dyn["thr_n"], 1), 3), dyn_brake_cut_share=round(dyn["abs_n"] / max(dyn["brk_n"], 1), 3), pit_impacts=sum(1 for i in impacts if i["pit"]), bumps=bumps, peak_accel_pit=round(peak_pit, 1), peak_accel=round(peak_all, 1), seconds=round(time.time() - t0), off_road_share=round(off_samples / max(samples, 1), 4), steer_travel=round(steer_travel / max(samples, 1) * 100, 2), max_offset=round(max_lat, 1))
     finally:
         state["run"] = False
         shared["steer"] = shared["brake"] = 0.0
