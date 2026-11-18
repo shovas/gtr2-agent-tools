@@ -733,15 +733,21 @@ def main():
                         d_imp, d_lim, d_kerb = n_imp - meta["imp"], n_lim - meta["lim"], len(kerbs) - meta["kerb"]
                         clean_ = d_imp == 0 and d_lim == 0 and d_kerb <= 5
                         used_ = meta["push"]
+                        if clean_:
+                            meta["bad"] = 0
                         if clean_ and (meta["best"] is None or lt_ < meta["best"]):
                             meta["best"], meta["best_push"] = lt_, used_
                             meta["push"] = min(args.meta_max, used_ + meta["step"])
                         elif clean_:
                             meta["push"] = min(args.meta_max, meta["best_push"] + 0.5 * meta["step"])
                             meta["step"] = max(0.004, meta["step"] * 0.7)
-                        else:
-                            meta["push"] = max(args.meta_min, min(used_, meta["best_push"] if meta["best"] is not None else used_) - meta["step"])
-                            meta["step"] = max(0.004, meta["step"] * 0.7)
+                        else:      # an unclean lap: the maps already slow the corner where it happened (track-limit and hit responses), so the push is held; only a second unclean lap in a row takes it down
+                            meta["bad"] = meta.get("bad", 0) + 1
+                            if meta["bad"] >= 2:
+                                meta["push"] = max(args.meta_min, used_ - meta["step"])
+                                meta["step"] = max(0.004, meta["step"] * 0.7)
+                            else:
+                                meta["push"] = used_
                         gmv_ = list(gm.values())
                         diag_ = {"gm_mean": round(sum(gmv_) / len(gmv_), 3) if gmv_ else 1.0, "gm_min": round(min(gmv_), 2) if gmv_ else 1.0, "learned": len(learned), "learned_min": round(min([f_ for _, _, f_ in learned], default=1.0), 2),
                                  "brake_mean": round(sum(padec.values()) / len(padec), 2) if padec else None, "tyre_wear": round(sum(w_["wear"] for w_ in tel["wheels"]) / 4, 4), "tyre_temp": round(sum(sum(w_["temps"]) / 3 for w_ in tel["wheels"]) / 4, 1)}
