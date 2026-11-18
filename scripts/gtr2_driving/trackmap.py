@@ -220,7 +220,7 @@ class Track:
             j = nj
         return best, at
 
-    def speed_limit_live(self, chain, k, metres, a_lat, kk, a_brk, span=12.0, kb=0.0, scale=None):
+    def speed_limit_live(self, chain, k, metres, a_lat, kk, a_brk, span=12.0, kb=0.0, scale=None, bmargin=None):
         """Like speed_limit, with grip that grows with speed (downforce): cornering grip a_lat * (1 + kk v^2) and braking grip
         a_brk * (1 + kk v^2). A corner of curvature c is taken at v^2 c = a_lat (1 + kk v^2), i.e. v = sqrt(a_lat / (c - a_lat kk));
         braking towards it from further back follows v^2 + 1/kk = (v_c^2 + 1/kk) exp(2 a_brk kk d). Returns (speed now, distance)."""
@@ -246,10 +246,11 @@ class Track:
             al = a_lat * (scale(a) if scale else 1.0)      # a slow zone scales the cornering grip at this waypoint
             den = c - al * kk
             vc = math.sqrt(al / den) if c > 1e-4 and den > 1e-6 else 150.0
+            dd = max(0.0, d - bmargin(a)) if bmargin else d      # a brake margin at this corner (learned from running off the road after braking): the corner counts as that many metres nearer
             if kb > 1e-9:
-                v = math.sqrt((vc * vc + 1.0 / kb) * math.exp(min(2.0 * a_brk * kb * d, 50.0)) - 1.0 / kb)
+                v = math.sqrt((vc * vc + 1.0 / kb) * math.exp(min(2.0 * a_brk * kb * dd, 50.0)) - 1.0 / kb)
             else:
-                v = math.sqrt(vc * vc + 2.0 * a_brk * d)       # braking grip constant with speed (measured: about 12 to 13 m/s^2 at every speed)
+                v = math.sqrt(vc * vc + 2.0 * a_brk * dd)       # braking grip constant with speed (measured: about 12 to 13 m/s^2 at every speed)
             if v < best:
                 best, at = v, d
         return best, at

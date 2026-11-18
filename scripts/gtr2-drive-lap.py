@@ -180,7 +180,11 @@ def main():
     ap.add_argument("--lat-free", type=float, default=2.5)
     ap.add_argument("--lat-span", type=float, default=8.0)
     ap.add_argument("--lat-floor", type=float, default=0.5)
-    ap.add_argument("--limit-brake-pen", type=float, default=0.10, help="live braking map: a track-limit event within 4 s of hard braking lowers the braking numbers of the speed bands from the limit speed up to the braking start speed by this share (0 = off)")
+    ap.add_argument("--limit-brake-pen", type=float, default=0.0, help="live braking map: a track-limit event within 4 s of hard braking lowers the braking numbers of the speed bands from the limit speed up to the braking start speed by this share (0 = off)")
+    ap.add_argument("--brake-margin", action="store_true", help="per-corner brake marker: a track-limit event within 4 s of hard braking moves the braking for that corner --bm-add m earlier (up to --bm-max), healing --bm-heal m per clean lap; on in live mode")
+    ap.add_argument("--bm-add", type=float, default=30.0)
+    ap.add_argument("--bm-max", type=float, default=160.0)
+    ap.add_argument("--bm-heal", type=float, default=8.0)
     ap.add_argument("--hit-geometry", action="store_true", help="classify a jolt by distance: it is an impact only when a near-vertical face of the track's own collision meshes (wall, barrier, fence) is within --hit-gap of the car's outline; with no structure there it is a bump (seam, kerb, dip). Every jolt over the limit is recorded with its distance and the structure's name (result geo_hits). On in live mode")
     ap.add_argument("--hit-gap", type=float, default=0.4, help="--hit-geometry: gap in metres to a structure that still counts as touching (position and heading are measured to about this much)")
     ap.add_argument("--steer-live", action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
@@ -328,7 +332,7 @@ def main():
             args.kerb_vert_share = 0.35
         if args.impact_track <= 0:
             args.impact_track = 20.0
-        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id", "hit_geometry", "lat_guard", "trap_escape"):
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id", "hit_geometry", "lat_guard", "trap_escape", "brake_margin"):
             setattr(args, name, True)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
@@ -721,6 +725,7 @@ def main():
                 walls = None
                 print("hit geometry unavailable (%s: %s): acceleration rules only" % (type(e).__name__, e), flush=True)
         tt = {"phase": 0, "stuck_since": None, "t_stuck": None, "escape_s": None, "dist0": None}      # --trap-test state
+        bmar = {}      # brake margin in metres by 40 m of lap distance (the corner's own position), --brake-margin
         bz = {"t": -99.0, "v0": 0.0}      # the last hard braking: when it was last on and the speed it began from
         geo_hits = []      # every jolt over the limit with its distance to the nearest structure (result geo_hits)
         bff = {"t": 0.0, "tv": 0.0, "a": 0.0}      # brake feedforward state (--brake-ff)
@@ -770,7 +775,7 @@ def main():
                 result["lap_changes"].append({"t": round(now - t0, 1), "lap": tel["lap"]})
                 print("t=%5.1f lap counter %d -> %d" % (now - t0, last_lap, tel["lap"]), flush=True)
                 last_lap = tel["lap"]
-                if args.session_laps > 0:      # a lap is done: judge it and adjust the push for the next one
+                if args.session_laps > 0 and finish_at is None:      # a lap is done: judge it and adjust the push for the next one (not once the run is finishing: the counter ticked again 20 s and 3.5 s after the last lap, Monza 4, and those were scored as laps of 20.13 s and 3.51 s)
                     n_imp = len([i_ for i_ in impacts if not i_.get("pit")])
                     n_lim = len([e_ for e_ in limit_events if e_["seconds"] >= 0.06])
                     clean_ = False
@@ -805,6 +810,11 @@ def main():
                         meta["laps"].append({"lap": tel["lap"] - 1, "time": round(lt_, 2), "clean": clean_, **diag_, "impacts": d_imp, "track_limits": d_lim, "kerbs": d_kerb, "push": round(used_, 3), "next_push": round(meta["push"], 3)})
                         print("SESSION lap %d: %.2f s, %s (impacts %d, track limits %d, kerb strikes %d) push %.3f -> %.3f, best %s" % (tel["lap"] - 1, lt_, "clean" if clean_ else "NOT clean", d_imp, d_lim, d_kerb, used_, meta["push"], ("%.2f" % meta["best"]) if meta["best"] else "none"), flush=True)
                     meta["t"], meta["imp"], meta["lim"], meta["kerb"] = now, n_imp, n_lim, len(kerbs)
+                    if clean_ and bmar:
+                        for b_ in list(bmar):
+                            bmar[b_] -= args.bm_heal
+                            if bmar[b_] <= 0.0:
+                                del bmar[b_]
                     if clean_ and args.brake_adapt and padec:      # braking numbers lowered by a hit under braking heal with clean laps too (the probe raises them only where the pedal stayed under 90%)
                         for bb_ in list(padec):
                             padec[bb_] = min(22.0, padec[bb_] * (1.0 + args.brake_heal))
@@ -936,12 +946,17 @@ def main():
                     if limit_open is None or now - limit_last > 0.5:
                         limit_open = {"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "seconds": 0.0, "surface": ",".join(sorted(set(tel["surfaces"])))}
                         limit_events.append(limit_open)
-                        if args.brake_adapt and padec and args.limit_brake_pen > 0 and now - bz["t"] < 4.0 and tt["phase"] == 0 and last_lap != start_lap:      # off the road soon after hard braking: the braking numbers of the bands braked from were too bold (Monza 4, first chicane: ran through into the gravel)
+                        if now - bz["t"] < 4.0 and tt["phase"] == 0 and last_lap != start_lap:      # off the road soon after hard braking: the braking for this corner was too late (Monza 4, first chicane: ran through into the gravel)
                             lo_b, hi_b = int(min(speed, 79.0) // 10), int(min(bz["v0"], 79.0) // 10)
-                            for b_ in range(lo_b, hi_b + 1):
-                                if b_ in padec:
-                                    padec[b_] = max(8.0, padec[b_] * (1.0 - args.limit_brake_pen))
-                            print("t=%5.1f off the road after braking from %.0f m/s: braking numbers of the bands %d to %d lowered" % (now - t0, bz["v0"], lo_b * 10, hi_b * 10), flush=True)
+                            if args.brake_adapt and padec and args.limit_brake_pen > 0:
+                                for b_ in range(lo_b, hi_b + 1):
+                                    if b_ in padec:
+                                        padec[b_] = max(8.0, padec[b_] * (1.0 - args.limit_brake_pen))
+                                print("t=%5.1f off the road after braking from %.0f m/s: braking numbers of the bands %d to %d lowered" % (now - t0, bz["v0"], lo_b * 10, hi_b * 10), flush=True)
+                            if args.brake_margin:
+                                for b_ in range(int(w.dist // 40) - 1, int(w.dist // 40) + 3):
+                                    bmar[b_] = min(args.bm_max, bmar.get(b_, 0.0) + args.bm_add)
+                                print("t=%5.1f off the road after braking from %.0f m/s at lap distance %d: braking for it moves %.0f m earlier" % (now - t0, bz["v0"], w.dist, bmar[int(w.dist // 40)]), flush=True)
                         if args.grip_map:      # live response: the corners before this point were taken too fast to stay inside the white lines; take their grip factor down now and for the next pass
                             for bb in range(int(w.dist // 20) - 6, int(w.dist // 20) + 1):
                                 gm[bb] = max(args.gm_min, gm.get(bb, 1.0) * (1.0 - args.gm_limit))
@@ -1093,8 +1108,8 @@ def main():
             window = 25.0 + speed * speed / (2.0 * decel_plan)
             if args.live and chain is track.main:
                 a_brk_p = decel_plan if args.brake_adapt else live["a_brk"]      # the braking map's number when it is on
-                window = 25.0 + speed * speed / (2.0 * a_brk_p * (1.0 + args.live_brake_k * speed * speed))
-                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None)
+                window = 25.0 + speed * speed / (2.0 * a_brk_p * (1.0 + args.live_brake_k * speed * speed)) + (max(bmar.values()) if bmar else 0.0)
+                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None, bmargin=(lambda w_: bmar.get(int(w_.dist // 40), 0.0)) if bmar else None)
             else:
                 corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             if args.grip_map and chain is track.main and last_lap == start_lap:
