@@ -58,7 +58,7 @@ def torque(car, rpm):
     return c[-1][1]
 
 
-def best_gear(car, rpm, gear, speed_scale=1.0, cap=0.95, hysteresis=1.04):
+def best_gear(car, rpm, gear, speed_scale=1.0, cap=0.95, hysteresis=1.04, down_hysteresis=None, speed=None, first_max=None):
     """Gear (1 based) with the most wheel thrust (torque x ratio) at the rpm the car would have in it, from the rpm now in `gear`
     (the engine speed is proportional to the gear ratio at a given road speed; `speed_scale` is the speed to judge at over the speed now).
     A gear that would take the engine over cap x rev limit is out; the current gear stays unless another beats it by `hysteresis`."""
@@ -78,8 +78,13 @@ def best_gear(car, rpm, gear, speed_scale=1.0, cap=0.95, hysteresis=1.04):
             best, best_f = n, f
     if best == gear:
         return gear
-    if cur_f > 0 and best_f < hysteresis * cur_f:
+    # a downshift has to pay for itself (it costs shift time and the next upshift): a wider margin than an upshift
+    h = down_hysteresis if (down_hysteresis and best < gear) else hysteresis
+    if cur_f > 0 and best_f < h * cur_f:
         return gear
+    # 1st gear only at crawling speed (first_max m/s): above it the next-best gear is taken
+    if best == 1 and gear > 1 and first_max is not None and speed is not None and speed > first_max:
+        return gear if gear == 2 else 2
     return best
 
 
