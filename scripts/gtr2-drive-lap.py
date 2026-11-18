@@ -169,7 +169,9 @@ def main():
     ap.add_argument("--follower", choices=("pursuit", "stanley", "designed"), default="pursuit", help="how the steering follows the line: pursuit (aim at a point look-ahead metres ahead, the proven default) or stanley (cross-track and heading error at the car plus curvature feed-forward, with a steering gain learned from the car's own yaw response)")
     ap.add_argument("--steer-id", action="store_true", help="identify the steering while driving (yaw rate per steering command per m/s, per 10 m/s speed bin, steady stretches only) and record it in the result; does not change the steering yet. On in live mode")
     ap.add_argument("--brake-ff", type=float, default=0.0, help="brake feedforward share (0 = off): the brake follows the deceleration the planned speed curve asks for (as a share of the planned deceleration) plus the speed-error term")
-    ap.add_argument("--steer-live",action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
+    ap.add_argument("--hit-geometry", action="store_true", help="classify a jolt by distance: it is an impact only when a near-vertical face of the track's own collision meshes (wall, barrier, fence) is within --hit-gap of the car's outline; with no structure there it is a bump (seam, kerb, dip). Every jolt over the limit is recorded with its distance and the structure's name (result geo_hits). On in live mode")
+    ap.add_argument("--hit-gap", type=float, default=0.4, help="--hit-geometry: gap in metres to a structure that still counts as touching (position and heading are measured to about this much)")
+    ap.add_argument("--steer-live", action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
     ap.add_argument("--steer-live-ref", type=float, default=0.8, help="--steer-live: reference yaw response, rad/s per unit of steering command")
     ap.add_argument("--steer-live-min", type=float, default=0.7)
     ap.add_argument("--steer-live-max", type=float, default=1.4)
@@ -314,7 +316,7 @@ def main():
             args.kerb_vert_share = 0.35
         if args.impact_track <= 0:
             args.impact_track = 20.0
-        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id"):
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id", "hit_geometry"):
             setattr(args, name, True)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
@@ -523,7 +525,7 @@ def main():
         shared["wt"] = now_w
         x = fol["steer"].step(shared["steer"] * shared["scale"], dt)
         cap = args.analog_throttle[max(1, min(6, shared["gear"])) - 1] * (1.0 - args.analog_steer_ease * min(1.0, abs(shared["steer"])))
-        if args.dyn:      # the wheels are watched instead (see the dynamic control in the main loop)
+        if args.dyn and shared.get("dyn_free", False):      # the wheels are watched instead (see the dynamic control in the main loop); only on the racing line: the garage, the pit lane and the merge keep the per-gear caps (a full launch hit the garage wall at Zhuhai, Monza and Spa)
             cap = 1.0
         if args.tc_gain > 0:      # traction-aware: ease the throttle by the lateral load the car is carrying right now (measured, not commanded); the sliding car spins when the throttle stays high at the limit of grip
             cap *= max(args.tc_floor, 1.0 - args.tc_gain * max(0.0, shared.get("lat_load", 0.0) - args.tc_free))
@@ -694,6 +696,19 @@ def main():
                 if lo <= w.dist <= hi:
                     f = min(f, ff)
             return f
+        walls = None
+        if args.hit_geometry:
+            try:      # the track's own collision meshes: a jolt is a structure hit only when a near-vertical face is at (about) zero distance from the car's outline
+                sys.path.insert(0, str(Path(__file__).resolve().parent / "gtr2_driving"))
+                import hitgeom
+                trk_f = next((q for q in Path(args.aiw).parent.iterdir() if q.suffix.lower() == ".trk" and q.stem.lower() == Path(args.aiw).stem.lower()), None)
+                t_w = time.time()
+                walls = hitgeom.WallIndex(trk_f) if trk_f is not None else None
+                print("hit geometry: %s (%.1f s)" % ("%d wall faces from the track meshes, hit gap %.2f m" % (walls.count, args.hit_gap) if walls else "no .trk next to the AIW, acceleration rules only", time.time() - t_w), flush=True)
+            except Exception as e:      # never stop a run for it: the acceleration rules stay
+                walls = None
+                print("hit geometry unavailable (%s: %s): acceleration rules only" % (type(e).__name__, e), flush=True)
+        geo_hits = []      # every jolt over the limit with its distance to the nearest structure (result geo_hits)
         bff = {"t": 0.0, "tv": 0.0, "a": 0.0}      # brake feedforward state (--brake-ff)
         sid = {"hist": [], "k": {}}      # steering identification (--steer-id): samples of yaw rate per steering command per m/s, by speed bin
         stn = {"g": {},"last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
@@ -830,8 +845,14 @@ def main():
                 last_contact = now      # measure every jolt (also the small ones under the hit limits) with what is under the wheels, to set the limits from data (gtr2-contact-stats.py)
                 kind_c = "impact" if (a_h > args.impact_accel and (a_h > args.kerb_max_accel or not (abs(tel["accel"][1]) >= args.kerb_vert_share * a_h or any(any(k in sf for k in KERB_STR) for sf in tel["surfaces"])))) else ("kerb" if a_h > args.impact_accel else "jolt")
                 contacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "lat": round(abs(tel["accel"][0]), 1), "long": round(abs(tel["accel"][2]), 1), "speed": round(speed, 1), "kind": kind_c, "surfaces": sorted(set(tel["surfaces"]))})
-            if a_h > args.impact_accel and now - last_impact > 0.3 and (box_target is not None or merging) and abs(tel["accel"][1]) >= 0.3 * a_h:
-                last_impact = now      # in the garage exit only: a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
+            geo_none, geo_gap, geo_name = False, None, None
+            thr_g = args.impact_track if (args.impact_track > 0 and chain is track.main) else args.impact_accel
+            if walls is not None and a_h > thr_g and now - last_impact > 0.3 and spiky:
+                geo_gap, geo_name = walls.clearance(x, tel["pos"][1], z, tel["yaw"])
+                geo_none = geo_gap is None or geo_gap > args.hit_gap      # no structure at the car: a seam, a kerb, a bump, not a wall
+                geo_hits.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "gap": None if geo_gap is None else round(geo_gap, 2), "obj": geo_name, "pit": chain is track.pit})
+            if a_h > args.impact_accel and now - last_impact > 0.3 and (((box_target is not None or merging or chain is track.pit) and abs(tel["accel"][1]) >= 0.3 * a_h) or (geo_none and chain is not track.main)):
+                last_impact = now      # in the garage exit and on the pit lane (hit-locate showed the 14 to 15 m/s^2 jolts at the pit exits of Zhuhai 4 and Monza 4 sit on road-mesh seams, TRACK04 to TRACK05, 4 to 10 m from any wall): a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
                 bumps += 1
                 print("t=%5.1f BUMP %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
             elif a_h > (args.impact_track if args.impact_track > 0 else args.impact_accel) and now - last_impact > 0.3 and spiky and chain is track.main and a_h <= args.kerb_max_accel and (abs(tel["accel"][1]) >= args.kerb_vert_share * a_h or any(any(k in sf for k in ("BRICK", "RMBL", "RMBB", "CURB", "KERB")) for sf in tel["surfaces"])):
@@ -841,9 +862,13 @@ def main():
                     learn_hit(a_h, w.dist)
                     hit_braking(speed)
                 print("t=%5.1f KERB %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
+            elif geo_none and a_h > thr_g and now - last_impact > 0.3 and spiky:
+                last_impact = now
+                bumps += 1
+                print("t=%5.1f BUMP %.1f m/s^2 at (%.1f, %.1f): no structure within %.2f m (nearest %s)" % (now - t0, a_h, x, z, args.hit_gap, "none within 6 m" if geo_gap is None else "%s at %.2f m" % (geo_name, geo_gap)), flush=True)
             elif a_h > (args.impact_track if (args.impact_track > 0 and chain is track.main) else args.impact_accel) and now - last_impact > 0.3 and spiky:
                 last_impact = now
-                impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit})
+                impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit, "gap": None if geo_gap is None else round(geo_gap, 2), "obj": geo_name})
                 if chain is track.main:
                     learn_hit(a_h, w.dist)
                     hit_braking(speed)
@@ -967,6 +992,7 @@ def main():
                 merged_at = now
             if args.stop_at_merge and merged_at is not None and now - merged_at >= args.stop_at_merge:
                 result["outcome"] = "merged"; break
+            shared["dyn_free"] = chain is track.main and not merging and box_target is None
             shared["scale"] = args.merge_steer if (merging or box_target is not None or chain is track.pit) else args.analog_steer   # slow in the pit lane: full lock (Anderstorp's 90 degree bend, 5 to 6 m wide)
             if args.follower in ("stanley", "designed") and chain is track.main and not merging and box_target is None:
                 # Stanley follower with curvature feed-forward (gtr2_driving/follower.py, tuned offline in gtr2-follower-sim.py): the steering gain is the
@@ -1292,6 +1318,8 @@ def main():
         result["lap_counter_missing"] = by_distance
         if args.session_laps > 0:
             result["session_laps"] = meta["laps"]
+        if args.hit_geometry:
+            result["geo_hits"] = geo_hits[:60]
         if args.steer_id:
             result["steer_id"] = {str(b * 10): {"n": len(v_), "k_med": round(sorted(v_)[len(v_) // 2], 5), "k_p10": round(sorted(v_)[len(v_) // 10], 5), "k_p90": round(sorted(v_)[-1 - len(v_) // 10], 5)} for b, v_ in sorted(sid["k"].items()) if len(v_) >= 5}
         if args.geo_limits:
