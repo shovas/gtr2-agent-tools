@@ -266,3 +266,9 @@ Real drivers seldom use 1st gear in a corner; every shift costs time and the car
 ## Gear choice in slow corners (2026-11-18)
 
 `--gear-opt` now needs a downshift to give 15% more wheel thrust than the current gear (`--gear-down-hyst 1.15`, was 4%) and takes no downshift into 1st above 8 m/s (`--gear-first-max 8`). The old rule picked 1st even at 15 m/s from 2nd. Fresh 10-lap sessions, Imola 4, Maserati, wheel, same day: new rule best clean lap 124.15 s (8 of 10 laps clean); old rule (`--gear-down-hyst 1.04 --gear-first-max 99`) 126.10 s (7 clean). One session each: variance between sessions is several seconds, so repeat before treating the gap as exact.
+
+## Steering identification and live loop gain (2026-11-18)
+
+`--steer-id` (on in live mode) records the car's yaw rate per steering command per m/s from steady stretches, by 10 m/s speed bin (result `steer_id`). Imola 4, Maserati, one flying lap: 0.057 at 10 m/s, 0.027 to 0.029 at 20 to 30, 0.020 at 40 to 60 (median). Times speed that is a yaw response per command of about 0.6 rad/s at 10 to 20 m/s rising to about 1.2 at 60 m/s: the fixed pursuit gain makes the heading loop about twice as fast at speed as in slow corners.
+
+`--steer-live` (opt-in) scales the pursuit command by 0.8 / measured response (clamped 0.7 to 1.4) to keep one time constant. A fresh 10-lap session: best clean lap 128.17 s, 5 of 10 clean, against 124.15 s and 8 clean for the baseline the same day. Not an improvement (one session each; variance is several seconds), so it stays off by default. Next angles: scale only the yaw-damping term, a different reference, or feed the response into the look-ahead instead.

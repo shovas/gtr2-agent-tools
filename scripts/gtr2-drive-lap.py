@@ -167,6 +167,11 @@ def main():
     ap.add_argument("--line-opt", action="store_true", help="drive a time-optimal racing line found from the track's widths and the grip/braking/power numbers (gtr2_driving/racingline.py; cached per layout); replaces --line-smooth")
     ap.add_argument("--line-opt-margin", type=float, default=1.2, help="--line-opt: metres the car's side stays inside each white line")
     ap.add_argument("--follower", choices=("pursuit", "stanley", "designed"), default="pursuit", help="how the steering follows the line: pursuit (aim at a point look-ahead metres ahead, the proven default) or stanley (cross-track and heading error at the car plus curvature feed-forward, with a steering gain learned from the car's own yaw response)")
+    ap.add_argument("--steer-id", action="store_true", help="identify the steering while driving (yaw rate per steering command per m/s, per 10 m/s speed bin, steady stretches only) and record it in the result; does not change the steering yet. On in live mode")
+    ap.add_argument("--steer-live", action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
+    ap.add_argument("--steer-live-ref", type=float, default=0.8, help="--steer-live: reference yaw response, rad/s per unit of steering command")
+    ap.add_argument("--steer-live-min", type=float, default=0.7)
+    ap.add_argument("--steer-live-max", type=float, default=1.4)
     ap.add_argument("--st-learn", action="store_true", help="--follower stanley: adapt the steering gain per speed bin from the yaw response (off: use the measured table)")
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
     ap.add_argument("--st-zeta", type=float, default=0.8, help="--follower designed: damping ratio")
@@ -308,7 +313,7 @@ def main():
             args.kerb_vert_share = 0.35
         if args.impact_track <= 0:
             args.impact_track = 20.0
-        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard"):
+        for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id"):
             setattr(args, name, True)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
@@ -688,7 +693,8 @@ def main():
                 if lo <= w.dist <= hi:
                     f = min(f, ff)
             return f
-        stn = {"g": {}, "last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
+        sid = {"hist": [], "k": {}}      # steering identification (--steer-id): samples of yaw rate per steering command per m/s, by speed bin
+        stn = {"g": {},"last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
         gearcar = cargears.load(args.car_key) if args.gear_opt and args.car_key else None
         print("gear optimisation: %s (car key %r, option %s)" % ("on, gears %s, limit %.0f" % ([round(x, 2) for x in gearcar["gears"]], gearcar["limit"]) if gearcar else "off", args.car_key, args.gear_opt), flush=True)
         live = {"a_lat": args.live_lat, "a_brk": args.live_brake, "kk": args.live_k, "sx": 0.0, "sy": 0.0, "sxx": 0.0, "sxy": 0.0, "n": 0, "t": 0.0, "lat_lo": 99.0, "lat_hi": 0.0, "brk_lo": 99.0, "brk_hi": 0.0, "pen": 0}
@@ -981,7 +987,23 @@ def main():
                 else:
                     shared["steer"] = follower.stanley(track, chain, k, x, z, yaw, speed, yawrate, lat, k_cross=args.st_k, ks=args.st_ks, ff=args.st_ff, preview=args.st_preview, damp=args.st_damp, wheelbase=args.wheelbase, gain=gl)
             else:
-                shared["steer"] = max(-1.0, min(1.0, herr / args.steer_gain - yawrate / args.damping))
+                sl_ = 1.0
+                if args.steer_live and chain is track.main and not merging and box_target is None:
+                    # live loop gain: the car's measured yaw response per steering command at this speed (steer-id) against a reference response, so the
+                    # heading loop has about the same time constant at every speed
+                    b_ = int(min(speed, 79.0) // 10)
+                    ks_ = sid["k"].get(b_, [])
+                    if len(ks_) >= 20:
+                        y_ = sorted(ks_[-200:])[len(ks_[-200:]) // 2] * (b_ * 10 + 5.0)
+                        sl_ = max(args.steer_live_min, min(args.steer_live_max, args.steer_live_ref / max(y_, 0.1)))
+                shared["steer"] = max(-1.0, min(1.0, sl_ * (herr / args.steer_gain - yawrate / args.damping)))
+            if args.steer_id and chain is track.main:
+                # online identification of the steering: yaw rate per unit of command per metre/second (k = yaw rate / (steer x speed)), from steady stretches only
+                cmd_ = shared["steer"]
+                sid["hist"].append(cmd_)
+                del sid["hist"][:-12]
+                if abs(cmd_) > 0.06 and speed > 6.0 and len(sid["hist"]) >= 12 and max(sid["hist"]) - min(sid["hist"]) < 0.04 and shared["brake"] < 0.1 and abs(tel["accel"][0]) < 9.0:
+                    sid["k"].setdefault(int(min(speed, 79.0) // 10), []).append(math.radians(yawrate) / (cmd_ * speed))
             if chain is track.main and speed > 10.0:
                 stn["lat2"] += lat * lat
                 stn["lat_n"] += 1
@@ -1255,6 +1277,8 @@ def main():
         result["lap_counter_missing"] = by_distance
         if args.session_laps > 0:
             result["session_laps"] = meta["laps"]
+        if args.steer_id:
+            result["steer_id"] = {str(b * 10): {"n": len(v_), "k_med": round(sorted(v_)[len(v_) // 2], 5), "k_p10": round(sorted(v_)[len(v_) // 10], 5), "k_p90": round(sorted(v_)[-1 - len(v_) // 10], 5)} for b, v_ in sorted(sid["k"].items()) if len(v_) >= 5}
         if args.geo_limits:
             mg = sorted(geo["margins"])
             result["geo"] = {"samples": geo["n"], "both": geo["both"], "geometric_only": geo["geo_only"], "surface_only": geo["surf_only"],
