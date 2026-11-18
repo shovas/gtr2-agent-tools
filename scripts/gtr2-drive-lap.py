@@ -238,6 +238,7 @@ def main():
     ap.add_argument("--brake-adapt", action="store_true", help="the braking number of the planner follows the deceleration the car achieves at the lock-up threshold, per speed bin (starts at --decel)")
     ap.add_argument("--learn-hits", action="store_true", help="a hard hit (impact or kerb strike over --learn-min m/s^2) makes the planner take that stretch of the lap slower from then on (the out lap teaches the flying lap); nothing is set per track")
     ap.add_argument("--learn-heal", type=float, default=0.05, help="--learn-hits in a lap session: each lap gives the zones learned from hits this much of their factor back")
+    ap.add_argument("--learn-kerb-min", type=float, default=35.0, help="--learn-hits: a kerb strike must be at least this hard (m/s^2) to take a stretch slower and the braking number down; ordinary kerb strikes, 14 to 30, do not (impacts still teach from --learn-min)")
     ap.add_argument("--learn-min", type=float, default=20.0)
     ap.add_argument("--debug-stop", type=float, nargs=2, metavar=("AT", "SECONDS"), default=None, help="test hook: at AT seconds brake to a stop and hold for SECONDS, to exercise --recover")
     ap.add_argument("--live-lat", type=float, default=10.0, help="--live: starting cornering grip at rest, m/s^2")
@@ -805,8 +806,8 @@ def main():
             elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky and chain is track.main and a_h <= args.kerb_max_accel and (abs(tel["accel"][1]) >= 0.5 * a_h or any(any(k in sf for k in ("BRICK", "RMBL", "RMBB", "CURB", "KERB")) for sf in tel["surfaces"])):
                 last_impact = now      # a kerb strike (real racing has them): a vertical-dominated jolt, or kerb/rumble surfaces under a wheel, on the racing line and below --kerb-max-accel; counted apart from impacts, the lap check allows a few
                 kerbs.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "speed": round(speed, 1)})
-                learn_hit(a_h, w.dist)
-                if a_h >= args.learn_min:
+                if a_h >= args.learn_kerb_min:      # kerb strikes are part of racing: only a hard one teaches the planner anything
+                    learn_hit(a_h, w.dist)
                     hit_braking(speed)
                 print("t=%5.1f KERB %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
             elif a_h > args.impact_accel and now - last_impact > 0.3 and spiky:
