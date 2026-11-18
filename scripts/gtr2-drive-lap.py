@@ -740,6 +740,10 @@ def main():
                         diag_ = {"gm_mean": round(sum(gmv_) / len(gmv_), 3) if gmv_ else 1.0, "gm_min": round(min(gmv_), 2) if gmv_ else 1.0, "learned": len(learned), "learned_min": round(min([f_ for _, _, f_ in learned], default=1.0), 2),
                                  "tyre_wear": round(sum(w_["wear"] for w_ in tel["wheels"]) / 4, 4), "tyre_temp": round(sum(sum(w_["temps"]) / 3 for w_ in tel["wheels"]) / 4, 1)}
                         print("SESSION diag: " + " ".join("%s=%s" % kv_ for kv_ in diag_.items()), flush=True)
+                        meta["still"] = 0 if (clean_ and meta["best"] is not None and lt_ <= meta["best"] + 1e-9) else meta.get("still", 0) + 1
+                        if meta["still"] >= 3 and meta["step"] < args.meta_step:      # no gain for three laps: the step has shrunk too far to explore, widen it again
+                            meta["step"] = min(args.meta_step, meta["step"] * 2.0)
+                            meta["still"] = 0
                         meta["laps"].append({"lap": tel["lap"] - 1, "time": round(lt_, 2), "clean": clean_, **diag_, "impacts": d_imp, "track_limits": d_lim, "kerbs": d_kerb, "push": round(used_, 3), "next_push": round(meta["push"], 3)})
                         print("SESSION lap %d: %.2f s, %s (impacts %d, track limits %d, kerb strikes %d) push %.3f -> %.3f, best %s" % (tel["lap"] - 1, lt_, "clean" if clean_ else "NOT clean", d_imp, d_lim, d_kerb, used_, meta["push"], ("%.2f" % meta["best"]) if meta["best"] else "none"), flush=True)
                     meta["t"], meta["imp"], meta["lim"], meta["kerb"] = now, n_imp, n_lim, len(kerbs)
