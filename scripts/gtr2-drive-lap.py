@@ -169,6 +169,7 @@ def main():
     ap.add_argument("--follower", choices=("pursuit", "stanley", "designed"), default="pursuit", help="how the steering follows the line: pursuit (aim at a point look-ahead metres ahead, the proven default) or stanley (cross-track and heading error at the car plus curvature feed-forward, with a steering gain learned from the car's own yaw response)")
     ap.add_argument("--steer-id", action="store_true", help="identify the steering while driving (yaw rate per steering command per m/s, per 10 m/s speed bin, steady stretches only) and record it in the result; does not change the steering yet. On in live mode")
     ap.add_argument("--brake-ff", type=float, default=0.0, help="brake feedforward share (0 = off): the brake follows the deceleration the planned speed curve asks for (as a share of the planned deceleration) plus the speed-error term")
+    ap.add_argument("--live-off", default="", help="live mode: comma-separated live systems to switch off again for a test (grip_map, brake_ctl, brake_adapt, dyn, learn_hits, recover, live, live_fit, gear_opt, limit_guard, steer_id, hit_geometry, lat_guard, trap_escape, brake_margin)")
     ap.add_argument("--trap-escape", action="store_true", help="stuck in a gravel or sand trap (all four tyres off the road, below 8 m/s): hold a steady engine speed (--trap-rpm of the rev limit) in the lowest gear instead of the wheel-slip control's throttle cuts; a driver's technique, to be proven by --trap-test. On in live mode when proven")
     ap.add_argument("--trap-rpm", type=float, default=0.8, help="--trap-escape: engine speed to hold, share of the rev limit")
     ap.add_argument("--trap-steer", type=float, default=1.0, help="--trap-escape: largest steering (1 = full lock) while crawling in a trap (1 = no limit)")
@@ -183,6 +184,7 @@ def main():
     ap.add_argument("--limit-brake-pen", type=float, default=0.0, help="live braking map: a track-limit event within 4 s of hard braking lowers the braking numbers of the speed bands from the limit speed up to the braking start speed by this share (0 = off)")
     ap.add_argument("--brake-margin", action="store_true", help="per-corner brake marker: a track-limit event within 4 s of hard braking moves the braking for that corner --bm-add m earlier (up to --bm-max), healing --bm-heal m per clean lap; on in live mode")
     ap.add_argument("--bm-add", type=float, default=30.0)
+    ap.add_argument("--bm-min-speed", type=float, default=45.0, help="--brake-margin: only a stop that began above this speed (m/s) counts: a touch of the edge after a slow-corner stop is not a braking miss (Imola 4, 24 m/s: it cost 4 s a lap)")
     ap.add_argument("--bm-max", type=float, default=160.0)
     ap.add_argument("--bm-heal", type=float, default=8.0)
     ap.add_argument("--hit-geometry", action="store_true", help="classify a jolt by distance: it is an impact only when a near-vertical face of the track's own collision meshes (wall, barrier, fence) is within --hit-gap of the car's outline; with no structure there it is a bump (seam, kerb, dip). Every jolt over the limit is recorded with its distance and the structure's name (result geo_hits). On in live mode")
@@ -334,6 +336,8 @@ def main():
             args.impact_track = 20.0
         for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard", "steer_id", "hit_geometry", "lat_guard", "trap_escape", "brake_margin"):
             setattr(args, name, True)
+        for name in [n_.strip().replace("-", "_") for n_ in args.live_off.split(",") if n_.strip()]:      # ablation: named live systems switched off again
+            setattr(args, name, False)
         print("live mode: grip map, braking map, wheel control, contact learning, stall recovery (--fixed for fixed limits)", flush=True)
     slow = dict(speed=6.0, pit_speed=8.0, lat_accel=2.0, decel=3.0, max_gear=3, shift_rpm=6800.0, down_rpm=2800.0)
     fast = dict(speed=60.0 if args.fixed else 150.0, pit_speed=16.0, lat_accel=7.5 if args.fixed else 10.0, decel=6.0 if args.fixed else 12.0, max_gear=6, shift_rpm=6300.0, down_rpm=3000.0)
@@ -946,7 +950,7 @@ def main():
                     if limit_open is None or now - limit_last > 0.5:
                         limit_open = {"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "seconds": 0.0, "surface": ",".join(sorted(set(tel["surfaces"])))}
                         limit_events.append(limit_open)
-                        if now - bz["t"] < 4.0 and tt["phase"] == 0 and last_lap != start_lap:      # off the road soon after hard braking: the braking for this corner was too late (Monza 4, first chicane: ran through into the gravel)
+                        if now - bz["t"] < 4.0 and bz["v0"] >= args.bm_min_speed and tt["phase"] == 0 and last_lap != start_lap:      # off the road soon after hard braking: the braking for this corner was too late (Monza 4, first chicane: ran through into the gravel)
                             lo_b, hi_b = int(min(speed, 79.0) // 10), int(min(bz["v0"], 79.0) // 10)
                             if args.brake_adapt and padec and args.limit_brake_pen > 0:
                                 for b_ in range(lo_b, hi_b + 1):
