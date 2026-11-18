@@ -239,6 +239,7 @@ def main():
     ap.add_argument("--learn-hits", action="store_true", help="a hard hit (impact or kerb strike over --learn-min m/s^2) makes the planner take that stretch of the lap slower from then on (the out lap teaches the flying lap); nothing is set per track")
     ap.add_argument("--learn-heal", type=float, default=0.05, help="--learn-hits in a lap session: each lap gives the zones learned from hits this much of their factor back")
     ap.add_argument("--learn-kerb-min", type=float, default=35.0, help="--learn-hits: a kerb strike must be at least this hard (m/s^2) to take a stretch slower and the braking number down; ordinary kerb strikes, 14 to 30, do not (impacts still teach from --learn-min)")
+    ap.add_argument("--brake-heal", type=float, default=0.03, help="--brake-adapt in a lap session: each clean lap raises every learned braking number by this share (hits under braking lower them)")
     ap.add_argument("--learn-min", type=float, default=20.0)
     ap.add_argument("--debug-stop", type=float, nargs=2, metavar=("AT", "SECONDS"), default=None, help="test hook: at AT seconds brake to a stop and hold for SECONDS, to exercise --recover")
     ap.add_argument("--live-lat", type=float, default=10.0, help="--live: starting cornering grip at rest, m/s^2")
@@ -723,6 +724,7 @@ def main():
                 if args.session_laps > 0:      # a lap is done: judge it and adjust the push for the next one
                     n_imp = len([i_ for i_ in impacts if not i_.get("pit")])
                     n_lim = len([e_ for e_ in limit_events if e_["seconds"] >= 0.06])
+                    clean_ = False
                     if meta["t"] is not None:      # the first change only ends the out lap
                         lt_ = now - meta["t"]
                         d_imp, d_lim, d_kerb = n_imp - meta["imp"], n_lim - meta["lim"], len(kerbs) - meta["kerb"]
@@ -739,7 +741,7 @@ def main():
                             meta["step"] = max(0.004, meta["step"] * 0.7)
                         gmv_ = list(gm.values())
                         diag_ = {"gm_mean": round(sum(gmv_) / len(gmv_), 3) if gmv_ else 1.0, "gm_min": round(min(gmv_), 2) if gmv_ else 1.0, "learned": len(learned), "learned_min": round(min([f_ for _, _, f_ in learned], default=1.0), 2),
-                                 "tyre_wear": round(sum(w_["wear"] for w_ in tel["wheels"]) / 4, 4), "tyre_temp": round(sum(sum(w_["temps"]) / 3 for w_ in tel["wheels"]) / 4, 1)}
+                                 "brake_mean": round(sum(padec.values()) / len(padec), 2) if padec else None, "tyre_wear": round(sum(w_["wear"] for w_ in tel["wheels"]) / 4, 4), "tyre_temp": round(sum(sum(w_["temps"]) / 3 for w_ in tel["wheels"]) / 4, 1)}
                         print("SESSION diag: " + " ".join("%s=%s" % kv_ for kv_ in diag_.items()), flush=True)
                         meta["still"] = 0 if (clean_ and meta["best"] is not None and lt_ <= meta["best"] + 1e-9) else meta.get("still", 0) + 1
                         if meta["still"] >= 3 and meta["step"] < args.meta_step:      # no gain for three laps: the step has shrunk too far to explore, widen it again
@@ -748,6 +750,9 @@ def main():
                         meta["laps"].append({"lap": tel["lap"] - 1, "time": round(lt_, 2), "clean": clean_, **diag_, "impacts": d_imp, "track_limits": d_lim, "kerbs": d_kerb, "push": round(used_, 3), "next_push": round(meta["push"], 3)})
                         print("SESSION lap %d: %.2f s, %s (impacts %d, track limits %d, kerb strikes %d) push %.3f -> %.3f, best %s" % (tel["lap"] - 1, lt_, "clean" if clean_ else "NOT clean", d_imp, d_lim, d_kerb, used_, meta["push"], ("%.2f" % meta["best"]) if meta["best"] else "none"), flush=True)
                     meta["t"], meta["imp"], meta["lim"], meta["kerb"] = now, n_imp, n_lim, len(kerbs)
+                    if clean_ and args.brake_adapt and padec:      # braking numbers lowered by a hit under braking heal with clean laps too (the probe raises them only where the pedal stayed under 90%)
+                        for bb_ in list(padec):
+                            padec[bb_] = min(22.0, padec[bb_] * (1.0 + args.brake_heal))
                     if learned:      # zones learned from hits heal with the laps: a clean lap gives 5% back, a hit again takes it away
                         learned[:] = [(lo_, hi_, min(1.0, f_ + args.learn_heal)) for lo_, hi_, f_ in learned if f_ + args.learn_heal < 1.0]
             if finish_at is None and last_lap == start_lap and accum >= 1.1 * args.laps_crossed * track.lap_length:
