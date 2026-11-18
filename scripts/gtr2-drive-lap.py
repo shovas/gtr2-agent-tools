@@ -227,6 +227,7 @@ def main():
     ap.add_argument("--limit-guard", action="store_true", help="track-limit prevention: when three tyres are already off the road surface (the fourth would void the lap), cut the throttle and steer back towards the line until a tyre is back on the road. Live mode turns it on")
     ap.add_argument("--limit-guard-throttle", type=float, default=0.3, help="--limit-guard: throttle ceiling while three tyres are off the road")
     ap.add_argument("--limit-guard-steer", type=float, default=0.15, help="--limit-guard: extra steering towards the line (units of the steering command) while three tyres are off the road, four times that if all four")
+    ap.add_argument("--kerb-vert-share", type=float, default=0.5, help="a jolt counts as a kerb strike or bump (not an impact) when its vertical part is at least this share of it (or kerb surfaces are under a tyre). Live mode uses 0.35: measured at Imola, bumps under braking give 0.40 to 0.41, garage wall hits 0.01")
     ap.add_argument("--contact-min", type=float, default=10.0, help="record every jolt of at least this many m/s^2 (with the surfaces under the wheels) in the result's `contacts`, whatever the hit limits say; read them with gtr2-contact-stats.py")
     ap.add_argument("--kerb-mode", action="store_true", help="on a kerb or rumble strip (and for --kerb-hold seconds after): cap the throttle, ease the brake and hold the gear, so the kick does not become wheelspin, a lockup or an unloaded shift")
     ap.add_argument("--kerb-hold", type=float, default=0.4)
@@ -301,6 +302,8 @@ def main():
         args.aiw = keep
         print("tuned settings for %s: %s" % (Path(args.aiw).stem.lower(), entry["args"]), flush=True)
     if args.fast and not args.fixed:      # the default: live, dynamic, feedback driven; the numbers below are only the starting priors the maps adapt from
+        if args.kerb_vert_share == 0.5:
+            args.kerb_vert_share = 0.35
         if args.impact_track <= 0:
             args.impact_track = 20.0
         for name in ("grip_map", "brake_ctl", "brake_adapt", "dyn", "learn_hits", "recover", "live", "live_fit", "gear_opt", "limit_guard"):
@@ -815,13 +818,13 @@ def main():
                     print("t=%5.1f BUMP (single-sample seam, %.1f m/s^2 at (%.1f, %.1f)): not counted as an impact" % (entry["t"], peak, entry["x"], entry["z"]), flush=True)
             if chain is track.main and a_h >= args.contact_min and now - last_contact > 0.3 and (a_h - base >= 3.0 or abs(tel["accel"][1]) >= 0.5 * args.contact_min):
                 last_contact = now      # measure every jolt (also the small ones under the hit limits) with what is under the wheels, to set the limits from data (gtr2-contact-stats.py)
-                kind_c = "impact" if (a_h > args.impact_accel and (a_h > args.kerb_max_accel or not (abs(tel["accel"][1]) >= 0.5 * a_h or any(any(k in sf for k in KERB_STR) for sf in tel["surfaces"])))) else ("kerb" if a_h > args.impact_accel else "jolt")
+                kind_c = "impact" if (a_h > args.impact_accel and (a_h > args.kerb_max_accel or not (abs(tel["accel"][1]) >= args.kerb_vert_share * a_h or any(any(k in sf for k in KERB_STR) for sf in tel["surfaces"])))) else ("kerb" if a_h > args.impact_accel else "jolt")
                 contacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "lat": round(abs(tel["accel"][0]), 1), "long": round(abs(tel["accel"][2]), 1), "speed": round(speed, 1), "kind": kind_c, "surfaces": sorted(set(tel["surfaces"]))})
             if a_h > args.impact_accel and now - last_impact > 0.3 and (box_target is not None or merging) and abs(tel["accel"][1]) >= 0.3 * a_h:
                 last_impact = now      # in the garage exit only: a jolt with a big vertical part is the lip at the garage mouth, not a wall (Zhuhai 4: 15 to 54 m/s^2 with vert 8 to 17; Anderstorp's pillar: 70 with vert 0.5). Everywhere else every jolt counts as an impact
                 bumps += 1
                 print("t=%5.1f BUMP %.1f m/s^2 at (%.1f, %.1f) speed %.1f accel (lat %.1f, vert %.1f, long %.1f)" % (now - t0, a_h, x, z, speed, tel["accel"][0], tel["accel"][1], tel["accel"][2]), flush=True)
-            elif a_h > (args.impact_track if args.impact_track > 0 else args.impact_accel) and now - last_impact > 0.3 and spiky and chain is track.main and a_h <= args.kerb_max_accel and (abs(tel["accel"][1]) >= 0.5 * a_h or any(any(k in sf for k in ("BRICK", "RMBL", "RMBB", "CURB", "KERB")) for sf in tel["surfaces"])):
+            elif a_h > (args.impact_track if args.impact_track > 0 else args.impact_accel) and now - last_impact > 0.3 and spiky and chain is track.main and a_h <= args.kerb_max_accel and (abs(tel["accel"][1]) >= args.kerb_vert_share * a_h or any(any(k in sf for k in ("BRICK", "RMBL", "RMBB", "CURB", "KERB")) for sf in tel["surfaces"])):
                 last_impact = now      # a kerb strike (real racing has them): a vertical-dominated jolt, or kerb/rumble surfaces under a wheel, on the racing line and below --kerb-max-accel; counted apart from impacts, the lap check allows a few
                 kerbs.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "vert": round(abs(tel["accel"][1]), 1), "speed": round(speed, 1)})
                 if a_h >= args.learn_kerb_min:      # kerb strikes are part of racing: only a hard one teaches the planner anything
