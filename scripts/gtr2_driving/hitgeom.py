@@ -15,6 +15,7 @@ import garage  # noqa: E402
 from gmt import GmtError, parse  # noqa: E402
 
 CELL = 20.0
+ROAD_STEP = 0.4      # steep faces of road/terrain meshes lower than this are kerb and edge steps, not walls
 
 
 class WallIndex:
@@ -40,7 +41,9 @@ class WallIndex:
                     if not garage.steep(tri):
                         continue
                     ys = [p[1] for p in tri]
-                    item = ([(p[0], p[2]) for p in tri], inst, min(ys), max(ys))
+                    if max(ys) - min(ys) < ROAD_STEP and inst.upper().startswith(("TRACK", "TERRAIN")):
+                        continue      # the road's own kerb and edge steps (Spa Track55: 0.13 to 0.23 m high), not a structure
+                    item =([(p[0], p[2]) for p in tri], inst, min(ys), max(ys))
                     xs, zs = [p[0] for p in tri], [p[2] for p in tri]
                     for cx in range(int(min(xs) // CELL), int(max(xs) // CELL) + 1):
                         for cz in range(int(min(zs) // CELL), int(max(zs) // CELL) + 1):
