@@ -397,3 +397,10 @@ The repeat track-limit events of the two default Spa sessions (the long ones, 2 
 ### Spa: planned vs actual speed at the sweeper, and `--gm-down 0.06` (2026-11-19)
 
 `--sig-log` now records the planned speed. At the Spa fast sweeper (x about 35, z about -345) the car follows the plan to within a few m/s, so the plan itself is too fast: on unclean laps the plan is 46 to 54 m/s through it (and jumps up to 5 m/s inside the corner: the curvature estimate over 12 m is noisy), and after the lap-5 spin the grip map pulled it to 40 to 45 m/s, and laps 6 to 9 were clean. A slide cue (front grip 0.26 to 0.45, sideslip 4 to 5 degrees) was present on laps 1 to 4 without any track-limit event, while the map only lost 2% per slide. `--gm-down 0.06`: 5 of 10 clean, best clean 168.48 s, no better (default 6 of 10, 165.95 s; this session's default 165.67 s). The grip map changes do not move Spa; the remaining time is in how conservative the plan is everywhere else (Spa 166 s against a real best lap near 125 s).
+
+## Imola 4, Maserati: highest clean fixed push by bisection (2026-11-19)
+
+Fresh 10-lap sessions with the push fixed (`--meta-start/min/max {v}`), good = at least 8 of 10 clean laps, bracket 1.0 to 1.5 (old `--tol 0.03` stop rule).
+1.25: 0 of 6 clean (fail); 1.125: 9 of 10, best clean 125.28 s; 1.1875: 6 of 10 (fail); 1.1562: 8 of 10, 124.03 s; 1.1719: 8 of 10, 123.71 s (good).
+Highest good fixed push is about 1.17, best clean lap 123.71 s: the same 123.5 to 124.2 s as the live sessions, so one global push is saturated near 124 s, about 18 s over the real pole (105.8 s).
+More speed needs per-corner limits (where the car actually has margin), not a bigger global factor.
