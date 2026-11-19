@@ -385,3 +385,7 @@ One fresh session: 9 of 10 clean, best clean 125.82 s (laps 133.1, 132.4, 131.4,
 ### `--slip-ease 0.9` at Spa (2026-11-19)
 
 8 laps in the time allowed (the allowance was 150 s a lap and Spa takes about 170 s: new `--lap-allow` on the campaign), 3 clean, best clean 170.10 s; the earlier default session had 5 of 8 clean and 166.42 s. The ease did not help at Spa either; `--slip-ease` stays off. The cue leads events but a throttle ease does not remove them (the car is already too fast for the corner by then); the better lever is likely the entry speed (grip map) rather than the exit throttle.
+
+### Spa 4 campaign, defaults, Maserati, `--lap-allow 190` (2026-11-19)
+
+Session 1: 10 laps, 6 clean, best clean 165.95 s (laps 167.6, 171.4, 169.7, 166.7, 166.0, 165.5*, 170.4*, 166.2, 166.0, 165.8*). Session 2: 10 laps, 6 clean, best clean 166.07 s; it started at push 0.987, which is the carried push lowered by the clean-share cap (6 of 10 clean: 0.08 lower): the first run in which the cap acted. The campaign stopped (no gain). Spa is the clearest case of the unclean-lap problem: 4 of 10 laps in each session had a track-limit event or hit, and the push climbs only to about 1.09. Laps are 40 s slower than the best real laps, so pace here is limited by the cautious grip map and braking, not by the push. Next at Spa: find where the track-limit events repeat (`gtr2-hit-locate.py`, signal CSV positions) and fix those corners first.
