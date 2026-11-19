@@ -244,6 +244,8 @@ def main():
     ap.add_argument("--outlap-scale", type=float, default=0.97, help="live mode: the out lap (before the first lap change) is driven at this share of the planned corner and braking speeds: it is not a valid lap (cold tyres), it only teaches the maps")
     ap.add_argument("--fresh-memory", action="store_true", help="live mode: ignore the remembered maps at the start but save what this session learned over them (a campaign's first session)")
     ap.add_argument("--sig-log", action="store_true", help="E1 (instrument only, no control change): log 10 times a second the sideslip angle (velocity direction against heading), yaw rate, front and rear grip fractions, speed and lap distance to runs/signals_<time>.csv, with the track-limit and impact events, to check whether those cues lead a slide")
+    ap.add_argument("--slip-ease", type=float, default=1.0, help="E-next from E1: while the rear grip fraction is under 0.5 with the yaw rate over 15 deg/s at speed (the cue that led 11 of 13 track-limit events by 1 to 2 s), scale the throttle by this (e.g. 0.8) and hold it for --slip-ease-hold seconds; 1.0 = off")
+    ap.add_argument("--slip-ease-hold", type=float, default=1.0, help="--slip-ease: seconds the ease stays after the cue")
     ap.add_argument("--no-memory", action="store_true", help="live mode: do not load or save what the maps learned (scripts/gtr2_driving/learned/<layout>_<car>.json)")
     ap.add_argument("--geo-limits", action="store_true", help="experiment: also test the track limits geometrically (each tyre's position against the white lines from the waypoint widths) next to the surface rule, and record both in the result (geo_*)")
     ap.add_argument("--wheel-track", type=float, default=1.65, help="--geo-limits: distance between the left and right wheels, metres")
@@ -739,6 +741,7 @@ def main():
         bz = {"t": -99.0, "v0": 0.0}      # the last hard braking: when it was last on and the speed it began from
         geo_hits = []      # every jolt over the limit with its distance to the nearest structure (result geo_hits)
         bff = {"t": 0.0, "tv": 0.0, "a": 0.0}      # brake feedforward state (--brake-ff)
+        se_until = 0.0      # --slip-ease: the throttle ease holds until this time
         sig = {"prev": None, "rows": []}      # --sig-log
         sid = {"hist": [], "k": {}}      # steering identification (--steer-id): samples of yaw rate per steering command per m/s, by speed bin
         stn = {"g": {},"last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
@@ -1214,6 +1217,11 @@ def main():
                 if shared["brake"] > 0.1:
                     dyn["abs_n"] += 1 if dyn["abs"] < 0.9 else 0
                     dyn["brk_n"] += 1
+                if args.slip_ease < 1.0:
+                    if speed > 15.0 and min(wl[2]["grip"], wl[3]["grip"]) < 0.5 and abs(yawrate) > 15.0:
+                        se_until = now + args.slip_ease_hold
+                    if now < se_until:
+                        shared["duty"] *= args.slip_ease
                 if not (args.trap_escape and off4 and speed < 8.0 and tt["phase"] != 1):
                     shared["duty"] *= dyn["tc"]      # in a trap the slip control would cut the throttle on every spin of the wheels: the escape holds the engine speed instead (below)
                 shared["brake"] *= dyn["abs"]
