@@ -359,3 +359,7 @@ Four 10-lap sessions in a row, each starting from the previous session's learned
 | 4 | 5 of 10 | 123.94 s | push 1.22, grip map mean 0.94: over-pushed, stopped (no gain) |
 
 Memory carried across sessions is worth about 3 s at Imola (124.3 to 121.0 s); the stop rule fired because session 4 pushed past the limit (more track-limit events, grip bins cut), not because learning ran out. The real pole is about 105.8 s, so the gap is still about 15 s. Idea: cap the carried push so it backs off when the clean share falls below 8 of 10.
+
+### Monza 4, `--brake-plan-share 0.9`, Maserati (2026-11-19)
+
+One fresh 10-lap session: 7 clean, best clean 129.50 s (laps 133.5, 132.6, 131.1, 129.8*, 130.1, 146.2*, 129.5, 128.6*, 132.3, 132.5; * = track-limit event). The default sessions gave 129 to 130.4 s clean, so 0.9 gives no clear gain at Monza, still has a track-limit event at the first chicane in 3 of 10 laps, and was 1.8 s slower at Imola. Keep the default of 1.0.
