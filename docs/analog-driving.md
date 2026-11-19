@@ -377,3 +377,7 @@ Session 1: 10 of 10 clean, push 1.00 to 1.18, every lap faster than the last, be
 ### E1 on Imola, Spa and Monza (Maserati, one session each, 2026-11-19)
 
 Rows 13 to 16 thousand per session, 13 track-limit events in all (Imola 2, Spa 8, Monza 3; Spa also 4 impacts, 8 laps in the time allowed, best clean 166.42 s with 5 clean; Monza 129.63 s, 8 of 10 clean). Sideslip stays small everywhere (p99 3.6 to 5.8 degrees); the Spa maximum of 166 degrees is the car after a spin or hit. The cue "rear grip fraction under 0.5 and yaw rate above 15 deg/s" was present in the 2 s before 11 of the 13 events (85%), against 23% for random 2 s windows at speed over 15 m/s, and was on in 1.6 to 7.5% of all rows. So it leads track-limit events usefully; it is a candidate for E-next: ease the throttle (and later steering) while the cue is on, as an opt-in `--slip-ease`.
+
+### `--slip-ease 0.8` at Imola (2026-11-19)
+
+One fresh session: 9 of 10 clean, best clean 125.82 s (laps 133.1, 132.4, 131.4, 130.2, 129.6, 128.8, 127.7, 126.5, 125.8, then 124.5 with one track-limit event). The fresh default sessions were 123.55 s (10 clean), 123.65 s (10 clean) and 124.18 s (8 clean): the ease costs about 1.5 to 2 s a lap and did not make laps cleaner (the default sessions were already 8 to 10 clean). Left off (1.0). Imola has too few events for the cue to pay; a track with many exit track-limit events (Spa: 8 in 8 laps) is the place to try it, with the bisection of the ease factor (0.9 first).
