@@ -44,6 +44,7 @@ av_paths	our_options_main.txt`.
 - `gtr2-contact-stats.py`: summarises the jolts the lap runner measured (`contacts`, `--contact-min`) per surface under the wheels and kind (jolt, kerb strike, impact): size, vertical part, speed; for setting hit limits from data.
 - `gtr2-lap-sections.py`: where a lap loses time: sections of lap distance from a lap log compared with the offline speed model on the same line, worst first; also shows what the model says for other grip/braking numbers.
 - `gtr2-hit-locate.py`: places the hits of a lap result on the track map (chain, distance along it, offset against the road edges, nearest collision structures and surfaces of the track's own meshes) so a repeated hit can be traced to a wall, barrier or seam.
+- `gtr2-lap-profile.py`: reads a `--sig-log` CSV and prints one lap's speed, lowest speed and planned speed per stretch of track and the time spent by speed class, so the slow stretches stand out (`--target` shows the speed-up a lap time needs).
 - `gtr2-outlap-sweep.py`: finds the highest out-lap speed share that is reliably clean, by bisection between 0.80 and 1.00 (`--linear` for 1% steps).
 - `gtr2-lap-campaign.py`: repeated 10-lap live sessions with fresh tyres while the best clean lap keeps improving; results in `runs/campaign.jsonl`.
 - `gtr2-lap-estimate.py`: offline lap-time estimate of planner settings on a layout (power limited acceleration, downforce grip), within 2 to 3 s of real laps; `gtr2-shift-points.py`: best upshift rpm per gear from a car's own engine and gear files.
