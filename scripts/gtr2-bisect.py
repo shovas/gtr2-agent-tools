@@ -1,13 +1,13 @@
 r"""Bisection search of one driver setting by lap sessions: between a low value that is known good and a high value that is not, test the midpoint with a fresh
 10-lap session (gtr2-lap-campaign.py, one session, --fresh), call it good when at least --min-clean of the timed laps were clean (an unclean lap is a fail,
-not a slow time), keep the half that brackets the limit, and stop when the bracket is narrower than --tol. Every test (value, clean laps, best clean lap)
+not a slow time), keep the half that brackets the limit, and stop by the 1% rule: the test whose value differs from the previous test by 1% or less (--stop-rel) is the last one. Every test (value, clean laps, best clean lap)
 is appended to scripts/gtr2_ui/runs/bisect.jsonl and printed, and the end result is the highest good value with its best clean lap time.
 
-    scripts\.venv\Scripts\python.exe -I scripts\gtr2-bisect.py Imola4Imol --car gt/maserati_mc12 --lo 1.0 --hi 1.5 --tol 0.02 \
+    scripts\.venv\Scripts\python.exe -I scripts\gtr2-bisect.py Imola4Imol --car gt/maserati_mc12 --lo 1.0 --hi 1.5 \
         --template "--meta-start {v} --meta-min {v} --meta-max {v}"
 
 {v} in --template is the tested value (here a fixed push factor: the push does not climb, so a session measures one value). The PC must be left alone:
-a test takes about 25 minutes, so a bracket of 0.5 down to 0.02 takes five tests. Standard library only.
+a test takes about 25 minutes, so 1.0 to 1.5 takes about six tests. Standard library only.
 """
 import argparse
 import json
@@ -40,16 +40,17 @@ def main():
     ap.add_argument("--car", default="gt/maserati_mc12")
     ap.add_argument("--lo", type=float, required=True, help="a value expected to be good (clean)")
     ap.add_argument("--hi", type=float, required=True, help="a value expected to fail")
-    ap.add_argument("--tol", type=float, default=0.02, help="stop when hi - lo is below this")
+    ap.add_argument("--stop-rel", type=float, default=0.01, help="stop after a test whose value is within this relative change of the previous test (rule: 1 percent)")
+    ap.add_argument("--tol", type=float, default=0.0, help="also stop when hi - lo is below this absolute width (0 = off)")
     ap.add_argument("--template", required=True, help='driver options with {v}, e.g. "--meta-start {v} --meta-min {v} --meta-max {v}"')
     ap.add_argument("--common", default="", help="driver options added to every test")
     ap.add_argument("--min-clean", type=int, default=8, help="clean timed laps (of 10) for a value to count as good")
     ap.add_argument("--lap-allow", type=int, default=150)
     ap.add_argument("--max-tests", type=int, default=8)
     a = ap.parse_args()
-    lo, hi, best = a.lo, a.hi, None
+    lo, hi, best, prev = a.lo, a.hi, None, None
     for n in range(a.max_tests):
-        if hi - lo < a.tol:
+        if a.tol > 0 and hi - lo < a.tol:
             break
         v = round((lo + hi) / 2.0, 4)
         t0 = time.time()
@@ -66,6 +67,10 @@ def main():
             lo, best = v, r
         else:
             hi = v
+        if prev is not None and abs(v - prev) <= a.stop_rel * abs(prev):
+            print("change from the previous test %.2f percent: stop (1 percent rule)" % (100.0 * abs(v - prev) / abs(prev)), flush=True)
+            break
+        prev = v
     print("bracket %g to %g; highest good value %s%s" % (lo, hi, ("%g" % best["value"]) if best else "none tested", (", best clean lap %.2f s" % best["best_clean"]) if best and best["best_clean"] else ""), flush=True)
     return 0
 
