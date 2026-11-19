@@ -243,6 +243,7 @@ def main():
     ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
     ap.add_argument("--outlap-scale", type=float, default=0.97, help="live mode: the out lap (before the first lap change) is driven at this share of the planned corner and braking speeds: it is not a valid lap (cold tyres), it only teaches the maps")
     ap.add_argument("--fresh-memory", action="store_true", help="live mode: ignore the remembered maps at the start but save what this session learned over them (a campaign's first session)")
+    ap.add_argument("--sig-log", action="store_true", help="E1 (instrument only, no control change): log 10 times a second the sideslip angle (velocity direction against heading), yaw rate, front and rear grip fractions, speed and lap distance to runs/signals_<time>.csv, with the track-limit and impact events, to check whether those cues lead a slide")
     ap.add_argument("--no-memory", action="store_true", help="live mode: do not load or save what the maps learned (scripts/gtr2_driving/learned/<layout>_<car>.json)")
     ap.add_argument("--geo-limits", action="store_true", help="experiment: also test the track limits geometrically (each tyre's position against the white lines from the waypoint widths) next to the surface rule, and record both in the result (geo_*)")
     ap.add_argument("--wheel-track", type=float, default=1.65, help="--geo-limits: distance between the left and right wheels, metres")
@@ -682,8 +683,8 @@ def main():
                 padec.update({int(k_): float(v_) for k_, v_ in mem.get("padec", {}).items()})
                 if args.session_laps > 0 and mem.get("meta"):      # a later session (fresh tyres) starts from the push that worked, with a small step
                     meta["push"] = meta["best_push"] = min(args.meta_max, max(args.meta_min, float(mem["meta"].get("push", args.meta_start))))
-                    if float(mem["meta"].get("clean_frac", 1.0)) < 0.8:      # fewer than 8 of 10 laps clean last session: the push was over the limit of the car, start lower
-                        meta["push"] = meta["best_push"] = max(args.meta_min, meta["push"] - 0.04)
+                    if float(mem["meta"].get("clean_frac", 1.0)) < 1.0:      # laps were unclean last session: the push was over the limit of the car, start lower by 0.02 per unclean lap of ten (8 clean 0.04, 5 clean 0.10)
+                        meta["push"] = meta["best_push"] = max(args.meta_min, meta["push"] - 0.2 * (1.0 - float(mem["meta"]["clean_frac"])))
                         print("last session had only %.0f%% clean laps: carried push lowered to %.3f" % (100 * float(mem["meta"]["clean_frac"]), meta["push"]), flush=True)
                     meta["step"] = args.meta_step      # a new session starts with the full step again (the tyres are fresh)
                     meta["prev_best"] = mem["meta"].get("best_time")
@@ -738,6 +739,7 @@ def main():
         bz = {"t": -99.0, "v0": 0.0}      # the last hard braking: when it was last on and the speed it began from
         geo_hits = []      # every jolt over the limit with its distance to the nearest structure (result geo_hits)
         bff = {"t": 0.0, "tv": 0.0, "a": 0.0}      # brake feedforward state (--brake-ff)
+        sig = {"prev": None, "rows": []}      # --sig-log
         sid = {"hist": [], "k": {}}      # steering identification (--steer-id): samples of yaw rate per steering command per m/s, by speed bin
         stn = {"g": {},"last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
         gearcar = cargears.load(args.car_key) if args.gear_opt and args.car_key else None
@@ -764,6 +766,14 @@ def main():
             dt = max(now - prev_t, 1e-3)
             yawrate = 0.0 if prev_yaw is None else wrap(yaw - prev_yaw) / dt
             prev_yaw, prev_t = yaw, now
+            if args.sig_log:
+                if sig["prev"] is None or now - sig["prev"][2] >= 0.1:
+                    if sig["prev"] is not None and speed > 8.0:
+                        mvx, mvz = x - sig["prev"][0], z - sig["prev"][1]
+                        if mvx * mvx + mvz * mvz > 0.25:
+                            wl_ = tel["wheels"]
+                            sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z)))
+                    sig["prev"] = (x, z, now)
             if args.focus_test:
                 if ft["phase"] == 0 and now - t0 > args.focus_test[0] and speed > 25:
                     ft["phase"], ft["until"] = 1, now + args.focus_test[1]
@@ -1418,6 +1428,17 @@ def main():
                              "events": [e_ for e_ in geo["events"] if e_["seconds"] >= 0.06][:10], "surface_off_margin_m": ([mg[0], mg[len(mg) // 10], mg[len(mg) // 2], mg[-1]] if mg else None),
                              "gap_any_tyre_off_road_surface(min,p5,p50,p95,n)": (lambda v_: [v_[0], v_[len(v_) // 20], v_[len(v_) // 2], v_[-1 - len(v_) // 20], len(v_)] if v_ else None)(sorted(geo.get("m_off", []))),
                              "gap_all_tyres_on_road_surface(min,p5,p50,p95,n)": (lambda v_: [v_[0], v_[len(v_) // 20], v_[len(v_) // 2], v_[-1 - len(v_) // 20], len(v_)] if v_ else None)(sorted(geo.get("m_on", [])))}
+        if args.sig_log and sig["rows"]:
+            try:
+                sf_ = Path(__file__).resolve().parent / "gtr2_ui" / "runs" / ("signals_%s.csv" % time.strftime("%Y%m%d_%H%M%S"))
+                with sf_.open("w", encoding="utf-8") as f_:
+                    f_.write("# layout %s car %s; sideslip and yawrate in degrees and degrees/s; events: track limits %s impacts %s\n" % (args.aiw, args.car_key, [(e_.get("t"), e_.get("seconds")) for e_ in limit_events if e_["seconds"] >= 0.06], [(i_["t"], i_["a"]) for i_ in impacts if not i_.get("pit")]))
+                    f_.write("t,speed,sideslip,yawrate,front_grip,rear_grip,lap,x,z\n")
+                    for r_ in sig["rows"]:
+                        f_.write(",".join(str(v_) for v_ in r_) + "\n")
+                print("signals logged to %s (%d rows)" % (sf_.name, len(sig["rows"])), flush=True)
+            except Exception as e_:
+                print("signal log not written (%s)" % e_, flush=True)
         if args.grip_map and not args.no_memory and len(result["lap_changes"]) >= 2 and (args.session_laps > 0 or not [i_ for i_ in impacts if not i_.get("pit")]):      # a completed lap without impacts: remember what the maps learned
             try:
                 mem_file.parent.mkdir(exist_ok=True)
