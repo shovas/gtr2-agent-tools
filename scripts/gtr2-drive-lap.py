@@ -775,7 +775,7 @@ def main():
                         mvx, mvz = x - sig["prev"][0], z - sig["prev"][1]
                         if mvx * mvx + mvz * mvz > 0.25:
                             wl_ = tel["wheels"]
-                            sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z)))
+                            sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z), round(sig.get("tv", 0.0), 1)))
                     sig["prev"] = (x, z, now)
             if args.focus_test:
                 if ft["phase"] == 0 and now - t0 > args.focus_test[0] and speed > 25:
@@ -1147,6 +1147,7 @@ def main():
             if chain is track.pit and abs(lat) > 3.0:
                 vmax = min(vmax, 5.0)
             target_v = max(3.0, min(vmax, corner_v))
+            sig["tv"] = target_v      # --sig-log: the planned speed
             if edge_over > 0.0:
                 target_v = max(4.0, target_v * max(0.6, 1.0 - args.edge_slow * edge_over))
             if box_target is not None:
@@ -1441,7 +1442,7 @@ def main():
                 sf_ = Path(__file__).resolve().parent / "gtr2_ui" / "runs" / ("signals_%s.csv" % time.strftime("%Y%m%d_%H%M%S"))
                 with sf_.open("w", encoding="utf-8") as f_:
                     f_.write("# layout %s car %s; sideslip and yawrate in degrees and degrees/s; events: track limits %s impacts %s\n" % (args.aiw, args.car_key, [(e_.get("t"), e_.get("seconds")) for e_ in limit_events if e_["seconds"] >= 0.06], [(i_["t"], i_["a"]) for i_ in impacts if not i_.get("pit")]))
-                    f_.write("t,speed,sideslip,yawrate,front_grip,rear_grip,lap,x,z\n")
+                    f_.write("t,speed,sideslip,yawrate,front_grip,rear_grip,lap,x,z,plan_speed\n")
                     for r_ in sig["rows"]:
                         f_.write(",".join(str(v_) for v_ in r_) + "\n")
                 print("signals logged to %s (%d rows)" % (sf_.name, len(sig["rows"])), flush=True)
