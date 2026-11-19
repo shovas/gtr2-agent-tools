@@ -346,3 +346,16 @@ Fresh 10-lap sessions, Imola 4, Maserati, same day: old code (commit 550db47, a 
 Late braking is common to the Monza chicane overshoots and the Spa La Source run-wide: the pedal is a proportional law on speed error, so the car follows the planned braking curve 3 to 5 m/s above it all the way down and reaches the corner too fast (Spa log: 48 m/s against a plan of 45, then 17 against 8 at the hairpin entry). `--brake-plan-share S` (opt-in, default 1.0) plans with S of the braking map's deceleration. Spa out laps (lateral rms / largest offset): 1.0 1.74 / 5.5 m, 0.9 1.74 / 5.7 m, 0.8 1.67 / 5.5 m: no difference on the eased out lap. Imola 4 10-lap session at 0.9: 125.62 s best clean, 9 of 10 clean, against 123.86 s and 10 of 10 at 1.0 the same day: about 1.8 s slower and no cleaner there. Stays 1.0; to try at Monza and Spa in sessions (where the overshoots are) and with a pedal that anticipates (feedforward, E5/E6 in the strategy section).
 
 Repeat of the Imola 4 default session (hit geometry, lateral guard, brake marker above 45 m/s, trap escape on): 124.20 s best clean, 10 of 10 clean, push 1.18 and still gaining about 0.5 to 1 s a lap, against 123.86 s the first time: repeatable within 0.4 s. Campaign (sessions of 10 laps, each starting from the memory of the last) next.
+
+### Imola 4 campaign, defaults, Maserati (2026-11-18)
+
+Four 10-lap sessions in a row, each starting from the previous session's learned memory with fresh tyres (`gtr2-lap-campaign.py --max-sessions 4 --fresh`):
+
+| session | clean laps | best clean lap | note |
+|---|---|---|---|
+| 1 | 10 of 10 | 124.30 s | |
+| 2 | 10 of 10 | 123.72 s | |
+| 3 | 8 of 10 | **121.00 s** | push 1.18 to 1.20 from lap 1 (carried over) |
+| 4 | 5 of 10 | 123.94 s | push 1.22, grip map mean 0.94: over-pushed, stopped (no gain) |
+
+Memory carried across sessions is worth about 3 s at Imola (124.3 to 121.0 s); the stop rule fired because session 4 pushed past the limit (more track-limit events, grip bins cut), not because learning ran out. The real pole is about 105.8 s, so the gap is still about 15 s. Idea: cap the carried push so it backs off when the clean share falls below 8 of 10.
