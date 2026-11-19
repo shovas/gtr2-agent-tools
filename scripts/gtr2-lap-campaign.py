@@ -33,12 +33,13 @@ def main():
     ap.add_argument("--max-sessions", type=int, default=5)
     ap.add_argument("--gain", type=float, default=0.1, help="a session must beat the previous best clean lap by this many seconds for another session to start")
     ap.add_argument("--drive-args", default="", help="extra driver options for every session")
+    ap.add_argument("--lap-allow", type=int, default=150, help="seconds allowed per timed lap when sizing the session (Spa takes about 170 s a lap: 8 of 10 laps fitted at 150)")
     ap.add_argument("--fresh", action="store_true", help="ignore the learned memory of earlier campaigns in the first session and replace it with what that session learns")
     a = ap.parse_args()
     best_prev, session = None, 0
     while session < a.max_sessions:
         session += 1
-        total = 200 + a.laps * 150
+        total = 200 + a.laps * a.lap_allow
         extra = "--session-laps %d --total %d %s" % (a.laps, total, a.drive_args)
         if a.fresh and session == 1:
             extra += " --fresh-memory"

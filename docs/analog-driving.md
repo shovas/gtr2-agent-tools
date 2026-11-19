@@ -381,3 +381,7 @@ Rows 13 to 16 thousand per session, 13 track-limit events in all (Imola 2, Spa 8
 ### `--slip-ease 0.8` at Imola (2026-11-19)
 
 One fresh session: 9 of 10 clean, best clean 125.82 s (laps 133.1, 132.4, 131.4, 130.2, 129.6, 128.8, 127.7, 126.5, 125.8, then 124.5 with one track-limit event). The fresh default sessions were 123.55 s (10 clean), 123.65 s (10 clean) and 124.18 s (8 clean): the ease costs about 1.5 to 2 s a lap and did not make laps cleaner (the default sessions were already 8 to 10 clean). Left off (1.0). Imola has too few events for the cue to pay; a track with many exit track-limit events (Spa: 8 in 8 laps) is the place to try it, with the bisection of the ease factor (0.9 first).
+
+### `--slip-ease 0.9` at Spa (2026-11-19)
+
+8 laps in the time allowed (the allowance was 150 s a lap and Spa takes about 170 s: new `--lap-allow` on the campaign), 3 clean, best clean 170.10 s; the earlier default session had 5 of 8 clean and 166.42 s. The ease did not help at Spa either; `--slip-ease` stays off. The cue leads events but a throttle ease does not remove them (the car is already too fast for the corner by then); the better lever is likely the entry speed (grip map) rather than the exit throttle.
