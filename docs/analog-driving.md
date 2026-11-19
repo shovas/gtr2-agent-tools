@@ -363,3 +363,7 @@ Memory carried across sessions is worth about 3 s at Imola (124.3 to 121.0 s); t
 ### Monza 4, `--brake-plan-share 0.9`, Maserati (2026-11-19)
 
 One fresh 10-lap session: 7 clean, best clean 129.50 s (laps 133.5, 132.6, 131.1, 129.8*, 130.1, 146.2*, 129.5, 128.6*, 132.3, 132.5; * = track-limit event). The default sessions gave 129 to 130.4 s clean, so 0.9 gives no clear gain at Monza, still has a track-limit event at the first chicane in 3 of 10 laps, and was 1.8 s slower at Imola. Keep the default of 1.0.
+
+### Imola 4 campaign repeat with the clean-share cap (2026-11-19)
+
+Session 1: 10 of 10 clean, push 1.00 to 1.18, every lap faster than the last, best 123.55 s (lap 10, still improving: 10 laps is too few). Session 2 started from push 1.22 and had 7 of 10 clean, best 124.33 s (lap 1 was 147.4 s with an incident), so the campaign stopped (no gain). The cap (`clean_frac` under 0.8 lowers the carried push by 0.04) did not trigger, because session 1 was clean: it is still untested. Observations: session 1 climbed 0.02 push per lap to the end and was still gaining 1 s a lap, so the carried push 1.22 was a jump too far for the next session; the cap should also look at how far the push has risen in one session, or the session length should grow while laps keep improving.
