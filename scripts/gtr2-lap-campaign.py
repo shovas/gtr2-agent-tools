@@ -33,7 +33,7 @@ def main():
     ap.add_argument("--max-sessions", type=int, default=5)
     ap.add_argument("--gain", type=float, default=0.1, help="a session must beat the previous best clean lap by this many seconds for another session to start")
     ap.add_argument("--drive-args", default="", help="extra driver options for every session")
-    ap.add_argument("--fresh", action="store_true", help="ignore the learned memory of earlier campaigns in the first session")
+    ap.add_argument("--fresh", action="store_true", help="ignore the learned memory of earlier campaigns in the first session and replace it with what that session learns")
     a = ap.parse_args()
     best_prev, session = None, 0
     while session < a.max_sessions:
@@ -41,7 +41,7 @@ def main():
         total = 200 + a.laps * 150
         extra = "--session-laps %d --total %d %s" % (a.laps, total, a.drive_args)
         if a.fresh and session == 1:
-            extra += " --no-memory"
+            extra += " --fresh-memory"
         cmd = [sys.executable, "-I", str(HERE / "gtr2-lap-check.py"), a.layout, "--car", a.car, "--input", a.input, "--timeout", str(total + 600), "--drive-args=" + extra.strip()]
         t0 = time.time()
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

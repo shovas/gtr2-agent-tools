@@ -242,6 +242,7 @@ def main():
     ap.add_argument("--gm-slide", type=float, default=0.50, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
     ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
     ap.add_argument("--outlap-scale", type=float, default=0.97, help="live mode: the out lap (before the first lap change) is driven at this share of the planned corner and braking speeds: it is not a valid lap (cold tyres), it only teaches the maps")
+    ap.add_argument("--fresh-memory", action="store_true", help="live mode: ignore the remembered maps at the start but save what this session learned over them (a campaign's first session)")
     ap.add_argument("--no-memory", action="store_true", help="live mode: do not load or save what the maps learned (scripts/gtr2_driving/learned/<layout>_<car>.json)")
     ap.add_argument("--geo-limits", action="store_true", help="experiment: also test the track limits geometrically (each tyre's position against the white lines from the waypoint widths) next to the surface rule, and record both in the result (geo_*)")
     ap.add_argument("--wheel-track", type=float, default=1.65, help="--geo-limits: distance between the left and right wheels, metres")
@@ -674,7 +675,7 @@ def main():
         gm = {}             # --grip-map: 20 m bin of lap distance -> factor on the planner's cornering grip
         gmh = {}
         guard_n = 0
-        if args.grip_map and not args.no_memory and mem_file.exists():
+        if args.grip_map and not args.no_memory and not args.fresh_memory and mem_file.exists():
             try:
                 mem = json.loads(mem_file.read_text())
                 gm.update({int(k_): float(v_) for k_, v_ in mem.get("gm", {}).items()})
