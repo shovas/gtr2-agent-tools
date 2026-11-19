@@ -186,7 +186,7 @@ def main():
     ap.add_argument("--bm-add", type=float, default=30.0)
     ap.add_argument("--bm-min-speed", type=float, default=45.0, help="--brake-margin: only a stop that began above this speed (m/s) counts: a touch of the edge after a slow-corner stop is not a braking miss (Imola 4, 24 m/s: it cost 4 s a lap)")
     ap.add_argument("--bm-max", type=float, default=160.0)
-    ap.add_argument("--bm-heal", type=float, default=8.0)
+    ap.add_argument("--bm-heal", type=float, default=3.0)
     ap.add_argument("--hit-geometry", action="store_true", help="classify a jolt by distance: it is an impact only when a near-vertical face of the track's own collision meshes (wall, barrier, fence) is within --hit-gap of the car's outline; with no structure there it is a bump (seam, kerb, dip). Every jolt over the limit is recorded with its distance and the structure's name (result geo_hits). On in live mode")
     ap.add_argument("--hit-gap", type=float, default=0.4, help="--hit-geometry: gap in metres to a structure that still counts as touching (position and heading are measured to about this much)")
     ap.add_argument("--steer-live", action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
