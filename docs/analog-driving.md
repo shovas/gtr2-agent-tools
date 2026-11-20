@@ -442,3 +442,8 @@ Fixed push 1.1, `gtr2-bisect.py --const 0.4 --gallop 0.1 --template "--dyn-grip 
 With the default 0.4 the lap time is the same: the cutoff only costs clean laps when it is nearly off. Not a lever; left at 0.4.
 
 Summary of the 2026-11-19/20 Imola probes at fixed push 1.1 (all 126.1 to 126.7 s best clean): `--live-brake` (11 to 26), `--live-lat` (above 11 turns laps unclean), line margin (1.8 to 0.11 m), `--dyn-slip` (0.10 to 0.85), `--dyn-grip` (0.4 to 0.1). Only the push (and with it the planned corner speed) moves the lap time (1.1: 126.3 s, 1.17: 123.7 s). The next levers have to change the plan itself: per-bin grip headroom, the learned memory over several sessions, or a better line with a follower that tracks it.
+
+## Imola 4, Maserati: `--line-opt` with the designed follower in live mode, 3-lap screening (2026-11-20)
+
+Fixed push 1.1, new kerb rule, `--line-opt --follower designed`, fresh memory, out lap plus 3 timed laps (`--laps 3`). Margin 1.2 m: 0 of 3 clean (7 to 9 track-limit events per lap, 1 impact), 133.7 to 136.9 s. Margin 2.0 m: 0 of 3 clean (4 to 9 events), 128.5 and 130.7 s plus one 35 s stall at (634, 407). The smoothed line at the same push: 126.3 s with 8 to 9 of 10 clean.
+The events repeat at the same places every lap and are all four wheels on kerb, rumble strip and grass: (-744, 307) at 507 m, (-1004, -185) at 1089 m, (-554, -98) at about 2500 m, (-880, 190) at 690 m (2.4 to 4.4 s at margin 1.2), the start straight (-349, 405) at 75 m (about 1 s) and (-436, -5) at 2685 m. Not clean and not faster: the optimised line does not pay with this follower (cross-track error rms 1.0, p95 2.4 m); it needs a follower that tracks to well under a metre. Left off.
