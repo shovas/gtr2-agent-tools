@@ -25,7 +25,7 @@ OUT = HERE / "gtr2_ui" / "runs" / "bisect.jsonl"
 def run_test(a, v):
     before = len(CAMP.read_text(encoding="utf-8").splitlines()) if CAMP.exists() else 0
     drive = a.template.format(v=("%g" % v), w=("%g" % round(a.const - v, 4))) + (" " + a.common if a.common else "")      # {w} = --const minus the tested value (to search a setting downwards, e.g. a margin)
-    cmd = [sys.executable, "-I", str(HERE / "gtr2-lap-campaign.py"), a.layout, "--car", a.car, "--max-sessions", "1", "--fresh", "--lap-allow", str(a.lap_allow), "--drive-args=" + drive]
+    cmd = [sys.executable, "-I", str(HERE / "gtr2-lap-campaign.py"), a.layout, "--car", a.car, "--max-sessions", "1", "--fresh", "--laps", str(a.laps), "--lap-allow", str(a.lap_allow), "--drive-args=" + drive]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     lines = CAMP.read_text(encoding="utf-8").splitlines() if CAMP.exists() else []
     if len(lines) <= before:
@@ -42,6 +42,14 @@ def test_one(a, v, lo, hi, n):
         print("test at %g did not run: stopping" % v, flush=True)
         return None
     good = r["clean"] >= a.min_clean
+    for _ in range(a.retry_fail if not good else 0):      # a failed short test is run again: the better of the runs counts (3 laps are noisy)
+        r2 = run_test(a, v)
+        print("  retry at %g: %s of %s clean" % (v, r2 and r2["clean"], r2 and r2["laps"]), flush=True)
+        if r2 is not None and r2["clean"] > r["clean"]:
+            r = r2
+        good = r["clean"] >= a.min_clean
+        if good:
+            break
     r.update(good=good, bracket=[lo, hi], layout=a.layout, car=a.car, template=a.template, seconds=round(time.time() - t0))
     with OUT.open("a", encoding="utf-8") as f:
         f.write(json.dumps(r) + "\n")
@@ -63,6 +71,8 @@ def main():
     ap.add_argument("--common", default="", help="driver options added to every test")
     ap.add_argument("--min-clean", type=int, default=8, help="clean timed laps (of 10) for a value to count as good")
     ap.add_argument("--lap-allow", type=int, default=150)
+    ap.add_argument("--retry-fail", type=int, default=0, help="run a failed test again this many times (the better run counts); 1 with --laps 3")
+    ap.add_argument("--laps", type=int, default=10, help="timed laps per test (3 for a quick screening: then use --min-clean 3 and confirm a fail with a second run)")
     ap.add_argument("--max-tests", type=int, default=8)
     a = ap.parse_args()
     if a.hi is None and a.gallop <= 0:
