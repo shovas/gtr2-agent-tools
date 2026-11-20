@@ -137,7 +137,6 @@ def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
 
 TRACK_LIMIT_BUDGET = 0     # laps with all four wheels over the white line: none allowed
 RUN_TIMEOUT = 1500      # seconds one driver run may take (--timeout; a long session needs more)
-LIMIT_RULE = "surface"     # "surface": all four tyres off a ROAD or DRAIN surface (default); "geo": all four beyond the white lines by the waypoint widths (--limit-rule geo)
 KERB_BUDGET = None     # kerb strikes allowed on a lap: None = no limit (user, 2026-11-19: kerbs are fine while a tyre stays on the road; all four beyond the white line is the track limit rule)
 
 
@@ -152,9 +151,6 @@ def judge(result, limit=CLEAN_LIMIT):
         return False, "%d impact(s) on the track, peak %.0f m/s^2, first %s" % (len(hits), result.get("peak_accel", 0), hits[0])
     if KERB_BUDGET is not None and result.get("kerb_count", 0) > KERB_BUDGET:
         return False, "%d kerb strikes (budget %d), first %s" % (result["kerb_count"], KERB_BUDGET, (result.get("kerbs") or ["?"])[0])
-    if LIMIT_RULE == "geo" and result.get("geo") is not None:      # option: the white line from the waypoint widths (an experiment, it lets the car use kerbs: see docs/analog-driving.md), not the surface under the tyres
-        ev = result["geo"].get("events") or []
-        result = dict(result, track_limit_events=len(ev), track_limit_seconds=sum(e.get("seconds", 0) for e in ev), track_limit_list=ev)
     if "track_limit_events" in result:
         if result.get("lap_changes"):      # the out lap is not a valid lap (cold tyres): its track limits do not count, only the timed lap's
             t_fly = result["lap_changes"][0]["t"]
@@ -272,7 +268,6 @@ def main():
     ap.add_argument("--limit", type=float, default=CLEAN_LIMIT)
     ap.add_argument("--input", choices=("keyboard", "analog", "wheel"), default="keyboard", help="analog: drive through the vJoy virtual joystick; wheel: the same with the profile as after selecting the wheel in the game (Basic Controls 2; run gtr2-select-wheel.py first)")
     ap.add_argument("--profile", default="", help="extra profile values for the run, e.g. \"Speed Sensitive Steering=0,Steer Ratio Speed=40\" (reverted afterwards); separate with ; when a key contains a comma (Axis [00, 00] Dead Zone=0.1)")
-    ap.add_argument("--limit-rule", choices=("surface", "geo"), default="surface", help="track-limit rule: surface (default, the tyres' surface names) or geo (geometric white-line test from the waypoint widths; adds --geo-limits to the driver)")
     ap.add_argument("--timeout", type=int, default=1500, help="seconds one driver run may take (raise it for --drive-args=\"--session-laps 20 --total 3600\")")
     ap.add_argument("--quick", action="store_true", help="stop at the first start/finish crossing: the out lap from the pits (about 3 min) instead of out lap plus a timed lap (about 5.5 min)")
     ap.add_argument("--drive-args", default="", help="extra options for gtr2-drive-lap.py, e.g. \"--analog-steer 0.3\"")
@@ -285,11 +280,8 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--list-cars", action="store_true")
     a = ap.parse_args()
-    global LIMIT_RULE, RUN_TIMEOUT
+    global RUN_TIMEOUT
     RUN_TIMEOUT = a.timeout
-    LIMIT_RULE = a.limit_rule
-    if a.limit_rule == "geo":
-        a.drive_args = (a.drive_args + " --geo-limits").strip()
     for kv in [x for x in a.profile.split(";" if ";" in a.profile else ",") if x]:
         PROFILE_EXTRA[kv.split("=", 1)[0].strip()] = kv.split("=", 1)[1].strip()
     items, car_files = layouts(), cars()

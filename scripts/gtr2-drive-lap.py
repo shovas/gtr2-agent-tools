@@ -31,6 +31,7 @@ from ctypes import wintypes
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "gtr2_driving"))
+import limits  # noqa: E402
 import pitzones  # noqa: E402
 import cargears  # noqa: E402
 import racingline  # noqa: E402
@@ -247,9 +248,10 @@ def main():
     ap.add_argument("--slip-ease", type=float, default=1.0, help="E-next from E1: while the rear grip fraction is under 0.5 with the yaw rate over 15 deg/s at speed (the cue that led 11 of 13 track-limit events by 1 to 2 s), scale the throttle by this (e.g. 0.8) and hold it for --slip-ease-hold seconds; 1.0 = off")
     ap.add_argument("--slip-ease-hold", type=float, default=1.0, help="--slip-ease: seconds the ease stays after the cue")
     ap.add_argument("--no-memory", action="store_true", help="live mode: do not load or save what the maps learned (scripts/gtr2_driving/learned/<layout>_<car>.json)")
-    ap.add_argument("--geo-limits", action="store_true", help="experiment: also test the track limits geometrically (each tyre's position against the white lines from the waypoint widths) next to the surface rule, and record both in the result (geo_*)")
-    ap.add_argument("--wheel-track", type=float, default=1.65, help="--geo-limits: distance between the left and right wheels, metres")
-    ap.add_argument("--tyre-half", type=float, default=0.15, help="--geo-limits: half the tyre width, metres: a tyre is over the line when its whole width is beyond it")
+    ap.add_argument("--geo-limits", action="store_true", help="no effect any more: the geometric track-limit test is the only rule and always on (kept so old command lines still parse)")
+    ap.add_argument("--limit-trim", type=float, default=0.0, help="metres the boundary line is pulled inwards from the waypoint width (calibration of the white line; the widths reach 0.5 to 1 m past the road surface over the kerbs at Imola)")
+    ap.add_argument("--wheel-track", type=float, default=1.65, help="fallback only, when the car files cannot be read: distance between the left and right wheels, metres")
+    ap.add_argument("--tyre-half", type=float, default=0.15, help="fallback only, when the car files cannot be read: half the tyre width, metres")
     ap.add_argument("--session-laps", type=int, default=0, help="keep lapping: the out lap plus this many timed laps in one session, and adjust a push factor on the planned corner speeds lap by lap (--meta-*): a clean lap that is faster than the best raises it, an unclean lap or a slower one takes it back and shrinks the step. Raise --total and the lap check's --timeout with it")
     ap.add_argument("--meta-start", type=float, default=1.0, help="--session-laps: starting push factor")
     ap.add_argument("--meta-step", type=float, default=0.02, help="--session-laps: starting push step")
@@ -354,6 +356,10 @@ def main():
     STAGE = lambda name: print("STAGE %s epoch=%.3f" % (name, time.time()), flush=True)      # start-up timing: compared with gtr2-lap-check.py's own stamps
     STAGE("script_started")
     track = trackmap.Track(args.aiw)
+    bounds_ = limits.Boundaries(track.main, trim=args.limit_trim)      # the boundary lines from the file as it is, before any line smoothing moves the waypoints
+    wheels_geom = limits.car_wheels(args.car_key) if args.car_key else None      # the real tyre positions and widths from the car's wheel meshes
+    print("track limits by geometry: tyre positions %s" % ("read from the car's wheel meshes (track %.3f / %.3f m, tyre widths %.2f / %.2f m)" % (wheels_geom[0]["left"] - wheels_geom[1]["left"], wheels_geom[2]["left"] - wheels_geom[3]["left"], wheels_geom[0]["width"], wheels_geom[2]["width"]) if wheels_geom else "FIXED fallback (car files not readable)"), flush=True)
+    wheels_geom = wheels_geom or limits.default_wheels(track_half=args.wheel_track / 2, width=2 * args.tyre_half)
     if args.line_opt:
         ph = racingline.Physics(lat=args.lat_accel, decel=args.decel, kk=args.live_k if args.live else 0.0)
         offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True), seed=([-w_.dry for w_ in track.main] if args.line_seed_dry else None))
@@ -931,23 +937,11 @@ def main():
                     key = "%d %s" % (int(w.dist // 20) * 20, ",".join(sorted({s for s in tel["surfaces"] if any(b in s for b in OFF_ROAD)})))
                     off_buckets[key] = off_buckets.get(key, 0) + 1
                     off_lat.setdefault(key, []).append(lat)      # lateral offset from the line at those samples (sign: see trackmap.lateral)
-            if args.geo_limits and chain is track.main and speed > 3.0:
+            geo_out = False
+            if chain is track.main:      # a track limit is judged by geometry only: all four tyres wholly beyond the same boundary line (gtr2_driving/limits.py)
                 yr_ = math.radians(tel["yaw"])
-                hxc, hzc = -math.sin(yr_), -math.cos(yr_)
-                px_, pz_ = -hzc, hxc      # the lateral direction of Track.lateral, for the car's heading
-                side_out = {"l": 0, "r": 0}
-                gap_min = 99.0
-                for fa_, fb_ in ((1.35, 1), (1.35, -1), (-1.35, 1), (-1.35, -1)):      # four tyres: 1.35 m ahead or behind the centre, either side
-                    wx_, wz_ = x + fa_ * hxc + fb_ * args.wheel_track / 2 * px_, z + fa_ * hzc + fb_ * args.wheel_track / 2 * pz_
-                    wp_ = chain[track.nearest(chain, wx_, wz_, near=k, window=40)]
-                    lt_ = track.lateral(wp_, wx_, wz_)
-                    left_edge, right_edge = wp_.left - wp_.off, wp_.right + wp_.off      # the white lines, from the (shifted) line
-                    if lt_ - args.tyre_half > left_edge:
-                        side_out["l"] += 1
-                    if lt_ + args.tyre_half < -right_edge:
-                        side_out["r"] += 1
-                    gap_min = min(gap_min, left_edge - lt_, lt_ + right_edge)      # least distance from a tyre centre to a white line (negative: beyond it)
-                geo_out = side_out["l"] == 4 or side_out["r"] == 4
+                geo_flags, gap_min = limits.wheels_beyond(bounds_, k, x, z, -math.sin(yr_), -math.cos(yr_), wheels_geom)      # gap_min: least distance of a tyre footprint inside its line (negative: beyond)
+                geo_out = limits.all_four_beyond(geo_flags)
                 surf_out = all(not any(k_ in sf.upper() for k_ in ("ROAD", "DRAIN")) for sf in tel["surfaces"])
                 geo["n"] += 1
                 geo["both"] += 1 if (geo_out and surf_out) else 0
@@ -964,7 +958,7 @@ def main():
                     geo["open"]["seconds"] = round(geo["open"]["seconds"] + (now - geo["last"] if geo["last"] > 0 and now - geo["last"] < 0.2 else 0.02), 3)
                     geo["last"] = now
             if chain is track.main:
-                if all(not any(k in sf.upper() for k in ("ROAD", "DRAIN")) for sf in tel["surfaces"]):
+                if geo_out:      # a track-limit event: all four tyres wholly beyond the boundary line
                     if limit_open is None or now - limit_last > 0.5:
                         limit_open = {"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "dist": int(w.dist), "seconds": 0.0, "surface": ",".join(sorted(set(tel["surfaces"])))}
                         limit_events.append(limit_open)
@@ -1431,7 +1425,7 @@ def main():
             result["geo_hits"] = geo_hits[:60]
         if args.steer_id:
             result["steer_id"] = {str(b * 10): {"n": len(v_), "k_med": round(sorted(v_)[len(v_) // 2], 5), "k_p10": round(sorted(v_)[len(v_) // 10], 5), "k_p90": round(sorted(v_)[-1 - len(v_) // 10], 5)} for b, v_ in sorted(sid["k"].items()) if len(v_) >= 5}
-        if args.geo_limits:
+        if geo["n"] > 0:
             mg = sorted(geo["margins"])
             result["geo"] = {"samples": geo["n"], "both": geo["both"], "geometric_only": geo["geo_only"], "surface_only": geo["surf_only"],
                              "events": [e_ for e_ in geo["events"] if e_["seconds"] >= 0.06][:10], "surface_off_margin_m": ([mg[0], mg[len(mg) // 10], mg[len(mg) // 2], mg[-1]] if mg else None),
