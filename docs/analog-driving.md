@@ -435,3 +435,10 @@ Where the 2026-11-20 profile says the time goes (lap 9 of the 2026-11-19 signal 
 
 Fixed push 1.1, `--lo 0.10 --gallop 0.05`. 0.15: 9 of 10 clean, best clean 126.16 s; 0.25: 10, 126.52 s; 0.45: 9, 126.40 s; 0.85: 10, 126.47 s. Stopped by hand (the next, 1.65, means no slip control at all).
 No failure and no change in lap time up to 0.85 (rear wheels 85% faster than rolling before the throttle eases). The second rule of `--dyn`, a rear tyre grip fraction under `--dyn-grip` (0.4) cuts the throttle to 50%, was still on and probably did the work: next to bisect.
+
+## Imola 4, Maserati: `--dyn-grip` (grip fraction under which the throttle is cut) by downward search (2026-11-20)
+
+Fixed push 1.1, `gtr2-bisect.py --const 0.4 --gallop 0.1 --template "--dyn-grip {w}"` (tested value = how far the cutoff is lowered from 0.4). Cutoff 0.3: 8 of 10 clean, best clean 126.11 s; cutoff 0.1: 8 of 10, 126.28 s; cutoff 0.05: 4 of 10 (fail), 126.32 s. Stopped by hand before the 1% rule (4 more tests, about 100 minutes, to place the edge between 0.1 and 0.05, which cannot change the lap time).
+With the default 0.4 the lap time is the same: the cutoff only costs clean laps when it is nearly off. Not a lever; left at 0.4.
+
+Summary of the 2026-11-19/20 Imola probes at fixed push 1.1 (all 126.1 to 126.7 s best clean): `--live-brake` (11 to 26), `--live-lat` (above 11 turns laps unclean), line margin (1.8 to 0.11 m), `--dyn-slip` (0.10 to 0.85), `--dyn-grip` (0.4 to 0.1). Only the push (and with it the planned corner speed) moves the lap time (1.1: 126.3 s, 1.17: 123.7 s). The next levers have to change the plan itself: per-bin grip headroom, the learned memory over several sessions, or a better line with a follower that tracks it.
