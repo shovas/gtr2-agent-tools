@@ -418,3 +418,8 @@ Highest good value 11 (about 1.12 g), the same as the committed Imola setting. A
 ## Kerb strikes no longer make a lap unclean (2026-11-19, user's rule)
 
 The clean test of a timed lap is now: no impacts and no track-limit event (all four wheels off the road surface, i.e. beyond the white line; kerb surfaces do not count as road). Kerb strikes are still logged (`kerbs`, `kerb_count`) but have no budget: `gtr2-drive-lap.py` (`clean_`), `gtr2-lap-check.py` (`KERB_BUDGET = None`) and `gtr2-outlap-sweep.py`. Clean counts from before this change allowed at most 5 strikes per lap; in the Imola runs the failures were track-limit events and impacts, so the counts are close.
+
+## Imola 4, Maserati: `--live-brake` retest with `--gallop` (2026-11-20)
+
+Fixed push 1.1, new kerb rule, `--lo 11 --gallop 1`, good = 8 of 10 clean. 12: 9 of 10, best clean 127.59 s; 14: 9, 127.61 s; 18: 9, 127.11 s; 26: 9, 126.56 s. Stopped by hand after four tests (the next, 42, was pointless).
+No failure up to 26 m/s^2 (2.7 g, far above real braking grip) and no change in lap time: the starting braking prior is not used at Imola, the learned braking map overrides it. Not a lever; left at 11. These sessions ran about 1 s slower than the 2026-11-19 ones at the same push (126.2 to 126.7 s); cause not known (run-to-run noise or the kerb rule).
