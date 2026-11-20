@@ -423,3 +423,10 @@ The clean test of a timed lap is now: no impacts and no track-limit event (all f
 
 Fixed push 1.1, new kerb rule, `--lo 11 --gallop 1`, good = 8 of 10 clean. 12: 9 of 10, best clean 127.59 s; 14: 9, 127.61 s; 18: 9, 127.11 s; 26: 9, 126.56 s. Stopped by hand after four tests (the next, 42, was pointless).
 No failure up to 26 m/s^2 (2.7 g, far above real braking grip) and no change in lap time: the starting braking prior is not used at Imola, the learned braking map overrides it. Not a lever; left at 11. These sessions ran about 1 s slower than the 2026-11-19 ones at the same push (126.2 to 126.7 s); cause not known (run-to-run noise or the kerb rule).
+
+## Imola 4, Maserati: how close the smoothed line may go to the white lines (2026-11-20)
+
+`gtr2-bisect.py --const 1.8 --gallop 0.3`, fixed push 1.1, new kerb rule, Imola's track params passed with `--no-track-params` and `--line-margin` varied (the margin is 1.8 minus the tested reduction). Reductions 0.3, 0.9, 1.35, 1.575, 1.6875 (margins 1.5, 0.9, 0.45, 0.225, 0.11 m): 9, 8, 9, 8, 9 of 10 clean, best clean 126.27, 126.69, 126.34, 126.67, 126.55 s. Stopped by hand (the next tests only approach margin 0).
+No failure and no change in lap time: the line smoothing does not use the extra room (corners under radius 45 m are pinned and the rest is already near its limit), so the margin is not a lever with this smoother. A gain from the road width needs the optimised line (`--line-opt`) with a follower that can track it.
+
+Where the 2026-11-20 profile says the time goes (lap 9 of the 2026-11-19 signal log, Maserati, 124.3 s): lateral grip used is already 7 to 11 m/s^2 in the slow corners and 12 to 18 in the fast ones; full-throttle acceleration is a median 6.0 m/s^2 at 30 to 40 m/s (p90 7.3), 4.5 at 40 to 50 (p90 6.0), 3.6 at 50 to 60: the gap between median and p90 is the part the exit throttle (shifts, `--dyn` slip control) gives away.
