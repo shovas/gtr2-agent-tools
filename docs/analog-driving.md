@@ -404,3 +404,8 @@ Fresh 10-lap sessions with the push fixed (`--meta-start/min/max {v}`), good = a
 1.25: 0 of 6 clean (fail); 1.125: 9 of 10, best clean 125.28 s; 1.1875: 6 of 10 (fail); 1.1562: 8 of 10, 124.03 s; 1.1719: 8 of 10, 123.71 s (good).
 Highest good fixed push is about 1.17, best clean lap 123.71 s: the same 123.5 to 124.2 s as the live sessions, so one global push is saturated near 124 s, about 18 s over the real pole (105.8 s).
 More speed needs per-corner limits (where the car actually has margin), not a bigger global factor.
+
+## Imola 4, Maserati: `--live-brake` prior by bisection (2026-11-19)
+
+Fresh 10-lap sessions, fixed push 1.1, bracket 11 to 16, good = 8 of 10 clean. 13.5: 8 of 10, best clean 126.22 s; 14.75: 9, 126.23 s; 15.375: 9, 126.74 s; 15.6875: 9, 126.46 s; 15.8438: 9, 126.50 s (1% rule stop).
+Every value up to 15.84 was clean and the lap times did not change (126.2 to 126.7 s): the starting braking-grip prior has no effect at Imola, because the learned braking map takes over. Not a lever; left at 11.
