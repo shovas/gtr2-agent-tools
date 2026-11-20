@@ -17,7 +17,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "gtr2_ui" / "runs" / "lap_results.jsonl"
 OUT = HERE / "gtr2_ui" / "runs" / "outlap_sweep.jsonl"
-KERB_BUDGET = 5
+KERB_BUDGET = None
 
 
 def last_result():
@@ -35,8 +35,6 @@ def clean(res):
         return False, "%d impact(s), peak %.0f m/s^2" % (len(hits), x.get("peak_accel", 0))
     if x.get("track_limit_events", 0) > 0:
         return False, "%d track-limit event(s), %.1f s" % (x["track_limit_events"], x.get("track_limit_seconds", 0))
-    if x.get("kerb_count", 0) > KERB_BUDGET:
-        return False, "%d kerb strikes" % x["kerb_count"]
     return True, "clean (%d kerb strikes)" % x.get("kerb_count", 0)
 
 

@@ -138,7 +138,7 @@ def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
 TRACK_LIMIT_BUDGET = 0     # laps with all four wheels over the white line: none allowed
 RUN_TIMEOUT = 1500      # seconds one driver run may take (--timeout; a long session needs more)
 LIMIT_RULE = "surface"     # "surface": all four tyres off a ROAD or DRAIN surface (default); "geo": all four beyond the white lines by the waypoint widths (--limit-rule geo)
-KERB_BUDGET = 5     # kerb strikes allowed on a lap (real racing has them; see gtr2-drive-lap.py --kerb-max-accel)
+KERB_BUDGET = None     # kerb strikes allowed on a lap: None = no limit (user, 2026-11-19: kerbs are fine while a tyre stays on the road; all four beyond the white line is the track limit rule)
 
 
 def judge(result, limit=CLEAN_LIMIT):
@@ -150,7 +150,7 @@ def judge(result, limit=CLEAN_LIMIT):
     hits = [i for i in result.get("impacts", []) if not i.get("pit")]
     if hits:       # a hit on the track counts like one in the garage exit (the garage-mouth lip is already left out by the driver as a BUMP)
         return False, "%d impact(s) on the track, peak %.0f m/s^2, first %s" % (len(hits), result.get("peak_accel", 0), hits[0])
-    if result.get("kerb_count", 0) > KERB_BUDGET:
+    if KERB_BUDGET is not None and result.get("kerb_count", 0) > KERB_BUDGET:
         return False, "%d kerb strikes (budget %d), first %s" % (result["kerb_count"], KERB_BUDGET, (result.get("kerbs") or ["?"])[0])
     if LIMIT_RULE == "geo" and result.get("geo") is not None:      # option: the white line from the waypoint widths (an experiment, it lets the car use kerbs: see docs/analog-driving.md), not the surface under the tyres
         ev = result["geo"].get("events") or []

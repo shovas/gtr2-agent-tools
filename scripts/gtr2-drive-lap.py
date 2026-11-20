@@ -804,7 +804,7 @@ def main():
                     if meta["t"] is not None:      # the first change only ends the out lap
                         lt_ = now - meta["t"]
                         d_imp, d_lim, d_kerb = n_imp - meta["imp"], n_lim - meta["lim"], len(kerbs) - meta["kerb"]
-                        clean_ = d_imp == 0 and d_lim == 0 and d_kerb <= 5
+                        clean_ = d_imp == 0 and d_lim == 0      # kerb strikes no longer count (user, 2026-11-19): only an impact or all four wheels beyond the white line makes a lap unclean
                         used_ = meta["push"]
                         if clean_:
                             meta["bad"] = 0

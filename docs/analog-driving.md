@@ -409,3 +409,12 @@ More speed needs per-corner limits (where the car actually has margin), not a bi
 
 Fresh 10-lap sessions, fixed push 1.1, bracket 11 to 16, good = 8 of 10 clean. 13.5: 8 of 10, best clean 126.22 s; 14.75: 9, 126.23 s; 15.375: 9, 126.74 s; 15.6875: 9, 126.46 s; 15.8438: 9, 126.50 s (1% rule stop).
 Every value up to 15.84 was clean and the lap times did not change (126.2 to 126.7 s): the starting braking-grip prior has no effect at Imola, because the learned braking map takes over. Not a lever; left at 11.
+
+## Imola 4, Maserati: `--live-lat` prior by gallop and bisection (2026-11-19)
+
+Fresh 10-lap sessions, fixed push 1.1, good = 8 of 10 clean, `gtr2-bisect.py --lo 10 --gallop 1`. 11: 8 of 10, best clean 124.58 s (good); 13: 5 (fail); 12: 6 (fail); 11.5: 7 (fail); 11.25: 7 (125.58 s); 11.125: 7 (124.28 s); 11.0625: 7 (125.86 s); 1% rule stop.
+Highest good value 11 (about 1.12 g), the same as the committed Imola setting. Above it the laps turn unclean without getting faster. The prior is a real limit of this car and line, not a lever.
+
+## Kerb strikes no longer make a lap unclean (2026-11-19, user's rule)
+
+The clean test of a timed lap is now: no impacts and no track-limit event (all four wheels off the road surface, i.e. beyond the white line; kerb surfaces do not count as road). Kerb strikes are still logged (`kerbs`, `kerb_count`) but have no budget: `gtr2-drive-lap.py` (`clean_`), `gtr2-lap-check.py` (`KERB_BUDGET = None`) and `gtr2-outlap-sweep.py`. Clean counts from before this change allowed at most 5 strikes per lap; in the Imola runs the failures were track-limit events and impacts, so the counts are close.
