@@ -430,3 +430,8 @@ No failure up to 26 m/s^2 (2.7 g, far above real braking grip) and no change in 
 No failure and no change in lap time: the line smoothing does not use the extra room (corners under radius 45 m are pinned and the rest is already near its limit), so the margin is not a lever with this smoother. A gain from the road width needs the optimised line (`--line-opt`) with a follower that can track it.
 
 Where the 2026-11-20 profile says the time goes (lap 9 of the 2026-11-19 signal log, Maserati, 124.3 s): lateral grip used is already 7 to 11 m/s^2 in the slow corners and 12 to 18 in the fast ones; full-throttle acceleration is a median 6.0 m/s^2 at 30 to 40 m/s (p90 7.3), 4.5 at 40 to 50 (p90 6.0), 3.6 at 50 to 60: the gap between median and p90 is the part the exit throttle (shifts, `--dyn` slip control) gives away.
+
+## Imola 4, Maserati: `--dyn-slip` (throttle wheelspin tolerance) by gallop (2026-11-20)
+
+Fixed push 1.1, `--lo 0.10 --gallop 0.05`. 0.15: 9 of 10 clean, best clean 126.16 s; 0.25: 10, 126.52 s; 0.45: 9, 126.40 s; 0.85: 10, 126.47 s. Stopped by hand (the next, 1.65, means no slip control at all).
+No failure and no change in lap time up to 0.85 (rear wheels 85% faster than rolling before the throttle eases). The second rule of `--dyn`, a rear tyre grip fraction under `--dyn-grip` (0.4) cuts the throttle to 50%, was still on and probably did the work: next to bisect.
