@@ -24,7 +24,7 @@ OUT = HERE / "gtr2_ui" / "runs" / "bisect.jsonl"
 
 def run_test(a, v):
     before = len(CAMP.read_text(encoding="utf-8").splitlines()) if CAMP.exists() else 0
-    drive = a.template.format(v=("%g" % v)) + (" " + a.common if a.common else "")
+    drive = a.template.format(v=("%g" % v), w=("%g" % round(a.const - v, 4))) + (" " + a.common if a.common else "")      # {w} = --const minus the tested value (to search a setting downwards, e.g. a margin)
     cmd = [sys.executable, "-I", str(HERE / "gtr2-lap-campaign.py"), a.layout, "--car", a.car, "--max-sessions", "1", "--fresh", "--lap-allow", str(a.lap_allow), "--drive-args=" + drive]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     lines = CAMP.read_text(encoding="utf-8").splitlines() if CAMP.exists() else []
@@ -59,6 +59,7 @@ def main():
     ap.add_argument("--stop-rel", type=float, default=0.01, help="stop after a test whose value is within this relative change of the previous test (rule: 1 percent)")
     ap.add_argument("--tol", type=float, default=0.0, help="also stop when hi - lo is below this absolute width (0 = off)")
     ap.add_argument("--template", required=True, help='driver options with {v}, e.g. "--meta-start {v} --meta-min {v} --meta-max {v}"')
+    ap.add_argument("--const", type=float, default=0.0, help="the starting setting for a downward search: {w} in the template is this minus the tested value (tested value = how far it is lowered)")
     ap.add_argument("--common", default="", help="driver options added to every test")
     ap.add_argument("--min-clean", type=int, default=8, help="clean timed laps (of 10) for a value to count as good")
     ap.add_argument("--lap-allow", type=int, default=150)
