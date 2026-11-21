@@ -561,3 +561,5 @@ Brainstormed investigations and experiments, in order (screen at the fixed push 
  e. The apex speed: the planned minimum against the driven minimum and the slow-zone factors there (a zone factor of 0.82 takes the speed down 9%); with a better line the zones can be relaxed (bisect each zone's factor up while the corner stays clean).
  f. Controller: `--brake-gain`, `--brake-deadband`, `--brake-plan-share` (brake release and the undershoot of the plan at the slow corners) and the throttle on the exit.
  g. Gear: 1st gear is right below about 17 m/s; the cure for 1st-gear corners is the apex speed, not the gear logic.
+
+`--dry-line` (the game's own racing line from the AIW) with the zones, fixed push 1.2, 6 laps: 0 of 5 laps clean (the session timed out), 138.3, 155.7, 149.8, 148.9 and 164.6 s, 7 to 9 track-limit events a lap; the tyre footprints beyond the boundary line for 26 to 56 m at 440, 611, 1142 and 2544 m (up to 3 m beyond) and minima of 8.1 m/s (1270 m) and 8.4 m/s (1534 m) in 1st gear. The follower cannot drive that line; the baseline with the same zones at this push: 5 of 6 clean, 121.76 s best, mean 123.82 s. Not usable.
