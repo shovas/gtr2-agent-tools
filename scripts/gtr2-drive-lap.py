@@ -256,6 +256,7 @@ def main():
     ap.add_argument("--meta-start", type=float, default=1.0, help="--session-laps: starting push factor")
     ap.add_argument("--meta-step", type=float, default=0.02, help="--session-laps: starting push step")
     ap.add_argument("--meta-grow", type=float, default=2.0, help="--session-laps: factor the push step grows by after each clean lap that beats the best (2 = doubling by default, a gallop; 1 = fixed step to the limit before the back-off bisects)")
+    ap.add_argument("--limit-local", action="store_true", help="--session-laps with --grip-map: a track-limit event at a push above the best clean push lowers the grip factor of the corner's bins to best_push / push, so that corner stays at the best clean push while the global push climbs elsewhere (per-corner push)")
     ap.add_argument("--meta-step-max", type=float, default=0.08, help="--meta-grow: the largest push step")
     ap.add_argument("--meta-max", type=float, default=1.4)
     ap.add_argument("--meta-min", type=float, default=0.85)
@@ -824,15 +825,17 @@ def main():
                             meta["step"] = min(args.meta_step_max, meta["step"] * args.meta_grow)      # gallop: a clean, faster lap makes the next step bigger (--meta-grow 2: 0.02, 0.04, 0.08 ...) until a lap fails and the back-off shrinks it
                         elif clean_:
                             meta["push"] = min(args.meta_max, meta["best_push"] + 0.5 * meta["step"])
+                            if meta.get("hi") is not None:
+                                meta["push"] = min(meta["push"], meta["best_push"] + 0.5 * max(0.0, meta["hi"] - meta["best_push"]))      # never above half way to a push that failed
                             meta["step"] = max(0.004, meta["step"] * 0.7)
                         else:      # an unclean lap: the maps already slow the corner where it happened (track-limit and hit responses), so the push is held; only a second unclean lap in a row takes it down
                             meta["bad"] = meta.get("bad", 0) + 1
                             meta["hi"] = min(meta.get("hi", 9.0), used_)      # the lowest push that went unclean in this session: later rises bisect towards it instead of galloping past it
-                            if meta["bad"] >= 2:
+                            if used_ <= meta["best_push"] + 1e-6:      # unclean at or below the best clean push: back off by the step
                                 meta["push"] = max(args.meta_min, used_ - meta["step"])
                                 meta["step"] = max(0.004, meta["step"] * 0.7)
                             else:
-                                meta["push"] = used_
+                                meta["push"] = 0.5 * (meta["best_push"] + used_)      # unclean above the best clean push: bisection, the next lap tries half way between the two
                         gmv_ = list(gm.values())
                         diag_ = {"gm_mean": round(sum(gmv_) / len(gmv_), 3) if gmv_ else 1.0, "gm_min": round(min(gmv_), 2) if gmv_ else 1.0, "learned": len(learned), "learned_min": round(min([f_ for _, _, f_ in learned], default=1.0), 2),
                                  "brake_mean": round(sum(padec.values()) / len(padec), 2) if padec else None, "tyre_wear": round(sum(w_["wear"] for w_ in tel["wheels"]) / 4, 4), "tyre_temp": round(sum(sum(w_["temps"]) / 3 for w_ in tel["wheels"]) / 4, 1)}
@@ -982,6 +985,8 @@ def main():
                         if args.grip_map:      # live response: the corners before this point were taken too fast to stay inside the white lines; take their grip factor down now and for the next pass
                             for bb in range(int(w.dist // 20) - 6, int(w.dist // 20) + 1):
                                 gm[bb] = max(args.gm_min, gm.get(bb, 1.0) * (1.0 - args.gm_limit))
+                                if args.limit_local and args.session_laps > 0 and meta["push"] > meta["best_push"] + 1e-6:      # per-corner push: this corner failed at a push above the best clean one, so its bins go no higher than the best clean push while the global push keeps climbing elsewhere
+                                    gm[bb] = min(gm[bb], max(args.gm_min, meta["best_push"] / meta["push"]))
                             gms["down"] += 1
                     limit_open["seconds"] = round(now - t0 - limit_open["t"], 2)
                     limit_last = now
