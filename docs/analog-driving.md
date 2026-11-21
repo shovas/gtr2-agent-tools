@@ -496,3 +496,7 @@ Grip map after a session (Imola 4, keys are lap distance in metres of the 20 m b
 ## Imola 4, Maserati: `--gm-down` (grip-map loss when the car slides in a bin) downward at the fixed push (2026-11-21)
 
 Fixed push 1.2575, doubling off (`--meta-grow 1`), 10 laps per test, `gtr2-bisect.py --const 0.02 --gallop 0.005 --template "--gm-down {w}"`. `--gm-down` 0.015: 10 of 10 clean, best clean 118.47 s; 0.005: 8 of 10 clean, 118.38 s; 0.0025: 7 of 10 (fail), 119.56 s. The default 0.02 gave 9 of 10 and 118.19 s. Lowering the slide response never made a lap faster and below 0.005 it costs clean laps: not a lever, left at 0.02. The corner factors still fall lap after lap at the default; that is the tyres and the car sliding, not the setting.
+
+## Imola 4, Maserati: `--line-opt` retest under the geometric rule (2026-11-21)
+
+Fresh 3-lap session, fixed push 1.2, `--line-opt --follower designed`, margin 1.2 m: 0 of 3 clean, 7, 4 and 2 track-limit events (geometric rule), laps 139.8, 127.5 and 127.1 s (the smoothed line at this push: about 120 s, clean), cross-track error 2.74 m rms and 4.23 m p95, largest offset 20.9 m. The events repeat at the same places (lap distance 85, 193, 492, 692, 1485 and 1511 m, on grass and kerbs). The surface rule was not the reason for the failure: the optimised line needs a follower that tracks it to well under a metre. Left off.
