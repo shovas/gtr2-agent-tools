@@ -258,7 +258,7 @@ def main():
     ap.add_argument("--meta-step", type=float, default=0.02, help="--session-laps: starting push step")
     ap.add_argument("--meta-grow", type=float, default=2.0, help="--session-laps: factor the push step grows by after each clean lap that beats the best (2 = doubling by default, a gallop; 1 = fixed step to the limit before the back-off bisects)")
     ap.add_argument("--limit-local", action="store_true", help="--session-laps with --grip-map: a track-limit event at a push above the best clean push lowers the grip factor of the corner's bins to best_push / push, so that corner stays at the best clean push while the global push climbs elsewhere (per-corner push)")
-    ap.add_argument("--meta-step-max", type=float, default=0.08, help="--meta-grow: the largest push step")
+    ap.add_argument("--meta-step-max", type=float, default=0.04, help="--meta-grow: the largest push step")
     ap.add_argument("--meta-max", type=float, default=1.4)
     ap.add_argument("--meta-min", type=float, default=0.85)
     ap.add_argument("--line-seed-dry", action="store_true", help="with --line-opt: the optimiser starts from the game's own dry line (wp_path in the AIW) and refines it with the driver's own physics; the result is the driver's line, not the file's")
