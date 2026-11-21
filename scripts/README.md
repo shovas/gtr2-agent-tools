@@ -46,6 +46,7 @@ av_paths	our_options_main.txt`.
 - `gtr2-hit-locate.py`: places the hits of a lap result on the track map (chain, distance along it, offset against the road edges, nearest collision structures and surfaces of the track's own meshes) so a repeated hit can be traced to a wall, barrier or seam.
 - `gtr2-lap-profile.py`: reads a `--sig-log` CSV and prints one lap's speed, lowest speed and planned speed per stretch of track and the time spent by speed class, so the slow stretches stand out (`--target` shows the speed-up a lap time needs).
 - `gtr2-bisect.py`: bisection of one driver setting by fresh 10-lap sessions between a good low and a failing high value (a value is good when enough laps are clean); logs every test to `runs/bisect.jsonl`.
+- `gtr2-session-stats.py`: mean and median of the clean lap times of the last campaign sessions over a lap range (compare a setting at a push below the cliff, where pass/fail counts are noise)
 - `test_limits.py`: offline checks of the geometric track-limit module (`gtr2_driving/limits.py`: boundary polylines, tyre footprints, the car's wheel positions read from its wheel meshes, the nearest-waypoint comparison)
 - `gtr2-outlap-sweep.py`: finds the highest out-lap speed share that is reliably clean, by bisection between 0.80 and 1.00 (`--linear` for 1% steps).
 - `gtr2-lap-campaign.py`: repeated 10-lap live sessions with fresh tyres while the best clean lap keeps improving; results in `runs/campaign.jsonl`.
