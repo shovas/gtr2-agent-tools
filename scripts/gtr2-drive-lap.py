@@ -822,6 +822,11 @@ def main():
                         used_ = meta["push"]
                         if clean_:
                             meta["bad"] = 0
+                            meta["run"] = meta.get("run", 0) + 1
+                            if meta["run"] >= 3:      # three clean laps in a row: one failed lap is not a ceiling, the cap on the push is lifted so it can climb again
+                                meta.pop("hi", None)
+                        else:
+                            meta["run"] = 0
                         if clean_ and (meta["best"] is None or lt_ < meta["best"]):
                             meta["best"], meta["best_push"] = lt_, used_
                             meta["push"] = min(args.meta_max, used_ + meta["step"])
