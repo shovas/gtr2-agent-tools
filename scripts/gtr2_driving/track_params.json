@@ -6,7 +6,7 @@
   "sanderstorp": "--pit-speed 10 --lat-accel 5.0",
   "4zhuhai": "--guard-deg 12 --guard-span 25 --guard-floor 0.15 --lat-accel 5.5",
   "jnmonza": "--guard-deg 12 --guard-span 25 --guard-floor 0.15",
-  "4imol": "--brake-gain 0.45 --brake-deadband 0.3 --brake-max 1.0 --throttle-gain 0.5 --impact-spike 6 --shift-rpms 7200 7200 7200 7200 7200 --speed 150 --line-smooth 25 --line-margin 1.8 --line-pin 45 --dyn --learn-min 14 --kerb-max-accel 60 --slow-zone 440 560 0.85 --slow-zone 1040 1140 0.85 --slow-zone 2440 2560 0.85",
+  "4imol": "--brake-gain 0.45 --brake-deadband 0.3 --brake-max 1.0 --throttle-gain 0.5 --impact-spike 6 --shift-rpms 7200 7200 7200 7200 7200 --speed 150 --line-smooth 25 --line-margin 1.8 --line-pin 45 --dyn --learn-min 14 --kerb-max-accel 60 --slow-zone 380 560 0.80 --slow-zone 600 740 0.88 --slow-zone 1040 1140 0.85 --slow-zone 2080 2200 0.88 --slow-zone 2440 2560 0.85 --slow-zone 3880 4040 0.88",
   "ntmagny": "--guard-deg 12 --guard-span 25 --guard-floor 0.15",
   "4imol:fixed": "--decel 13 --lat-accel 11"
 }
