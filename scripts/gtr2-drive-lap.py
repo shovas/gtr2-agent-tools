@@ -255,7 +255,9 @@ def main():
     ap.add_argument("--session-laps", type=int, default=0, help="keep lapping: the out lap plus this many timed laps in one session, and adjust a push factor on the planned corner speeds lap by lap (--meta-*): a clean lap that is faster than the best raises it, an unclean lap or a slower one takes it back and shrinks the step. Raise --total and the lap check's --timeout with it")
     ap.add_argument("--meta-start", type=float, default=1.0, help="--session-laps: starting push factor")
     ap.add_argument("--meta-step", type=float, default=0.02, help="--session-laps: starting push step")
-    ap.add_argument("--meta-max", type=float, default=1.25)
+    ap.add_argument("--meta-grow", type=float, default=2.0, help="--session-laps: factor the push step grows by after each clean lap that beats the best (2 = doubling by default, a gallop; 1 = fixed step to the limit before the back-off bisects)")
+    ap.add_argument("--meta-step-max", type=float, default=0.08, help="--meta-grow: the largest push step")
+    ap.add_argument("--meta-max", type=float, default=1.4)
     ap.add_argument("--meta-min", type=float, default=0.85)
     ap.add_argument("--line-seed-dry", action="store_true", help="with --line-opt: the optimiser starts from the game's own dry line (wp_path in the AIW) and refines it with the driver's own physics; the result is the driver's line, not the file's")
     ap.add_argument("--dry-line", action="store_true", help="drive the game's own dry racing line stored in the AIW (wp_path, the line the in-game AI follows) instead of the smoothed file line; the margin to the white lines is --line-margin")
@@ -817,6 +819,7 @@ def main():
                         if clean_ and (meta["best"] is None or lt_ < meta["best"]):
                             meta["best"], meta["best_push"] = lt_, used_
                             meta["push"] = min(args.meta_max, used_ + meta["step"])
+                            meta["step"] = min(args.meta_step_max, meta["step"] * args.meta_grow)      # gallop: a clean, faster lap makes the next step bigger (--meta-grow 2: 0.02, 0.04, 0.08 ...) until a lap fails and the back-off shrinks it
                         elif clean_:
                             meta["push"] = min(args.meta_max, meta["best_push"] + 0.5 * meta["step"])
                             meta["step"] = max(0.004, meta["step"] * 0.7)
