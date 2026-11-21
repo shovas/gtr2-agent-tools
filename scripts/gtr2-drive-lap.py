@@ -213,6 +213,8 @@ def main():
     ap.add_argument("--dyn-brake-slip", type=float, default=0.12, help="--dyn: wheel slip against the car's speed the brake tolerates before easing (default 0.12)")
     ap.add_argument("--dyn-rear-brake-slip", type=float, default=0.25, help="--dyn: wheel slip against the car's speed the REAR axle tolerates under braking before the brake eases (the rear runs about 0.1 slow in every hard stop)")
     ap.add_argument("--dyn-gain", type=float, default=6.0, help="--dyn: pedal cut per unit of slip above the tolerance (default 6)")
+    ap.add_argument("--dyn-rear-grip", type=float, default=0.0, help="--dyn: a rear tyre with a grip fraction below this while braking cuts the brake to --dyn-rear-brake-cut (0 = off; the front tyres already do this at --dyn-grip)")
+    ap.add_argument("--dyn-rear-brake-cut", type=float, default=0.3, help="--dyn-rear-grip: the brake scale used when a rear tyre has lost its grip")
     ap.add_argument("--dyn-grip", type=float, default=0.4, help="--dyn: a driven (or front, braking) wheel with a grip fraction below this also cuts the pedal")
     ap.add_argument("--dyn-recover", type=float, default=3.0, help="--dyn: how fast a cut pedal comes back, fraction per second (default 3)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
@@ -1219,6 +1221,8 @@ def main():
                 target_b = max(args.dyn_min_brake, 1.0 - args.dyn_gain * excess)
                 if min(w["grip"] for w in wl[:2]) < args.dyn_grip:
                     target_b = min(target_b, 0.6)
+                if args.dyn_rear_grip > 0.0 and min(w["grip"] for w in wl[2:]) < args.dyn_rear_grip:      # the rear tyres lost their grip while braking (a spin starting: Imola 500 m, rear grip 0.10, sideslip 21 deg): let the brake off
+                    target_b = min(target_b, args.dyn_rear_brake_cut)
                 dyn["abs"] = target_b if target_b < dyn["abs"] else min(1.0, dyn["abs"] + args.dyn_recover * dt_d)
                 if shared["duty"] > 0.0:
                     dyn["tc_n"] += 1 if dyn["tc"] < 0.9 else 0
