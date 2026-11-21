@@ -13,6 +13,7 @@ Example: scripts\.venv\Scripts\python.exe -I scripts\gtr2-recover.py --force --r
 """
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -38,6 +39,16 @@ def nav_servers():
     return v if isinstance(v, list) else [v]
 
 
+def runners():
+    """Driver, lap check, campaign and bisect processes (a killed background chain leaves them running, and the driver holds the vJoy device)."""
+    me = os.getpid()
+    out = ps("Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'python' -and $_.CommandLine -match 'gtr2-(lap-campaign|lap-check|drive-lap|bisect)\.py' } | Select-Object -ExpandProperty ProcessId | ConvertTo-Json -Compress")
+    if not out:
+        return []
+    v = json.loads(out)
+    return [p for p in (v if isinstance(v, list) else [v]) if p != me]
+
+
 def game_pids():
     out = ps("Get-Process GTR2 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id | ConvertTo-Json -Compress")
     if not out:
@@ -54,10 +65,18 @@ def reap():
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--dry-run", action="store_true", help="only say what would be done")
-    ap.add_argument("--force", action="store_true", help="kill the game if closing it through the menus did not work")
+    ap.add_argument("--force", action="store_true", help="kill the game if closing it through the menus did not work, and kill leftover lap campaign / lap check / driver / bisect processes (they hold the vJoy device)")
     ap.add_argument("--revert", action="store_true", help="revert UserData and ReplayData in the game folder to the last commit and delete new files there")
     a = ap.parse_args()
     ok = True
+
+    if a.force:
+        run_pids = runners()
+        print("runner processes (lap campaign / lap check / driver / bisect): %s" % (run_pids or "none"))
+        if run_pids and not a.dry_run:
+            for p in run_pids:
+                subprocess.run(["taskkill", "/PID", str(p), "/F"], capture_output=True)
+            time.sleep(1.5)
 
     servers = nav_servers()
     print("nav servers: %s" % (servers or "none"))
