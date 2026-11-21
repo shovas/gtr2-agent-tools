@@ -239,7 +239,7 @@ def main():
     ap.add_argument("--gm-min", type=float, default=0.6)
     ap.add_argument("--gm-use", type=float, default=0.85, help="--grip-map: share of the planned lateral load the car must reach in a bin before the factor may rise")
     ap.add_argument("--gm-heal", type=float, default=0.04, help="--grip-map: a clean pass of a bin below 1.0 raises its factor by this much even when the grip was not used to the limit")
-    ap.add_argument("--gm-limit", type=float, default=0.08, help="--grip-map: factor loss on the six 20 m bins before a track-limit event (all four tyres beyond the white line)")
+    ap.add_argument("--gm-limit", type=float, default=0.0, help="--grip-map: factor loss on the six 20 m bins before a track-limit event (all four tyres beyond the white line)")
     ap.add_argument("--gm-slide", type=float, default=0.50, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
     ap.add_argument("--gm-line", type=float, default=1.5, help="--grip-map: metres off the line beyond which a bin counts as run wide")
     ap.add_argument("--outlap-scale", type=float, default=0.97, help="live mode: the out lap (before the first lap change) is driven at this share of the planned corner and braking speeds: it is not a valid lap (cold tyres), it only teaches the maps")
@@ -819,12 +819,15 @@ def main():
                         if clean_ and (meta["best"] is None or lt_ < meta["best"]):
                             meta["best"], meta["best_push"] = lt_, used_
                             meta["push"] = min(args.meta_max, used_ + meta["step"])
+                            if meta.get("hi") is not None:
+                                meta["push"] = min(meta["push"], used_ + 0.5 * max(0.0, meta["hi"] - used_))      # a push already failed: go only half way to it (bisection)
                             meta["step"] = min(args.meta_step_max, meta["step"] * args.meta_grow)      # gallop: a clean, faster lap makes the next step bigger (--meta-grow 2: 0.02, 0.04, 0.08 ...) until a lap fails and the back-off shrinks it
                         elif clean_:
                             meta["push"] = min(args.meta_max, meta["best_push"] + 0.5 * meta["step"])
                             meta["step"] = max(0.004, meta["step"] * 0.7)
                         else:      # an unclean lap: the maps already slow the corner where it happened (track-limit and hit responses), so the push is held; only a second unclean lap in a row takes it down
                             meta["bad"] = meta.get("bad", 0) + 1
+                            meta["hi"] = min(meta.get("hi", 9.0), used_)      # the lowest push that went unclean in this session: later rises bisect towards it instead of galloping past it
                             if meta["bad"] >= 2:
                                 meta["push"] = max(args.meta_min, used_ - meta["step"])
                                 meta["step"] = max(0.004, meta["step"] * 0.7)
