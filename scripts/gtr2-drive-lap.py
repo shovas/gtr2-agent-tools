@@ -240,6 +240,7 @@ def main():
     ap.add_argument("--gm-min", type=float, default=0.6)
     ap.add_argument("--gm-use", type=float, default=0.85, help="--grip-map: share of the planned lateral load the car must reach in a bin before the factor may rise")
     ap.add_argument("--gm-heal", type=float, default=0.04, help="--grip-map: a clean pass of a bin below 1.0 raises its factor by this much even when the grip was not used to the limit")
+    ap.add_argument("--gm-sev-min", type=float, default=0.0, help="--gm-sev: severity (0 to 1) below which a slide gets no extra loss, the scale then runs from 0 at this value to 1 at zero grip (0.6: only a slide under 20 percent grip is scaled)")
     ap.add_argument("--gm-sev", type=float, default=0.0, help="--grip-map: scale the loss when the car slides by how far the grip fell (0 = fixed --gm-down per slide; 4 = a slide at zero grip costs 5 times --gm-down per bin), so a corner entered far too fast is corrected in a pass or two instead of ten")
     ap.add_argument("--gm-limit", type=float, default=0.0, help="--grip-map: factor loss on the six 20 m bins before a track-limit event (all four tyres beyond the white line)")
     ap.add_argument("--gm-slide", type=float, default=0.50, help="--grip-map: grip fraction of an outer tyre under which it counts as sliding")
@@ -1313,6 +1314,7 @@ def main():
                 if loaded and min(front["grip"], rear["grip"]) < args.gm_slide:
                     gms["slid"] = True
                     sev_ = max(0.0, (args.gm_slide - min(front["grip"], rear["grip"])) / max(args.gm_slide, 1e-6))      # how far the grip fell below the slide threshold, 0 to 1
+                    sev_ = max(0.0, (sev_ - args.gm_sev_min) / max(1e-6, 1.0 - args.gm_sev_min))      # --gm-sev-min: only the part of the severity above this counts
                     if gms.get("dn_bin") != b_now or sev_ > gms.get("sev", 0.0) + 0.25:      # once per 20 m bin and pass, again when the slide gets clearly worse: this bin and the two before it (entered too fast)
                         inc_ = args.gm_down * (1.0 + args.gm_sev * sev_) if gms.get("dn_bin") != b_now else args.gm_down * args.gm_sev * (sev_ - gms.get("sev", 0.0))      # --gm-sev: a slide at the grip cliff cuts the bins (1 + gm_sev) times as hard as a slide at the threshold
                         if gms.get("dn_bin") != b_now:
