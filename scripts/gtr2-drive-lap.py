@@ -229,6 +229,9 @@ def main():
     ap.add_argument("--kin-min", type=float, default=1.5, help="--brake-kin: the least required deceleration (m/s^2) that starts the pedal")
     ap.add_argument("--stuck-launch", action="store_true", help="--recover: reverse and pull away with the engine speed held at --stuck-rpm and the clutch pedal slipped (wheel device), not a flat 0.6 throttle: with Auto Clutch off a stuck car in reverse or 1st on grass would not move")
     ap.add_argument("--stuck-rpm", type=float, default=0.55, help="--stuck-launch: engine speed to hold, share of the rev limit")
+    ap.add_argument("--steer-scale-low", type=float, default=0.0, help="analog: steering scale (share of the lock) at low speed on the track, 0 = off; falls to --analog-steer between --steer-low-v1 and --steer-low-v2 m/s. The hairpins need more than the 0.6 of the lock: a car at 14 m/s turned on a 27 m radius where the track asked for 20")
+    ap.add_argument("--steer-low-v1", type=float, default=15.0)
+    ap.add_argument("--steer-low-v2", type=float, default=30.0)
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -1116,6 +1119,10 @@ def main():
                 result["outcome"] = "merged"; break
             shared["dyn_free"] = chain is track.main and not merging and box_target is None
             shared["scale"] = args.merge_steer if (merging or box_target is not None or chain is track.pit) else args.analog_steer   # slow in the pit lane: full lock (Anderstorp's 90 degree bend, 5 to 6 m wide)
+            if args.steer_scale_low > 0.0 and chain is track.main and not merging and box_target is None:
+                # more of the lock in slow corners: at 0.6 of the lock the tightest turn the car can make is a radius of about 18 m, the hairpins ask for less; the scale falls back to --analog-steer between --steer-low-v1 and --steer-low-v2
+                fl_ = max(0.0, min(1.0, (speed - args.steer_low_v1) / max(args.steer_low_v2 - args.steer_low_v1, 1.0)))
+                shared["scale"] = args.steer_scale_low + (args.analog_steer - args.steer_scale_low) * fl_
             if args.follower in ("stanley", "designed") and chain is track.main and not merging and box_target is None:
                 # Stanley follower with curvature feed-forward (gtr2_driving/follower.py, tuned offline in gtr2-follower-sim.py): the steering gain is the
                 # measured per speed table; --st-learn adapts it per speed bin from the car's own yaw response (it collapsed once while the car was oscillating)
