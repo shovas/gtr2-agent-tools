@@ -224,6 +224,8 @@ def main():
     ap.add_argument("--brake-kin", type=float, default=0.0, help="--live: kinematic braking, the pedal is at least (v^2 - vc^2) / (2 d) / this, the deceleration needed to reach the limiting corner's speed vc at its distance d, m/s^2 the car delivers at a full pedal (the measured braking envelope is 14 to 17); 0 = off")
     ap.add_argument("--kin-lead", type=float, default=8.0, help="--brake-kin: metres before the corner by which the speed must be reached")
     ap.add_argument("--kin-min", type=float, default=1.5, help="--brake-kin: the least required deceleration (m/s^2) that starts the pedal")
+    ap.add_argument("--stuck-launch", action="store_true", help="--recover: reverse and pull away with the engine speed held at --stuck-rpm and the clutch pedal slipped (wheel device), not a flat 0.6 throttle: with Auto Clutch off a stuck car in reverse or 1st on grass would not move")
+    ap.add_argument("--stuck-rpm", type=float, default=0.55, help="--stuck-launch: engine speed to hold, share of the rev limit")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -644,6 +646,17 @@ def main():
         t_start = time.time()
         while time.time() - t_start < 0.25:
             put(1.0 - (time.time() - t_start) / 0.25); time.sleep(0.01)
+        put(0.0)
+
+    def clutch_slip(hold_s, level=0.55, ramp_s=0.6):
+        """Wheel device, stuck car (--stuck-launch): the clutch pedal slipped at `level` for hold_s seconds, then let out over ramp_s: the engine can rev while the car creeps off in 1st or reverse (Auto Clutch is off)."""
+        steps_n = (1 << args.wheel_pedal_bits) - 1
+        def put(v):
+            joy.axis("RY", 0.5 - 0.5 * round(v * steps_n) / steps_n)
+        put(level); time.sleep(hold_s)
+        t_s = time.time()
+        while time.time() - t_s < ramp_s:
+            put(level * (1.0 - (time.time() - t_s) / ramp_s)); time.sleep(0.02)
         put(0.0)
 
     threads = []
@@ -1439,7 +1452,10 @@ def main():
                             shift(False)
                         shared["duty"], shared["brake"], shared["steer"] = 0.0, 0.0, 0.0
                     else:
-                        shared["duty"], shared["brake"] = 0.6, 0.0
+                        if args.stuck_launch and wheel_dev and not rec.get("slip"):
+                            rec["slip"] = True
+                            threading.Thread(target=clutch_slip, args=(1.2,)).start()
+                        shared["duty"], shared["brake"] = ((max(0.2, min(1.0, 0.5 + 3.0 * (args.stuck_rpm - tel["rpm"] / (gearcar["limit"] if gearcar else 7500.0)))) if args.stuck_launch else 0.6), 0.0)      # hold the engine speed, not a flat throttle: in reverse on grass the wheels dig in or the engine bogs down
                         shared["steer"] = -max(-1.0, min(1.0, herr / 25.0))      # backing up: the wheel works the other way round
                         if math.hypot(x - rec["x"], z - rec["z"]) > args.recover_dist or now - rec["t"] > 6.0:
                             rec["phase"] = "forward"
@@ -1455,8 +1471,15 @@ def main():
                     else:
                         rec["phase"] = None
                         rec["still"] = None
+                        rec["slip"] = False
+                        if args.stuck_launch:
+                            rec["launch"] = now + 2.5
+                            if wheel_dev:
+                                threading.Thread(target=clutch_slip, args=(1.0,)).start()
                         last_move = now
                         print("t=%5.1f back in gear %d, driving on" % (now - t0, tel["gear"]), flush=True)
+            if args.stuck_launch and rec.get("launch", 0.0) > now and speed < 5.0 and tel["gear"] >= 1:
+                shared["duty"] = max(0.2, min(1.0, 0.5 + 3.0 * (args.stuck_rpm - tel["rpm"] / (gearcar["limit"] if gearcar else 7500.0))))      # after a recovery: pull away in 1st on the engine speed, not on a full throttle
             if n % args.every == 0:
                 print("t=%5.1f %s k=%3d lat=%+5.1f herr=%+6.1f v=%4.1f->%4.1f gear=%d lap=%d" % (
                     now - t0, "main" if chain is track.main else "pit ", k, lat, herr, speed, target_v, tel["gear"], tel["lap"]), flush=True)
