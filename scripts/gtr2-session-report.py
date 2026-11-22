@@ -86,6 +86,15 @@ def main():
         over = [r["speed"] - min(r["plan_speed"], 150) for r in br]
         print("braking %.0f%% of the lap, mean pedal %.2f, %+.1f m/s over the plan while braking, %.0f%% of braking samples more than 3 m/s over" % (
             100.0 * len(br) / len(v), sum(r["brake"] for r in br) / max(1, len(br)), sum(over) / max(1, len(over)), 100.0 * sum(1 for o in over if o > 3) / max(1, len(over))))
+    # follower error: lateral distance from the line the driver aims for (column lat_err, logs from 2026-11-21 evening on)
+    if "lat_err" in v[0]:
+        by_ = collections.defaultdict(list)
+        for r, d in zip(v, S):
+            by_[int(d // 200)].append(r["lat_err"])
+        rms = lambda xs: math.sqrt(sum(x * x for x in xs) / len(xs))
+        allv = [r["lat_err"] for r in v]
+        print("follower lateral error: rms %.2f m, largest %.1f m; worst 200 m stretches (rms, largest): %s" % (rms(allv), max(allv, key=abs), ", ".join(
+            "%d m %.1f/%.1f" % (k * 200, rms(x), max(x, key=abs)) for k, x in sorted(by_.items(), key=lambda kv: -rms(kv[1]))[:6])))
     # corner minima
     minima = []
     for i, r in enumerate(v):
