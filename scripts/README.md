@@ -53,3 +53,4 @@ av_paths	our_options_main.txt`.
 - `gtr2-lap-campaign.py`: repeated 10-lap live sessions with fresh tyres while the best clean lap keeps improving; results in `runs/campaign.jsonl`.
 - `gtr2-lap-estimate.py`: offline lap-time estimate of planner settings on a layout (power limited acceleration, downforce grip), within 2 to 3 s of real laps; `gtr2-shift-points.py`: best upshift rpm per gear from a car's own engine and gear files.
 - `gtr2_driving/racingline.py`: generic time-optimal racing line from road widths and grip numbers (numpy, cached per layout); `--line-opt` in `gtr2-drive-lap.py`.
+- `gtr2-vehicle-envelope.py`: the car's measured performance envelope from --sig-log files (lateral, braking and driving acceleration per speed bin, share of the combined friction ellipse used); shows how conservative the planner's grip numbers are.
