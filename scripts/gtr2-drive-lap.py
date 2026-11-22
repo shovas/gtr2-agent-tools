@@ -218,6 +218,7 @@ def main():
     ap.add_argument("--dyn-grip", type=float, default=0.4, help="--dyn: a driven (or front, braking) wheel with a grip fraction below this also cuts the pedal")
     ap.add_argument("--dyn-recover", type=float, default=3.0, help="--dyn: how fast a cut pedal comes back, fraction per second (default 3)")
     ap.add_argument("--trail-circle", type=float, default=0.0, help="friction circle for the brake: the brake pedal is scaled by sqrt(1 - (lateral acceleration / this)^2), lateral acceleration = speed x yaw rate, so the car finishes its braking as the steering comes on (a driver trail-brakes only as far as the tyres have grip left over from cornering; without Stability Control the Imola first corner spun at 1.2 push with the brake held through the turn-in); m/s^2, 0 = off, about 11 to 14")
+    ap.add_argument("--brake-rise", type=float, default=0.0, help="the brake pedal may rise at most this fast, pedal units per second (0 = no limit, the pedal jumps from 0 to the gain-set value in one step); a real driver rolls onto the brake in 0.2 to 0.4 s so the weight moves to the front tyres first; about 3 to 5")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -758,6 +759,7 @@ def main():
         geo_hits = []      # every jolt over the limit with its distance to the nearest structure (result geo_hits)
         bff = {"t": 0.0, "tv": 0.0, "a": 0.0}      # brake feedforward state (--brake-ff)
         se_until = 0.0      # --slip-ease: the throttle ease holds until this time
+        brs = {"t": 0.0, "v": 0.0}      # --brake-rise: the pedal's last value and time
         sig = {"prev": None, "rows": []}      # --sig-log
         sid = {"hist": [], "k": {}}      # steering identification (--steer-id): samples of yaw rate per steering command per m/s, by speed bin
         stn = {"g": {},"last": 0.0, "hist": [], "lat2": 0.0, "lat_n": 0, "lats": []}      # Stanley follower: learned steering gain per speed bin, cross-track statistics
@@ -1254,6 +1256,11 @@ def main():
                 lim_ = gearcar["limit"] if gearcar else 7500.0
                 shared["duty"] = max(0.15, min(1.0, 0.5 + 3.0 * (args.trap_rpm - tel["rpm"] / lim_)))      # steady engine speed, not a flat throttle: the wheels dig in when the throttle is high and stall when it is low
                 shared["brake"] = 0.0
+            if args.brake_rise > 0.0 and chain is track.main:
+                dt_r = max(0.001, min(0.2, now - brs["t"]))
+                brs["t"] = now
+                shared["brake"] = min(shared["brake"], brs["v"] + args.brake_rise * dt_r)      # a driver rolls onto the pedal: the weight has to move to the front tyres first
+                brs["v"] = shared["brake"]
             if shared["brake"] > 0.3:
                 if now - bz["t"] > 1.0:
                     bz["v0"] = speed      # a braking zone starts
