@@ -223,7 +223,8 @@ def main():
     ap.add_argument("--meta-clean-climb", action="store_true", help="--session-laps: after a clean lap that is not faster than the best (the Soft tyres wear, so a later lap at a higher push can be slower), the next push climbs from the push just driven, not from the push of the best lap")
     ap.add_argument("--brake-kin", type=float, default=0.0, help="--live: kinematic braking, the pedal is at least (v^2 - vc^2) / (2 d) / this, the deceleration needed to reach the limiting corner's speed vc at its distance d, m/s^2 the car delivers at a full pedal (the measured braking envelope is 14 to 17); 0 = off")
     ap.add_argument("--ellipse", action="store_true", help="--live: the planner's braking envelope uses the friction ellipse (forward-backward planning with a g-g-v limit): the deceleration available towards a corner is reduced by the cornering load already used there, so the plan brakes before the turn-in and the kinematic brake follows that profile (the standard minimum-time speed profile of the autonomous-racing literature)")
-    ap.add_argument("--kin-lead", type=float, default=8.0, help="--brake-kin: metres before the corner by which the speed must be reached")
+    ap.add_argument("--kin-dmin", type=float, default=12.0, help="--brake-kin with --ellipse: the nearest profile point (m) that counts")
+    ap.add_argument("--kin-lead", type=float, default=0.0, help="--brake-kin: metres before the corner by which the speed must be reached")
     ap.add_argument("--kin-min", type=float, default=1.5, help="--brake-kin: the least required deceleration (m/s^2) that starts the pedal")
     ap.add_argument("--stuck-launch", action="store_true", help="--recover: reverse and pull away with the engine speed held at --stuck-rpm and the clutch pedal slipped (wheel device), not a flat 0.6 throttle: with Auto Clutch off a stuck car in reverse or 1st on grass would not move")
     ap.add_argument("--stuck-rpm", type=float, default=0.55, help="--stuck-launch: engine speed to hold, share of the rev limit")
@@ -1211,7 +1212,7 @@ def main():
                 if prof_:
                     a_req = 0.0
                     for d_j, v_j in prof_:
-                        if d_j > 1.0 and v_j < speed - 1.0:
+                        if d_j >= args.kin_dmin and v_j < speed - 1.0:      # points nearer than kin_dmin are the plan speed now (the proportional pedal handles them): they would ask for an absurd deceleration over a few metres
                             a_req = max(a_req, (speed * speed - v_j * v_j) / (2.0 * max(d_j - args.kin_lead, 4.0)))
                     if a_req > args.kin_min:
                         shared["brake"] = max(shared["brake"], min(args.brake_max, a_req / args.brake_kin))
