@@ -219,6 +219,7 @@ def main():
     ap.add_argument("--dyn-recover", type=float, default=3.0, help="--dyn: how fast a cut pedal comes back, fraction per second (default 3)")
     ap.add_argument("--trail-circle", type=float, default=0.0, help="friction circle for the brake: the brake pedal is scaled by sqrt(1 - (lateral acceleration / this)^2), lateral acceleration = speed x yaw rate, so the car finishes its braking as the steering comes on (a driver trail-brakes only as far as the tyres have grip left over from cornering; without Stability Control the Imola first corner spun at 1.2 push with the brake held through the turn-in); m/s^2, 0 = off, about 11 to 14")
     ap.add_argument("--brake-rise", type=float, default=0.0, help="the brake pedal may rise at most this fast, pedal units per second (0 = no limit, the pedal jumps from 0 to the gain-set value in one step); a real driver rolls onto the brake in 0.2 to 0.4 s so the weight moves to the front tyres first; about 3 to 5")
+    ap.add_argument("--curv-span", type=float, default=12.0, help="--live: metres of line over which the planner measures the turn (curvature); a longer span smooths the waypoint noise of the file line and gives a larger local radius, so a higher corner speed, but starts slowing earlier and flattens tight corners")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -1151,7 +1152,7 @@ def main():
             if args.live and chain is track.main:
                 a_brk_p = decel_plan if args.brake_adapt else live["a_brk"]      # the braking map's number when it is on
                 window = 25.0 + speed * speed / (2.0 * a_brk_p * (1.0 + args.live_brake_k * speed * speed)) + (max(bmar.values()) if bmar else 0.0)
-                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None, bmargin=(lambda w_: bmar.get(int(w_.dist // 40), 0.0)) if bmar else None)
+                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, span=args.curv_span, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None, bmargin=(lambda w_: bmar.get(int(w_.dist // 40), 0.0)) if bmar else None)
             else:
                 corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             if args.grip_map and chain is track.main and last_lap == start_lap:
