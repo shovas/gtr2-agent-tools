@@ -217,6 +217,8 @@ def main():
     ap.add_argument("--dyn-rear-brake-cut", type=float, default=0.3, help="--dyn-rear-grip: the brake scale used when a rear tyre has lost its grip")
     ap.add_argument("--dyn-grip", type=float, default=0.4, help="--dyn: a driven (or front, braking) wheel with a grip fraction below this also cuts the pedal")
     ap.add_argument("--dyn-recover", type=float, default=3.0, help="--dyn: how fast a cut pedal comes back, fraction per second (default 3)")
+    ap.add_argument("--trail-circle", type=float, default=0.0, help="friction circle for the brake: the brake pedal is scaled by sqrt(1 - (lateral acceleration / this)^2), lateral acceleration = speed x yaw rate, so the car finishes its braking as the steering comes on (a driver trail-brakes only as far as the tyres have grip left over from cornering; without Stability Control the Imola first corner spun at 1.2 push with the brake held through the turn-in); m/s^2, 0 = off, about 11 to 14")
+    ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
     ap.add_argument("--live", action="store_true", help="live grip model: cornering and braking limits scale with the measured tyre load (downforce) and adapt while driving from the tyres' grip fraction, wheel lock and impacts (needs --dyn's wheel data); replaces --lat-accel and --decel on the racing line")
@@ -1243,6 +1245,9 @@ def main():
                 if not (args.trap_escape and off4 and speed < 8.0 and tt["phase"] != 1):
                     shared["duty"] *= dyn["tc"]      # in a trap the slip control would cut the throttle on every spin of the wheels: the escape holds the engine speed instead (below)
                 shared["brake"] *= dyn["abs"]
+            if args.trail_circle > 0.0 and chain is track.main and speed > 12.0 and shared["brake"] > 0.0:
+                frac_ = min(1.0, abs(math.radians(yawrate)) * speed / args.trail_circle)
+                shared["brake"] *= max(args.trail_floor, math.sqrt(max(0.0, 1.0 - frac_ * frac_)))
             if chain is track.main and off4 and tt["phase"] == 1:
                 shared["duty"], shared["brake"] = 0.0, 0.4      # trap test: let the trap stop the car
             elif args.trap_escape and chain is track.main and off4 and speed < 8.0 and tel["gear"] >= 1:
