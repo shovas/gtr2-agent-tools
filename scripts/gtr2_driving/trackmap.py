@@ -220,7 +220,7 @@ class Track:
             j = nj
         return best, at
 
-    def speed_limit_live(self, chain, k, metres, a_lat, kk, a_brk, span=12.0, kb=0.0, scale=None, bmargin=None):
+    def speed_limit_live(self, chain, k, metres, a_lat, kk, a_brk, span=12.0, kb=0.0, scale=None, bmargin=None, ellipse=False):
         """Like speed_limit, with grip that grows with speed (downforce): cornering grip a_lat * (1 + kk v^2) and braking grip
         a_brk * (1 + kk v^2). A corner of curvature c is taken at v^2 c = a_lat (1 + kk v^2), i.e. v = sqrt(a_lat / (c - a_lat kk));
         braking towards it from further back follows v^2 + 1/kk = (v_c^2 + 1/kk) exp(2 a_brk kk d). Returns (speed now, distance)."""
@@ -235,7 +235,9 @@ class Track:
             j = nj
         best, at, m = 150.0, 0.0, 0
         self.last_limit = None
+        self.last_profile = None
         inv = 1.0 / max(kk, 1e-9)
+        prof = []      # ellipse: (distance, curvature, cornering grip, corner speed) per point
         for d, a in pts:
             if d > metres:
                 break
@@ -247,6 +249,9 @@ class Track:
             al = a_lat * (scale(a) if scale else 1.0)      # a slow zone scales the cornering grip at this waypoint
             den = c - al * kk
             vc = math.sqrt(al / den) if c > 1e-4 and den > 1e-6 else 150.0
+            if ellipse:
+                prof.append((d, c, al, vc))
+                continue
             dd = max(0.0, d - bmargin(a)) if bmargin else d      # a brake margin at this corner (learned from running off the road after braking): the corner counts as that many metres nearer
             if kb > 1e-9:
                 v = math.sqrt((vc * vc + 1.0 / kb) * math.exp(min(2.0 * a_brk * kb * dd, 50.0)) - 1.0 / kb)
@@ -255,6 +260,25 @@ class Track:
             if v < best:
                 best, at = v, d
                 self.last_limit = (vc, d)      # corner speed and distance of the point that sets the speed now (kinematic braking in the driver)
+        if ellipse and prof:
+            # friction-ellipse speed profile (forward-backward planning with a g-g-v limit): braking towards each corner is limited by the cornering load already used there,
+            # decel = a_brk (1 + kb v^2) sqrt(1 - (v^2 c / (al (1 + kk v^2)))^2); the backward pass from the farthest point gives the speed allowed now and the planned profile
+            v_next = prof[-1][3]
+            profile = [(prof[-1][0], v_next)]
+            for i in range(len(prof) - 2, -1, -1):
+                d_i, c_i, al_i, vc_i = prof[i]
+                ds_i = max(prof[i + 1][0] - d_i, 0.5)
+                v_i = v_next
+                for _ in range(2):
+                    vm = 0.5 * (v_i + v_next)
+                    use = (vm * vm * c_i) / max(al_i * (1.0 + kk * vm * vm), 1e-6)
+                    a_av = a_brk * (1.0 + kb * vm * vm) * math.sqrt(max(0.0, 1.0 - min(1.0, use) ** 2))
+                    v_i = math.sqrt(v_next * v_next + 2.0 * max(a_av, 0.5) * ds_i)
+                v_next = min(vc_i, v_i)
+                profile.append((d_i, v_next))
+            profile.reverse()
+            self.last_profile = profile
+            best, at = profile[0][1], 0.0
         return best, at
 
     def speed_limit(self, chain, k, metres, lat_accel, decel, span=12.0, tight_radius=0.0, tight_speed=99.0):

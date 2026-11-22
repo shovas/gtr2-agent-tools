@@ -222,6 +222,7 @@ def main():
     ap.add_argument("--curv-span", type=float, default=12.0, help="--live: metres of line over which the planner measures the turn (curvature); a longer span smooths the waypoint noise of the file line and gives a larger local radius, so a higher corner speed, but starts slowing earlier and flattens tight corners")
     ap.add_argument("--meta-clean-climb", action="store_true", help="--session-laps: after a clean lap that is not faster than the best (the Soft tyres wear, so a later lap at a higher push can be slower), the next push climbs from the push just driven, not from the push of the best lap")
     ap.add_argument("--brake-kin", type=float, default=0.0, help="--live: kinematic braking, the pedal is at least (v^2 - vc^2) / (2 d) / this, the deceleration needed to reach the limiting corner's speed vc at its distance d, m/s^2 the car delivers at a full pedal (the measured braking envelope is 14 to 17); 0 = off")
+    ap.add_argument("--ellipse", action="store_true", help="--live: the planner's braking envelope uses the friction ellipse (forward-backward planning with a g-g-v limit): the deceleration available towards a corner is reduced by the cornering load already used there, so the plan brakes before the turn-in and the kinematic brake follows that profile (the standard minimum-time speed profile of the autonomous-racing literature)")
     ap.add_argument("--kin-lead", type=float, default=8.0, help="--brake-kin: metres before the corner by which the speed must be reached")
     ap.add_argument("--kin-min", type=float, default=1.5, help="--brake-kin: the least required deceleration (m/s^2) that starts the pedal")
     ap.add_argument("--stuck-launch", action="store_true", help="--recover: reverse and pull away with the engine speed held at --stuck-rpm and the clutch pedal slipped (wheel device), not a flat 0.6 throttle: with Auto Clutch off a stuck car in reverse or 1st on grass would not move")
@@ -1170,7 +1171,7 @@ def main():
             if args.live and chain is track.main:
                 a_brk_p = decel_plan if args.brake_adapt else live["a_brk"]      # the braking map's number when it is on
                 window = 25.0 + speed * speed / (2.0 * a_brk_p * (1.0 + args.live_brake_k * speed * speed)) + (max(bmar.values()) if bmar else 0.0)
-                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, span=args.curv_span, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None, bmargin=(lambda w_: bmar.get(int(w_.dist // 40), 0.0)) if bmar else None)
+                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, span=args.curv_span, ellipse=args.ellipse, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None, bmargin=(lambda w_: bmar.get(int(w_.dist // 40), 0.0)) if bmar else None)
             else:
                 corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             if args.grip_map and chain is track.main and last_lap == start_lap:
@@ -1206,7 +1207,15 @@ def main():
             if args.brake_kin > 0.0 and chain is track.main and box_target is None and not merging and args.live:
                 # kinematic braking: the deceleration needed to reach the limiting corner's speed at its distance, v^2 - vc^2 over 2 d, as a share of the deceleration the car delivers (--brake-kin, about 14 m/s^2
                 # measured at 10 to 60 m/s); the pedal starts where the planner's envelope starts and follows the need, instead of waiting for a speed error
-                lim_ = getattr(track, "last_limit", None)
+                prof_ = getattr(track, "last_profile", None) if args.ellipse else None
+                if prof_:
+                    a_req = 0.0
+                    for d_j, v_j in prof_:
+                        if d_j > 1.0 and v_j < speed - 1.0:
+                            a_req = max(a_req, (speed * speed - v_j * v_j) / (2.0 * max(d_j - args.kin_lead, 4.0)))
+                    if a_req > args.kin_min:
+                        shared["brake"] = max(shared["brake"], min(args.brake_max, a_req / args.brake_kin))
+                lim_ = None if prof_ else getattr(track, "last_limit", None)
                 if lim_ is not None and speed > lim_[0] + 1.0:
                     a_req = (speed * speed - lim_[0] * lim_[0]) / (2.0 * max(lim_[1] - args.kin_lead, 4.0))
                     if a_req > args.kin_min:
