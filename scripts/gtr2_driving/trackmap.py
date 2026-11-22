@@ -234,6 +234,7 @@ class Track:
             total += math.hypot(chain[nj].x - chain[j].x, chain[nj].z - chain[j].z)
             j = nj
         best, at, m = 150.0, 0.0, 0
+        self.last_limit = None
         inv = 1.0 / max(kk, 1e-9)
         for d, a in pts:
             if d > metres:
@@ -253,6 +254,7 @@ class Track:
                 v = math.sqrt(vc * vc + 2.0 * a_brk * dd)       # braking grip constant with speed (measured: about 12 to 13 m/s^2 at every speed)
             if v < best:
                 best, at = v, d
+                self.last_limit = (vc, d)      # corner speed and distance of the point that sets the speed now (kinematic braking in the driver)
         return best, at
 
     def speed_limit(self, chain, k, metres, lat_accel, decel, span=12.0, tight_radius=0.0, tight_speed=99.0):

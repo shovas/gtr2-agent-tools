@@ -221,6 +221,9 @@ def main():
     ap.add_argument("--brake-rise", type=float, default=0.0, help="the brake pedal may rise at most this fast, pedal units per second (0 = no limit, the pedal jumps from 0 to the gain-set value in one step); a real driver rolls onto the brake in 0.2 to 0.4 s so the weight moves to the front tyres first; about 3 to 5")
     ap.add_argument("--curv-span", type=float, default=12.0, help="--live: metres of line over which the planner measures the turn (curvature); a longer span smooths the waypoint noise of the file line and gives a larger local radius, so a higher corner speed, but starts slowing earlier and flattens tight corners")
     ap.add_argument("--meta-clean-climb", action="store_true", help="--session-laps: after a clean lap that is not faster than the best (the Soft tyres wear, so a later lap at a higher push can be slower), the next push climbs from the push just driven, not from the push of the best lap")
+    ap.add_argument("--brake-kin", type=float, default=0.0, help="--live: kinematic braking, the pedal is at least (v^2 - vc^2) / (2 d) / this, the deceleration needed to reach the limiting corner's speed vc at its distance d, m/s^2 the car delivers at a full pedal (the measured braking envelope is 14 to 17); 0 = off")
+    ap.add_argument("--kin-lead", type=float, default=8.0, help="--brake-kin: metres before the corner by which the speed must be reached")
+    ap.add_argument("--kin-min", type=float, default=1.5, help="--brake-kin: the least required deceleration (m/s^2) that starts the pedal")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -1187,6 +1190,14 @@ def main():
                 target_v = min(target_v, args.trap_speed)      # trap test: arrive and run off slowly
             shared["duty"] = max(0.0, min(1.0, 0.45 + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
             shared["brake"] = max(0.0, min(args.brake_max, args.brake_gain * (speed - target_v - args.brake_deadband)))
+            if args.brake_kin > 0.0 and chain is track.main and box_target is None and not merging and args.live:
+                # kinematic braking: the deceleration needed to reach the limiting corner's speed at its distance, v^2 - vc^2 over 2 d, as a share of the deceleration the car delivers (--brake-kin, about 14 m/s^2
+                # measured at 10 to 60 m/s); the pedal starts where the planner's envelope starts and follows the need, instead of waiting for a speed error
+                lim_ = getattr(track, "last_limit", None)
+                if lim_ is not None and speed > lim_[0] + 1.0:
+                    a_req = (speed * speed - lim_[0] * lim_[0]) / (2.0 * max(lim_[1] - args.kin_lead, 4.0))
+                    if a_req > args.kin_min:
+                        shared["brake"] = max(shared["brake"], min(args.brake_max, a_req / args.brake_kin))
             if args.brake_ff > 0.0 and chain is track.main and box_target is None and not merging:
                 # feedforward: the deceleration the speed curve asks for right now (falling target speed x speed), as a share of what the braking map says the car can do,
                 # added to the speed-error brake so the brake starts with the curve instead of after the error has built up
