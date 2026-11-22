@@ -50,13 +50,14 @@ DRIVING_PROFILE = {
     "Steer Ratio Speed": "25", "Difficulty Type": "2",
     # Simulation mode with every driving assist off (user, 2026-11-22: absolute requirement; the aids take over the driver's inputs)
     "Steering Help": "0", "Brake Help": "0", "Stability Control": "0", "Traction Control": "0", "Auto Clutch": "0", "Invulnerability": "0",
+    "Corner Markers": "0", "Pit Spot Marker": "0",      # no corner-severity or pit-spot graphics: nothing in the driver reads the screen, and the markers must not become a source of information
     "Control - Accelerate": "(0, 30)", "Control - Brake": "(0, 44)", "Control - Steer Left": "(0, 51)", "Control - Steer Right": "(0, 52)",
     "Control - Shift Up": "(0, 56)", "Control - Shift Down": "(0, 184)", "Control - First Gear": "(1, 152)",
 }
 DEFAULT_CAR = "gt/lamborghini_murcielago"
 # Difficulty and driver-aid settings recorded with every result (the committed profile is Novice: Difficulty Type 0; the driving
 # profile sets Difficulty Type 2 and, since 2026-11-22, every driver aid off: Steering Help, Brake Help, Stability Control, Traction Control, Auto Clutch, Invulnerability).
-MODE_KEYS = ["Difficulty Type", "Difficulty", "Arcade Mode", "Steering Help", "Steering Help Functionality", "Brake Help", "Stability Control", "Traction Control",
+MODE_KEYS = ["Difficulty Type", "Difficulty", "Arcade Mode", "Steering Help", "Steering Help Functionality", "Brake Help", "Stability Control", "Traction Control", "Corner Markers", "Pit Spot Marker",
              "Spin Recovery", "Opposite Lock", "Auto Clutch", "Shift Mode", "Auto Reverse", "Invulnerability", "Damage Multiplier",
              "Speed Sensitive Steering", "Steer Ratio Speed", "Basic Controls", "PRACT Weather", "PRACT Failure Rate",
              "PRACT Fuel Consumption Multiplier"]

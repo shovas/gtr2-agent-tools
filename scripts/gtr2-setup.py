@@ -167,6 +167,45 @@ def vjoy_bound(root, profile):
     return 'Control - Accelerate="(1, 6)"' in text and 'Control - Brake="(1, 8)"' in text
 
 
+# The default GTR2 environment of these tools (user requirement, 2026-11-22): Simulation mode, every driving assist off, no corner or pit-spot marker graphics.
+# The driver must run on real data (track geometry, speed, momentum), and an assist takes over the inputs the driver makes. gtr2-lap-check.py also writes these
+# values into the profile before every run, so a profile that drifts back is corrected at the next run.
+ENVIRONMENT = {
+    "Difficulty Type": "2", "Steering Help": "0", "Brake Help": "0", "Stability Control": "0", "Traction Control": "0.00000", "Auto Clutch": "0",
+    "Invulnerability": "0", "Spin Recovery": "0", "Opposite Lock": "0", "Auto Reverse": "0", "Shift Mode": "0",
+    "Corner Markers": "0", "Pit Spot Marker": "0",
+}
+
+
+def environment_state(plr):
+    """(differences, missing): {key: (current, wanted)} for the ENVIRONMENT keys in the profile file, and the keys it does not have."""
+    text = plr.read_bytes().decode("latin1")
+    diff, missing = {}, []
+    for key, want in ENVIRONMENT.items():
+        m = re.search(r'^%s="([^"]*)"' % re.escape(key), text, re.M)
+        if not m:
+            missing.append(key)
+        elif m.group(1) != want and not (key == "Traction Control" and float(m.group(1) or 0) == 0.0):
+            diff[key] = (m.group(1), want)
+    return diff, missing
+
+
+def apply_environment(plr):
+    """Write the ENVIRONMENT values into the profile, byte for byte otherwise (the NUL header and the trailing // comments stay). Returns the changed keys."""
+    raw = plr.read_bytes()
+    text = raw.decode("latin1")
+    changed = []
+    for key, want in ENVIRONMENT.items():
+        pat = re.compile(r'^(%s=")([^"]*)(")' % re.escape(key), re.M)
+        m = pat.search(text)
+        if m and m.group(2) != want and not (key == "Traction Control" and float(m.group(2) or 0) == 0.0):
+            text = text[:m.start(2)] + want + text[m.end(2):]
+            changed.append(key)
+    if changed:
+        plr.write_bytes(text.encode("latin1"))
+    return changed
+
+
 def git_info(root):
     r = run(["git", "--version"])
     have = r.returncode == 0
@@ -324,6 +363,19 @@ def gather(a):
     if vj and prof:
         bound = vjoy_bound(root, ans["profile"] or prof[-1])
         say("   Profile driving keys bound to vJoy: %s" % ({True: "yes", False: "no (see CLAUDE.md, 'Driving needs vJoy')", None: "unknown"}[bound]))
+    plr_path = (root / "UserData" / ans["profile"] / (ans["profile"] + ".PLR")) if ans["profile"] else (root / "UserData" / prof[-1] / (prof[-1] + ".PLR") if prof else None)
+    ans["environment"] = False
+    if plr_path is not None and plr_path.is_file():
+        diff, missing = environment_state(plr_path)
+        if diff:
+            say("   Game environment of the tools: Simulation mode, all driving assists off, corner and pit-spot markers off. The profile differs in: " +
+                ", ".join("%s %s -> %s" % (k, v[0], v[1]) for k, v in diff.items()))
+            ans["environment"] = confirm("   Set these in the profile (only those keys change; the driver needs them: an assist takes over the driver's inputs, and the corner markers must not be a source of information)?", True, a.yes)
+            ans["plr_path"] = str(plr_path)
+        else:
+            say("   Game environment (Simulation mode, assists off, markers off): the profile already has it.")
+    else:
+        say("   Game environment (Simulation mode, assists off, markers off): no profile file yet. The lap runner writes these values into the profile before every run; rerun setup after the game has created the profile to set them permanently.")
     docs = documents_gtr2()
     if (root / "config" / "Documents-Config.ini").is_file():
         say("7. The game folder already has its own config (config\\Documents-Config.ini): no bootstrap needed, Documents\\GTR2 is left alone.")
@@ -367,6 +419,7 @@ def review(ans, a):
     say("  game CLAUDE.md  : %s" % ({"absent": "copy in the game-folder instructions", "other": "write %s next to the existing CLAUDE.md (your agent merges it)" % MERGE_NAME,
                                       "merged": "already there"}[ans["claude_md_state"]] if ans["claude_md"] or ans["claude_md_state"] == "merged" else "skipped"))
     say("  game folder git : %s" % ("git init + baseline commit" if ans["git_init"] else "leave as is"))
+    say("  game environment: %s" % ("set Simulation mode, all assists off, markers off in the profile" if ans.get("environment") else "unchanged"))
     say("  first launch    : %s" % ("bootstrap config, set and verify the window size, preflight" if ans["launch"] else "skipped"))
     if ans["learn"]:
         say("  reference pictures: learn for %s (full navigation sweep, about 15 minutes)" % ans["resolution"])
@@ -412,6 +465,12 @@ def execute(ans):
             say('    "Merge the new instructions in %s into CLAUDE.md in this folder. Keep every existing instruction, add the new ones,' % MERGE_NAME)
             say("     ask me about any conflict, keep the line '%s' so setup knows it is merged, then delete %s.\"" % (TEMPLATE_MARKER, MERGE_NAME))
             say("")
+    if ans.get("environment"):
+        try:
+            changed = apply_environment(Path(ans["plr_path"]))
+            ok &= step("game environment (Simulation mode, assists off, markers off)", True, "changed " + (", ".join(changed) or "nothing"))
+        except OSError as e:
+            ok &= step("game environment", False, str(e))
     if ans["git_init"]:
         steps = [["git", "init", "-q", "-b", "main"], ["git", "config", "core.autocrlf", "false"], ["git", "add", "-A"]]
         if not (root / ".gitattributes").exists():
