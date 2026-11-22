@@ -220,6 +220,7 @@ def main():
     ap.add_argument("--trail-circle", type=float, default=0.0, help="friction circle for the brake: the brake pedal is scaled by sqrt(1 - (lateral acceleration / this)^2), lateral acceleration = speed x yaw rate, so the car finishes its braking as the steering comes on (a driver trail-brakes only as far as the tyres have grip left over from cornering; without Stability Control the Imola first corner spun at 1.2 push with the brake held through the turn-in); m/s^2, 0 = off, about 11 to 14")
     ap.add_argument("--brake-rise", type=float, default=0.0, help="the brake pedal may rise at most this fast, pedal units per second (0 = no limit, the pedal jumps from 0 to the gain-set value in one step); a real driver rolls onto the brake in 0.2 to 0.4 s so the weight moves to the front tyres first; about 3 to 5")
     ap.add_argument("--curv-span", type=float, default=12.0, help="--live: metres of line over which the planner measures the turn (curvature); a longer span smooths the waypoint noise of the file line and gives a larger local radius, so a higher corner speed, but starts slowing earlier and flattens tight corners")
+    ap.add_argument("--meta-clean-climb", action="store_true", help="--session-laps: after a clean lap that is not faster than the best (the Soft tyres wear, so a later lap at a higher push can be slower), the next push climbs from the push just driven, not from the push of the best lap")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -839,9 +840,10 @@ def main():
                                 meta["push"] = min(meta["push"], used_ + 0.5 * max(0.0, meta["hi"] - used_))      # a push already failed: go only half way to it (bisection)
                             meta["step"] = min(args.meta_step_max, meta["step"] * args.meta_grow)      # gallop: a clean, faster lap makes the next step bigger (--meta-grow 2: 0.02, 0.04, 0.08 ...) until a lap fails and the back-off shrinks it
                         elif clean_:
-                            meta["push"] = min(args.meta_max, meta["best_push"] + 0.5 * meta["step"])
+                            ref_ = max(meta["best_push"], used_) if args.meta_clean_climb else meta["best_push"]      # --meta-clean-climb: a clean lap that is not faster (tyre wear, fuel) still shows the push is possible: climb from the push just driven
+                            meta["push"] = min(args.meta_max, ref_ + 0.5 * meta["step"])
                             if meta.get("hi") is not None:
-                                meta["push"] = min(meta["push"], meta["best_push"] + 0.5 * max(0.0, meta["hi"] - meta["best_push"]))      # never above half way to a push that failed
+                                meta["push"] = min(meta["push"], ref_ + 0.5 * max(0.0, meta["hi"] - ref_))      # never above half way to a push that failed
                             meta["step"] = max(0.004, meta["step"] * 0.7)
                         else:      # an unclean lap: the maps already slow the corner where it happened (track-limit and hit responses), so the push is held; only a second unclean lap in a row takes it down
                             meta["bad"] = meta.get("bad", 0) + 1
