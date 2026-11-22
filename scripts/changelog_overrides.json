@@ -222,5 +222,95 @@
    "improve",
    "A better steering follower (about 40% less drift from the racing line) and a simulator to tune it; kerb and braking options for chasing faster laps"
   ]
+ ],
+ "4d8fa23": [
+  [
+   "highlight",
+   "The automatic driver now runs in Simulation mode with every driving aid off (steering, brake, stability, traction, clutch, invulnerability): the lap times are slower but the car is driven honestly."
+  ]
+ ],
+ "7b4d4b8": [
+  [
+   "highlight",
+   "The Imola driver no longer needs fixed slow zones: it plans its own corner speeds."
+  ]
+ ],
+ "432cd37": [
+  [
+   "improve",
+   "New tool that measures how hard the car really brakes, corners and accelerates from the driving logs."
+  ]
+ ],
+ "deddaac": [
+  [
+   "improve",
+   "Software ABS and traction control in the Imola set-up, and the car recovers after a spin so a session can finish."
+  ]
+ ],
+ "1f889d1": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "d88a7a7": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "c83a599": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "b5ea964": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "c95839b": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "ed1e571": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "e1e2e47": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "c4b2fbf": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "b77a725": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "e961c49": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "db5e4d6": [
+  [
+   "skip",
+   ""
+  ]
  ]
 }
