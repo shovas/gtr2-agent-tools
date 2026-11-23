@@ -50,6 +50,11 @@ def main():
         res = last_result() or {}
         x = res.get("result") or {}
         laps = x.get("session_laps") or []
+        if not laps:      # the driver ended without a result line (inside an unfinished lap): rebuild the finished laps from its log
+            import re
+            log = (Path(__file__).resolve().parent / "gtr2_ui" / "runs" / "lap_drive.log")
+            txt = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
+            laps = [{"lap": int(m[0]), "time": float(m[1]), "clean": m[2] == "clean"} for m in re.findall(r"SESSION lap (\d+): ([0-9.]+) s, (clean|NOT clean)", txt)]
         clean = [l["time"] for l in laps if l.get("clean")]
         best = min(clean) if clean else None
         with OUT.open("a", encoding="utf-8") as f:
