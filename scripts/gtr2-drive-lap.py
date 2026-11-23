@@ -170,6 +170,8 @@ def main():
     ap.add_argument("--tc-free", type=float, default=6.0, help="lateral load (m/s^2) below which --tc-gain does nothing")
     ap.add_argument("--tc-floor", type=float, default=0.3, help="lowest throttle cap --tc-gain can reach")
     ap.add_argument("--line-opt", action="store_true", help="drive a time-optimal racing line found from the track's widths and the grip/braking/power numbers (gtr2_driving/racingline.py; cached per layout); replaces --line-smooth")
+    ap.add_argument("--line-opt-zones", type=float, nargs="+", default=[], help="--line-opt only inside these lap-distance ranges: FROM TO [FROM TO ...] in metres (the file line elsewhere, fading over --line-opt-fade)")
+    ap.add_argument("--line-opt-fade", type=float, default=100.0)
     ap.add_argument("--line-opt-margin", type=float, default=1.2, help="--line-opt: metres the car's side stays inside each white line")
     ap.add_argument("--follower", choices=("pursuit", "stanley", "designed"), default="pursuit", help="how the steering follows the line: pursuit (aim at a point look-ahead metres ahead, the proven default) or stanley (cross-track and heading error at the car plus curvature feed-forward, with a steering gain learned from the car's own yaw response)")
     ap.add_argument("--steer-id", action="store_true", help="identify the steering while driving (yaw rate per steering command per m/s, per 10 m/s speed bin, steady stretches only) and record it in the result; does not change the steering yet. On in live mode")
@@ -395,6 +397,12 @@ def main():
     if args.line_opt:
         ph = racingline.Physics(lat=args.lat_accel, decel=args.decel, kk=args.live_k if args.live else 0.0)
         offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True), seed=([-w_.dry for w_ in track.main] if args.line_seed_dry else None))
+        if args.line_opt_zones:      # the optimised line only inside these lap-distance ranges (from, to, ...), fading to the file line over --line-opt-fade metres outside them
+            import numpy as np_z
+            zz_ = list(zip(args.line_opt_zones[0::2], args.line_opt_zones[1::2]))
+            def wt_(d_):
+                return max([max(0.0, 1.0 - max(0.0, max(a_ - d_, d_ - b_)) / args.line_opt_fade) for a_, b_ in zz_] or [0.0])
+            offs = np_z.array([o_ * wt_(w_.dist) for o_, w_ in zip(offs, track.main)])
         racingline.apply(track, offs)
         print("racing line applied: offsets %.1f to %.1f m (mean %.1f)" % (offs.min(), offs.max(), abs(offs).mean()), flush=True)
     if args.dry_line:
