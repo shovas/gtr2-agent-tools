@@ -154,6 +154,8 @@ def main():
     ap.add_argument("--shift-rpm", type=float, default=None, help="default 6800; --fast 6300")
     ap.add_argument("--down-rpm", type=float, default=None, help="default 2800; --fast 3000")
     ap.add_argument("--lookahead", type=float, nargs=2, default=[5.0, 1.2], metavar=("BASE", "PER_MS"))
+    ap.add_argument("--look-radius", type=float, default=0.0, help="shorten the aim distance in a tight corner to this fraction of the corner radius ahead (0 = off; 0.7 = aim no further than 70 percent of the radius), never below --look-min; the long straight-line aim distance cuts a hairpin by 3 to 5 m")
+    ap.add_argument("--look-min", type=float, default=8.0)
     ap.add_argument("--aim-step", action="store_true", help="aim at whole waypoints as before (the aim point jumps a waypoint spacing each time the nearest waypoint advances); the default interpolates the aim point exactly the lookahead distance along the line from the car")
     ap.add_argument("--steer-gain", type=float, default=25.0)
     ap.add_argument("--damping", type=float, default=90.0)
@@ -1035,6 +1037,10 @@ def main():
                 max_lat = max(max_lat, abs(lat))
 
             look = args.lookahead[0] + args.lookahead[1] * speed
+            if args.look_radius > 0.0 and chain is track.main:
+                c_look = track.curvature_ahead(chain, k, look)[0]
+                if c_look > 1e-4:
+                    look = max(min(look, args.look_min), min(look, args.look_radius / c_look))
             if chain is track.pit:
                 # a short aim distance in the pit lane: the narrow winding service roads at Estoril and Anderstorp (4 to 6 m wide, 90 degree
                 # bends) were cut by 1.5 m or more with the circuit's 5 m + 1.2 per m/s, which put the car into the wall
