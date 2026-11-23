@@ -130,6 +130,8 @@ def profile_values(venue, trk, aiw, car_path, analog=False, wheel=False):
         values["Basic Controls"] = "2" if wheel else "0"
         if wheel:
             values["Control - Clutch In"] = "(1, 10)"      # wheel profile: the clutch is a pedal axis too (vJoy RY below centre), not keyboard Q      # 2 = what the game writes once JOY1 is selected on the Controls page (gtr2-select-wheel.py)
+    values["Control - Ignition"] = "(0, 20)"      # keys T and Y: the profile has both unbound (code 89), so a stalled engine could never be started again (user, 2026-11-23: press Ignition if it is off, then Starter)
+    values["Control - Starter"] = "(0, 21)"
     values.update(PROFILE_EXTRA)
     values.update({"Track File": rel(trk), "Track Description": Path(trk).stem, "AI Database File": rel(aiw.name)})
     if car_path is not None:

@@ -42,7 +42,7 @@ import trackmap  # noqa: E402
 
 user32 = ctypes.windll.user32
 KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE = 0x1, 0x2, 0x8
-SCANCODES = {"a": 0x1E, "z": 0x2C, "q": 0x10, "comma": 0x33, "period": 0x34, "alt": 0x38, "ralt": (0x38, True), "space": 0x39}
+SCANCODES = {"ignition": 0x14, "starter": 0x15, "a": 0x1E, "z": 0x2C, "q": 0x10, "comma": 0x33, "period": 0x34, "alt": 0x38, "ralt": (0x38, True), "space": 0x39}
 OFF_ROAD = ("GRAS", "GRV", "SAND", "DIRT", "MUD", "GRAV")
 
 
@@ -159,6 +159,7 @@ def main():
     ap.add_argument("--ilc", type=float, default=0.0, help="--session-laps: iterative learning of the line: after each clean lap the aim point at every 10 m of the lap is moved by this fraction (0.3 to 0.7) of the sideways error the car had there, against the error (0 = off); the repeatable part of the follower error (the corner cut) shrinks lap by lap")
     ap.add_argument("--ilc-keep", type=float, default=0.85, help="--ilc: the share of the learned shift kept from lap to lap (under 1: it decays where the error does not repeat, so the correction cannot wind up)")
     ap.add_argument("--ilc-max", type=float, default=1.5, help="--ilc: the largest aim point shift learned, metres")
+    ap.add_argument("--restart-engine", action="store_true", help="--recover: start a stalled engine again with the Starter key (Ignition first on every second try); the lap runner binds both keys (T and Y)")
     ap.add_argument("--anti-stall", action="store_true", help="wheel device: clutch in when the revs fall under --stall-rpm below 20 m/s (a spin with no clutch aid stalls the engine and nothing restarts it)")
     ap.add_argument("--stall-rpm", type=float, default=1300.0)
     ap.add_argument("--aim-step", action="store_true", help="aim at whole waypoints as before (the aim point jumps a waypoint spacing each time the nearest waypoint advances); the default interpolates the aim point exactly the lookahead distance along the line from the car")
@@ -1490,10 +1491,20 @@ def main():
                     last_shift = now; shift(False)
             if args.debug_stop and args.debug_stop[0] <= now - t0 <= args.debug_stop[0] + args.debug_stop[1]:
                 shared["duty"], shared["brake"] = 0.0, 1.0      # test hook: hold the car still to exercise the stall recovery
-            if args.anti_stall and wheel_dev and chain is track.main and tel["rpm"] < args.stall_rpm and 200.0 < tel["rpm"] and speed < 20.0 and shared["duty"] < 0.5 and now - t0 > 20.0 and now - rec.get("t_anti", -99.0) > 1.5:      # a spin drops the revs below idle in a low gear with no clutch aid: the engine stalls; a driver dips the clutch before it dies
+            if args.anti_stall and wheel_dev and chain is track.main and tel["rpm"] < args.stall_rpm and 200.0 < tel["rpm"] and speed < 20.0 and rec["phase"] is None and rec.get("launch", 0.0) < now and now - t0 > 20.0 and now - rec.get("t_anti", -99.0) > 1.5:      # a spin drops the revs below idle in a low gear with no clutch aid: the engine stalls; a driver dips the clutch before it dies
                 rec["t_anti"] = now
                 print("t=%5.1f revs %.0f at %.1f m/s: clutch in so the engine does not stall" % (now - t0, tel["rpm"], speed), flush=True)
                 threading.Thread(target=clutch_slip, args=(1.0, 1.0, 0.5)).start()
+            if args.restart_engine and speed < 1.0 and tel["rpm"] < 200.0 and now - t0 > 20.0 and now - rec.get("t_start", -99.0) > 4.0:      # a stalled engine: the Starter first (the ignition is normally still on), the Ignition and then the Starter when the revs do not come back
+                rec["t_start"] = now
+                rec["start_n"] = rec.get("start_n", 0) + 1
+                print("t=%5.1f engine stalled (rpm %.0f): %s" % (now - t0, tel["rpm"], "starter" if rec["start_n"] % 2 else "ignition, then starter"), flush=True)
+                def restart_(n_=rec["start_n"]):
+                    if n_ % 2 == 0:
+                        press_key("ignition", hold=200)
+                        time.sleep(0.4)
+                    press_key("starter", hold=700)
+                threading.Thread(target=restart_).start()
             if args.recover and chain is track.main and not merging and box_target is None:
                 if speed < 1.0:
                     if rec["still"] is None:
@@ -1505,6 +1516,11 @@ def main():
                 if rec["phase"] is None and rec["still"] is not None and now - rec["still"] > args.recover_after * (args.trap_patience if (args.trap_escape and off4) else 1.0) and now - t0 > 20.0 and rec["n"] < args.recover_max:
                     rec.update(phase="reverse", n=rec["n"] + 1, t=now, t_last=now, x=x, z=z, shift=0.0)
                     print("t=%5.1f stopped at (%.0f, %.0f): reversing out (attempt %d)" % (now - t0, x, z, rec["n"]), flush=True)
+                    if args.ilc > 0.0 and ilc["corr"]:      # the learned aim shifts led here (or at least did not prevent it): forget them within 200 m of the incident, the line goes back to the baseline there
+                        k0_ = int(w.dist // 10)
+                        for k_ in [k_ for k_ in ilc["corr"] if abs(k_ - k0_) <= 20]:
+                            ilc["corr"].pop(k_)
+                        print("ILC: cleared the learned shifts within 200 m of the incident at %d m" % (k0_ * 10), flush=True)
                 if rec["phase"] == "reverse":
                     g_now = tel["gear"]
                     if g_now > -1:
