@@ -24,7 +24,7 @@ NUM = r"[-+0-9.eE]+"
 
 
 class Waypoint:
-    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz", "off", "dry")
+    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz", "off", "dry", "rhx", "rhz")
 
 
 def parse(path=DEFAULT):
@@ -181,6 +181,9 @@ class Track:
                 if ang > 1e-4 and tot / ang < pin_radius:
                     for d in range(-pin_pad, pin_pad + 1):
                         pinned[(i + d) % n] = True
+        for w in chain:
+            if not hasattr(w, "rhx"):
+                w.rhx, w.rhz = w.hx, w.hz      # the file line's own heading, kept for the planner's corner-speed cap (speed_limit_live rawcap)
         base = [(w.x, w.z, w.hx, w.hz, w.left, w.right) for w in chain]
         off = [0.0] * n                 # sideways shift of each waypoint, positive to the road's right (the sign of lateral())
         for _ in range(iters):
@@ -220,7 +223,7 @@ class Track:
             j = nj
         return best, at
 
-    def speed_limit_live(self, chain, k, metres, a_lat, kk, a_brk, span=12.0, kb=0.0, scale=None, bmargin=None, ellipse=False):
+    def speed_limit_live(self, chain, k, metres, a_lat, kk, a_brk, span=12.0, kb=0.0, scale=None, bmargin=None, ellipse=False, rawcap=0.0):
         """Like speed_limit, with grip that grows with speed (downforce): cornering grip a_lat * (1 + kk v^2) and braking grip
         a_brk * (1 + kk v^2). A corner of curvature c is taken at v^2 c = a_lat (1 + kk v^2), i.e. v = sqrt(a_lat / (c - a_lat kk));
         braking towards it from further back follows v^2 + 1/kk = (v_c^2 + 1/kk) exp(2 a_brk kk d). Returns (speed now, distance)."""
@@ -249,6 +252,12 @@ class Track:
             al = a_lat * (scale(a) if scale else 1.0)      # a slow zone scales the cornering grip at this waypoint
             den = c - al * kk
             vc = math.sqrt(al / den) if c > 1e-4 and den > 1e-6 else 150.0
+            if rawcap > 0.0 and hasattr(a, "rhx") and hasattr(b, "rhx"):
+                # the smoothed line straightens chicanes (+33% allowed speed at Imola 1100 m) and the car cannot take that line at that speed: never plan more than rawcap above the file line's own corner speed
+                c_r = abs(math.atan2(a.rhx * b.rhz - a.rhz * b.rhx, a.rhx * b.rhx + a.rhz * b.rhz)) / ds
+                den_r = c_r - al * kk
+                vc_r = math.sqrt(al / den_r) if c_r > 1e-4 and den_r > 1e-6 else 150.0
+                vc = min(vc, vc_r * (1.0 + rawcap))
             if ellipse:
                 prof.append((d, c, al, vc))
                 continue

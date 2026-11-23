@@ -232,6 +232,7 @@ def main():
     ap.add_argument("--steer-scale-low", type=float, default=0.0, help="analog: steering scale (share of the lock) at low speed on the track, 0 = off; falls to --analog-steer between --steer-low-v1 and --steer-low-v2 m/s. The hairpins need more than the 0.6 of the lock: a car at 14 m/s turned on a 27 m radius where the track asked for 20")
     ap.add_argument("--steer-low-v1", type=float, default=15.0)
     ap.add_argument("--steer-low-v2", type=float, default=30.0)
+    ap.add_argument("--raw-cap", type=float, default=0.0, help="--live: cap the planned corner speed at (1 + this) times the corner speed of the unsmoothed file line (0 = off); the smoothed line (--line-smooth) allows 33% more speed than the file line at the Imola chicane near 1100 m, which the car cannot take")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -1181,7 +1182,7 @@ def main():
             if args.live and chain is track.main:
                 a_brk_p = decel_plan if args.brake_adapt else live["a_brk"]      # the braking map's number when it is on
                 window = 25.0 + speed * speed / (2.0 * a_brk_p * (1.0 + args.live_brake_k * speed * speed)) + (max(bmar.values()) if bmar else 0.0)
-                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, span=args.curv_span, ellipse=args.ellipse, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None, bmargin=(lambda w_: bmar.get(int(w_.dist // 40), 0.0)) if bmar else None)
+                corner_v, _ = track.speed_limit_live(chain, k, window, live["a_lat"], live["kk"], a_brk_p, span=args.curv_span, ellipse=args.ellipse, rawcap=args.raw_cap, kb=args.live_brake_k, scale=zone_factor if (args.slow_zone or learned or args.grip_map) else None, bmargin=(lambda w_: bmar.get(int(w_.dist // 40), 0.0)) if bmar else None)
             else:
                 corner_v, _ = track.speed_limit(joined if (chain is track.pit and joined) else chain, k, window, args.pit_lat_accel if chain is track.pit else (lat_at if zones else ((lambda w: args.lat_accel * zone_factor(w)) if (args.slow_zone or learned or args.grip_map) else args.lat_accel)), decel_plan, tight_radius=args.tight_radius, tight_speed=args.tight_speed)
             if args.grip_map and chain is track.main and last_lap == start_lap:
