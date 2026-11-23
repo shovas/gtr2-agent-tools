@@ -158,10 +158,13 @@ def main():
     ap.add_argument("--look-min", type=float, default=8.0)
     ap.add_argument("--ilc", type=float, default=0.0, help="--session-laps: iterative learning of the line: after each clean lap the aim point at every 10 m of the lap is moved by this fraction (0.3 to 0.7) of the sideways error the car had there, against the error (0 = off); the repeatable part of the follower error (the corner cut) shrinks lap by lap")
     ap.add_argument("--ilc-keep", type=float, default=0.85, help="--ilc: the share of the learned shift kept from lap to lap (under 1: it decays where the error does not repeat, so the correction cannot wind up)")
+    ap.add_argument("--wall-clear", type=float, default=0.0, help="learn the walls: after an impact on the main line, the aim point within 60 m of it is kept this many metres clear of where the car was when it hit (the optimised line clips an apex kerb with a vertical face at 3126 m: 65 to 92 m/s^2); 0 = off")
     ap.add_argument("--ilc-max", type=float, default=1.5, help="--ilc: the largest aim point shift learned, metres")
     ap.add_argument("--restart-engine", action="store_true", help="--recover: start a stalled engine again with the Starter key (Ignition first on every second try); the lap runner binds both keys (T and Y)")
     ap.add_argument("--anti-stall", action="store_true", help="wheel device: clutch in when the revs fall under --stall-rpm below 20 m/s (a spin with no clutch aid stalls the engine and nothing restarts it)")
     ap.add_argument("--stall-rpm", type=float, default=1300.0)
+    ap.add_argument("--spin-gm", type=float, default=0.0, help="--anti-stall with --grip-map: after a spin, the planner's grip factor of the 140 m before it goes down by this fraction (0.04 = 4 percent) for the rest of the session")
+    ap.add_argument("--spin-deg", type=float, default=30.0, help="--anti-stall: the clutch goes in at once when the car slides sideways by more than this many degrees at speed (a spin: the revs collapse in under a second)")
     ap.add_argument("--aim-step", action="store_true", help="aim at whole waypoints as before (the aim point jumps a waypoint spacing each time the nearest waypoint advances); the default interpolates the aim point exactly the lookahead distance along the line from the car")
     ap.add_argument("--steer-gain", type=float, default=25.0)
     ap.add_argument("--damping", type=float, default=90.0)
@@ -716,6 +719,8 @@ def main():
         t0 = time.time()
         chain, k = chain0, None
         prev_yaw, prev_t, last_move, n, last_shift = None, time.time(), time.time(), 0, 0.0
+        wall_hits = []      # --wall-clear: (lap distance, lateral position) of every impact on the main line
+        mv = {"x": 0.0, "z": 0.0, "t": 0.0, "slide": 0.0}      # the direction of travel against the heading, from the last 0.1 s of position changes (a spin: the car slides sideways)
         ilc = {"corr": {}, "acc": {}}      # --ilc: learned aim point shift per 10 m of the lap (positive = left, like the aim offset) and this lap's sideways errors
         start_lap, last_lap, finish_at = first["lap"], first["lap"], None
         accum, prev_dist, by_distance = 0.0, None, False     # distance covered along the racing line: a fallback when the game's lap counter never moves (Hockenheim Short)
@@ -997,6 +1002,9 @@ def main():
             elif a_h > (args.impact_track if (args.impact_track > 0 and chain is track.main) else args.impact_accel) and now - last_impact > 0.3 and spiky:
                 last_impact = now
                 impacts.append({"t": round(now - t0, 2), "x": round(x, 1), "z": round(z, 1), "a": round(a_h, 1), "pit": chain is track.pit, "gap": None if geo_gap is None else round(geo_gap, 2), "obj": geo_name})
+                if chain is track.main and args.wall_clear > 0.0:
+                    wall_hits.append((w.dist, track.lateral(w, x, z)))
+                    print("t=%5.1f learned a wall at %.0f m, %.1f m from the centre line: the aim stays %.1f m clear" % (now - t0, w.dist, wall_hits[-1][1], args.wall_clear), flush=True)
                 if chain is track.main:
                     learn_hit(a_h, w.dist)
                     hit_braking(speed)
@@ -1090,6 +1098,13 @@ def main():
                     edge_over = args.edge_room - room
             margin = args.pit_margin if chain is track.pit else 0.0
 
+            def wall_clamp(shift, d_):
+                if args.wall_clear > 0.0 and chain is track.main:
+                    for dw_, lw_ in wall_hits:
+                        if abs(d_ - dw_) < 60.0:
+                            shift = max(shift, lw_ + args.wall_clear) if lw_ < 0.0 else min(shift, lw_ - args.wall_clear)
+                return shift
+
             def aim_offset(p):
                 shift = args.pit_aim if chain is track.pit else (bias_at(p) if zones else 0.0)
                 if p.left < margin:
@@ -1099,10 +1114,10 @@ def main():
                 lo, hi = -(p.right - 0.8), p.left - 0.8
                 if hi < lo:
                     return 0.5 * (p.left - p.right)
-                return max(lo, min(hi, shift))
+                return max(lo, min(hi, wall_clamp(shift, p.dist)))
             lat_t, lat_here = aim_offset(target), aim_offset(w)
             if args.ilc > 0.0 and chain is track.main and not merging and box_target is None:
-                lat_t = max(-(target.right - 1.0), min(target.left - 1.0, lat_t + ilc["corr"].get(int(target.dist // 10), 0.0)))
+                lat_t = max(-(target.right - 1.0), min(target.left - 1.0, wall_clamp(lat_t + ilc["corr"].get(int(target.dist // 10), 0.0), target.dist)))
             want = track.yaw_of(target.x - target.hz * lat_t - x, target.z + target.hx * lat_t - z)
             lat = lat - lat_here
             if args.ilc > 0.0 and chain is track.main and not merging and box_target is None and last_lap > start_lap:
@@ -1491,8 +1506,16 @@ def main():
                     last_shift = now; shift(False)
             if args.debug_stop and args.debug_stop[0] <= now - t0 <= args.debug_stop[0] + args.debug_stop[1]:
                 shared["duty"], shared["brake"] = 0.0, 1.0      # test hook: hold the car still to exercise the stall recovery
-            if args.anti_stall and wheel_dev and chain is track.main and tel["rpm"] < args.stall_rpm and 200.0 < tel["rpm"] and speed < 20.0 and rec["phase"] is None and rec.get("launch", 0.0) < now and now - t0 > 20.0 and now - rec.get("t_anti", -99.0) > 1.5:      # a spin drops the revs below idle in a low gear with no clutch aid: the engine stalls; a driver dips the clutch before it dies
+            if now - mv["t"] >= 0.1:
+                mdx_, mdz_ = x - mv["x"], z - mv["z"]
+                mv["slide"] = abs(wrap(track.yaw_of(mdx_, mdz_) - yaw)) if mdx_ * mdx_ + mdz_ * mdz_ > 0.25 else 0.0
+                mv["x"], mv["z"], mv["t"] = x, z, now
+            if args.anti_stall and wheel_dev and chain is track.main and ((tel["rpm"] < args.stall_rpm and 200.0 < tel["rpm"] and speed < 20.0) or (speed > 5.0 and mv["slide"] > args.spin_deg)) and rec["phase"] is None and rec.get("launch", 0.0) < now and now - t0 > 20.0 and now - rec.get("t_anti", -99.0) > 1.5:      # a spin drops the revs below idle in a low gear with no clutch aid: the engine stalls; a driver dips the clutch before it dies
                 rec["t_anti"] = now
+                if args.spin_gm > 0.0 and args.grip_map and speed > 5.0 and mv["slide"] > args.spin_deg:      # a spin: the corner before this point was taken too fast; its grip factor down for the next pass
+                    for bb in range(int(w.dist // 20) - 7, int(w.dist // 20) + 1):
+                        gm[bb] = max(args.gm_min, gm.get(bb, 1.0) * (1.0 - args.spin_gm))
+                    print("t=%5.1f spin (%.0f degrees sideways at %.0f m/s) at lap distance %d: the grip factor of the 140 m before it down by %.0f percent" % (now - t0, mv["slide"], speed, w.dist, 100 * args.spin_gm), flush=True)
                 print("t=%5.1f revs %.0f at %.1f m/s: clutch in so the engine does not stall" % (now - t0, tel["rpm"], speed), flush=True)
                 threading.Thread(target=clutch_slip, args=(1.0, 1.0, 0.5)).start()
             if args.restart_engine and speed < 1.0 and tel["rpm"] < 200.0 and now - t0 > 20.0 and now - rec.get("t_start", -99.0) > 4.0:      # a stalled engine: the Starter first (the ignition is normally still on), the Ignition and then the Starter when the revs do not come back
