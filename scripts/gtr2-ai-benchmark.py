@@ -33,6 +33,7 @@ def main():
     ap.add_argument("layout")
     ap.add_argument("--car", default="gt/maserati_mc12")
     ap.add_argument("--timeout", type=int, default=1200, help="seconds the race may take")
+    ap.add_argument("--record", default="", help="record the autopilot's telemetry to this CSV (gtr2-record-telemetry.py)")
     a = ap.parse_args()
     lc = load("lapcheck", "gtr2-lap-check.py")
     suite = lc.suite
@@ -56,11 +57,20 @@ def main():
         if not suite.start_game():
             print("the game never reached the main menu")
             return 1
+        rec = None
+        if a.record:
+            import subprocess
+            rec = subprocess.Popen([sys.executable, "-I", str(HERE / "gtr2-record-telemetry.py"), a.record, "--seconds", str(a.timeout)], creationflags=0x08000000)
         ok, out = lc.run_path(["MAIN MENU | APP_BUTTON_GAMEMODESELECT_GRANDPRIX | SUMMARY_GRANDPRIX",
                                "SUMMARY_GRANDPRIX | !SHORTRACE | SUMMARY_GRANDPRIX",
                                "SUMMARY_GRANDPRIX | CONTINUE | MONITOR_SINGLE",
                                "MONITOR_SINGLE | !RACE | POST RACE MONITOR"], "--session-step", "--drive-step", timeout=a.timeout)
         print("race:", "ok" if ok else "FAILED", "-", out.splitlines()[-1] if out else "")
+        if rec is not None:
+            time.sleep(1.0)
+            rec.terminate()
+            rec.wait(timeout=30)
+            print("telemetry recorded to", a.record)
         ok2, out2 = lc.run_path(["POST RACE MONITOR | APP_BUTTON_POSTRACENAVIGATION | MAIN MENU"], "--session-step", "--drive-step")
         if not ok2:
             message = "could not leave the results page (the game is left open): " + out2.splitlines()[-1]
