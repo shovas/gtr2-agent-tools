@@ -6,7 +6,7 @@
   "sanderstorp": "--pit-speed 10 --lat-accel 5.0",
   "4zhuhai": "--guard-deg 12 --guard-span 25 --guard-floor 0.15 --lat-accel 5.5",
   "jnmonza": "--guard-deg 12 --guard-span 25 --guard-floor 0.15",
-  "4imol": "--brake-gain 0.45 --brake-deadband 0.3 --brake-max 1.0 --throttle-gain 0.5 --impact-spike 6 --shift-rpms 7200 7200 7200 7200 7200 --speed 150 --line-smooth 25 --line-margin 1.8 --line-pin 45 --dyn --learn-min 14 --kerb-max-accel 60 --meta-start 1.10 --curv-span 20 --meta-clean-climb --ellipse --brake-kin 14 --live-lat 12 --live-brake 14 --steer-scale-low 1.0 --dyn-brake-slip 0.08 --dyn-slip 0.06 --recover --stuck-launch",
+  "4imol": "--brake-gain 0.45 --brake-deadband 0.3 --brake-max 1.0 --throttle-gain 0.5 --impact-spike 6 --shift-rpms 7200 7200 7200 7200 7200 --speed 150 --line-smooth 25 --line-margin 1.8 --line-pin 45 --dyn --learn-min 14 --kerb-max-accel 60 --meta-start 1.10 --curv-span 20 --meta-clean-climb --ellipse --brake-kin 14 --live-lat 12 --live-brake 14 --steer-scale-low 1.0 --dyn-brake-slip 0.08 --dyn-slip 0.06 --recover --recover-max 10 --stuck-launch",
   "ntmagny": "--guard-deg 12 --guard-span 25 --guard-floor 0.15",
   "4imol:fixed": "--decel 13 --lat-accel 11"
 }

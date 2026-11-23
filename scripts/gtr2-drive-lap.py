@@ -295,6 +295,7 @@ def main():
     ap.add_argument("--kerb-steer", type=float, default=1.0, help="--kerb-mode: steering scale on a kerb (1 = unchanged)")
     ap.add_argument("--recover", action="store_true", help="when the car has stopped (against a wall, spun) for --recover-after seconds while trying to drive, reverse out towards the line (neutral, reverse), then shift back up and carry on")
     ap.add_argument("--recover-after", type=float, default=2.0)
+    ap.add_argument("--recover-max", type=int, default=6, help="--recover: attempts within 90 s of each other before the run gives up (the count restarts after 90 s without one)")
     ap.add_argument("--recover-dist", type=float, default=7.0, help="metres to back up")
     ap.add_argument("--brake-ctl", action="store_true", help="regulate the brake pedal by measured front-wheel slip: it rises towards the full pedal while the front wheels slip less than --brake-slip and falls fast when they slip more, so braking runs at the lock-up threshold")
     ap.add_argument("--brake-slip", type=float, default=0.12, help="--brake-ctl: front wheel slip to hold (fraction of the speed of the car)")
@@ -1460,8 +1461,10 @@ def main():
                         rec["still"] = now
                 else:
                     rec["still"] = None
-                if rec["phase"] is None and rec["still"] is not None and now - rec["still"] > args.recover_after * (args.trap_patience if (args.trap_escape and off4) else 1.0) and now - t0 > 20.0 and rec["n"] < 6:
-                    rec.update(phase="reverse", n=rec["n"] + 1, t=now, x=x, z=z, shift=0.0)
+                if rec["n"] and rec["phase"] is None and now - rec.get("t_last", 0.0) > 90.0:
+                    rec["n"] = 0      # the attempts count within one trouble, not for the whole session
+                if rec["phase"] is None and rec["still"] is not None and now - rec["still"] > args.recover_after * (args.trap_patience if (args.trap_escape and off4) else 1.0) and now - t0 > 20.0 and rec["n"] < args.recover_max:
+                    rec.update(phase="reverse", n=rec["n"] + 1, t=now, t_last=now, x=x, z=z, shift=0.0)
                     print("t=%5.1f stopped at (%.0f, %.0f): reversing out (attempt %d)" % (now - t0, x, z, rec["n"]), flush=True)
                 if rec["phase"] == "reverse":
                     g_now = tel["gear"]
@@ -1476,7 +1479,7 @@ def main():
                             threading.Thread(target=clutch_slip, args=(1.2,)).start()
                         shared["duty"], shared["brake"] = ((max(0.2, min(1.0, 0.5 + 3.0 * (args.stuck_rpm - tel["rpm"] / (gearcar["limit"] if gearcar else 7500.0)))) if args.stuck_launch else 0.6), 0.0)      # hold the engine speed, not a flat throttle: in reverse on grass the wheels dig in or the engine bogs down
                         shared["steer"] = -max(-1.0, min(1.0, herr / 25.0))      # backing up: the wheel works the other way round
-                        if math.hypot(x - rec["x"], z - rec["z"]) > args.recover_dist or now - rec["t"] > 6.0:
+                        if math.hypot(x - rec["x"], z - rec["z"]) > args.recover_dist * (2.0 if abs(herr) > 100.0 else 1.0) or now - rec["t"] > 6.0:      # facing backwards after a spin: back up twice as far to turn the car round
                             rec["phase"] = "forward"
                             rec["shift"] = 0.0
                     if rec["phase"] == "reverse" and now - rec["t"] > 9.0:
