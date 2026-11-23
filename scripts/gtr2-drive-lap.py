@@ -156,6 +156,8 @@ def main():
     ap.add_argument("--lookahead", type=float, nargs=2, default=[5.0, 1.2], metavar=("BASE", "PER_MS"))
     ap.add_argument("--look-radius", type=float, default=0.0, help="shorten the aim distance in a tight corner to this fraction of the corner radius ahead (0 = off; 0.7 = aim no further than 70 percent of the radius), never below --look-min; the long straight-line aim distance cuts a hairpin by 3 to 5 m")
     ap.add_argument("--look-min", type=float, default=8.0)
+    ap.add_argument("--anti-stall", action="store_true", help="wheel device: clutch in when the revs fall under --stall-rpm below 20 m/s (a spin with no clutch aid stalls the engine and nothing restarts it)")
+    ap.add_argument("--stall-rpm", type=float, default=1300.0)
     ap.add_argument("--aim-step", action="store_true", help="aim at whole waypoints as before (the aim point jumps a waypoint spacing each time the nearest waypoint advances); the default interpolates the aim point exactly the lookahead distance along the line from the car")
     ap.add_argument("--steer-gain", type=float, default=25.0)
     ap.add_argument("--damping", type=float, default=90.0)
@@ -818,9 +820,10 @@ def main():
             prev_yaw, prev_t = yaw, now
             if args.sig_log:
                 if sig["prev"] is None or now - sig["prev"][2] >= 0.1:
-                    if sig["prev"] is not None and speed > 8.0:
+                    stuck_ = now - last_move > 3.0      # keep logging while the car is stuck (the recovery attempts)
+                    if sig["prev"] is not None and (speed > 8.0 or stuck_):
                         mvx, mvz = x - sig["prev"][0], z - sig["prev"][1]
-                        if mvx * mvx + mvz * mvz > 0.25:
+                        if mvx * mvx + mvz * mvz > 0.25 or stuck_:
                             wl_ = tel["wheels"]
                             sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z), round(sig.get("tv", 0.0), 1), tel["gear"], int(tel["rpm"]), round(shared["duty"], 2), round(shared["brake"], 2), round(sig.get("lat", 0.0), 2), round(sig.get("line", 0.0), 2)))
                     sig["prev"] = (x, z, now)
@@ -1463,6 +1466,10 @@ def main():
                     last_shift = now; shift(False)
             if args.debug_stop and args.debug_stop[0] <= now - t0 <= args.debug_stop[0] + args.debug_stop[1]:
                 shared["duty"], shared["brake"] = 0.0, 1.0      # test hook: hold the car still to exercise the stall recovery
+            if args.anti_stall and wheel_dev and chain is track.main and tel["rpm"] < args.stall_rpm and 200.0 < tel["rpm"] and speed < 20.0 and now - t0 > 20.0 and now - rec.get("t_anti", -99.0) > 1.5:      # a spin drops the revs below idle in a low gear with no clutch aid: the engine stalls; a driver dips the clutch before it dies
+                rec["t_anti"] = now
+                print("t=%5.1f revs %.0f at %.1f m/s: clutch in so the engine does not stall" % (now - t0, tel["rpm"], speed), flush=True)
+                threading.Thread(target=clutch_slip, args=(1.0, 1.0, 0.5)).start()
             if args.recover and chain is track.main and not merging and box_target is None:
                 if speed < 1.0:
                     if rec["still"] is None:
