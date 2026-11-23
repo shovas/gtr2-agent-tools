@@ -768,3 +768,7 @@ Offline check of next experiment 1 (curvature over 20 m on the file line against
 ### 2026-11-22 23:07: `--raw-cap 0.1`, one 4-lap session at Imola (no zones, no aids)
 
 Laps 1 to 3 clean: 124.46, 123.61, 123.02 s (push 1.10, 1.12, 1.16). Lap 4 (push 1.20) went wrong at about 1700 m (heading error -23 degrees, speed 19 m/s) and the session ended in it, so the campaign recorded "no result" and lost the three clean laps (they are only in `lap_drive.log`). The raw-line cap does not make the laps faster than the earlier 122.4 to 124.6 s pairs; it stays out of the Imola entry. Tooling gap: a session that ends inside an unfinished lap should still report the laps it finished.
+
+### 2026-11-23 about 00:00: two 4 to 5 lap sessions ended at about 570 s without a result
+
+`--meta-max 1.16` (5 laps): clean 124.28, 123.77, 122.88 s, then the session ended at t=571 s inside lap 4, again with "GTR2 window not found" (also the `--raw-cap 0.1` run, t=561 s). The push was capped in the second run, so the end is not a spin. No minidump, no Application error events. The 10-lap sessions earlier ran 1460 s. Open question: why do short sessions lose the game window at about 570 s (compare a 10-lap baseline). The campaign now rebuilds the finished laps from the driver log (commit 5003d87).
