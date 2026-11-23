@@ -156,6 +156,9 @@ def main():
     ap.add_argument("--lookahead", type=float, nargs=2, default=[5.0, 1.2], metavar=("BASE", "PER_MS"))
     ap.add_argument("--look-radius", type=float, default=0.0, help="shorten the aim distance in a tight corner to this fraction of the corner radius ahead (0 = off; 0.7 = aim no further than 70 percent of the radius), never below --look-min; the long straight-line aim distance cuts a hairpin by 3 to 5 m")
     ap.add_argument("--look-min", type=float, default=8.0)
+    ap.add_argument("--ilc", type=float, default=0.0, help="--session-laps: iterative learning of the line: after each clean lap the aim point at every 10 m of the lap is moved by this fraction (0.3 to 0.7) of the sideways error the car had there, against the error (0 = off); the repeatable part of the follower error (the corner cut) shrinks lap by lap")
+    ap.add_argument("--ilc-keep", type=float, default=0.85, help="--ilc: the share of the learned shift kept from lap to lap (under 1: it decays where the error does not repeat, so the correction cannot wind up)")
+    ap.add_argument("--ilc-max", type=float, default=1.5, help="--ilc: the largest aim point shift learned, metres")
     ap.add_argument("--anti-stall", action="store_true", help="wheel device: clutch in when the revs fall under --stall-rpm below 20 m/s (a spin with no clutch aid stalls the engine and nothing restarts it)")
     ap.add_argument("--stall-rpm", type=float, default=1300.0)
     ap.add_argument("--aim-step", action="store_true", help="aim at whole waypoints as before (the aim point jumps a waypoint spacing each time the nearest waypoint advances); the default interpolates the aim point exactly the lookahead distance along the line from the car")
@@ -712,6 +715,7 @@ def main():
         t0 = time.time()
         chain, k = chain0, None
         prev_yaw, prev_t, last_move, n, last_shift = None, time.time(), time.time(), 0, 0.0
+        ilc = {"corr": {}, "acc": {}}      # --ilc: learned aim point shift per 10 m of the lap (positive = left, like the aim offset) and this lap's sideways errors
         start_lap, last_lap, finish_at = first["lap"], first["lap"], None
         accum, prev_dist, by_distance = 0.0, None, False     # distance covered along the racing line: a fallback when the game's lap counter never moves (Hockenheim Short)
         off_samples = samples = 0
@@ -856,6 +860,7 @@ def main():
                 result["lap_changes"].append({"t": round(now - t0, 1), "lap": tel["lap"]})
                 print("t=%5.1f lap counter %d -> %d" % (now - t0, last_lap, tel["lap"]), flush=True)
                 last_lap = tel["lap"]
+                ilc_lap, ilc["acc"] = ilc["acc"], {}      # the errors of the lap that just ended; a new lap starts empty
                 if args.session_laps > 0 and finish_at is None:      # a lap is done: judge it and adjust the push for the next one (not once the run is finishing: the counter ticked again 20 s and 3.5 s after the last lap, Monza 4, and those were scored as laps of 20.13 s and 3.51 s)
                     n_imp = len([i_ for i_ in impacts if not i_.get("pit")])
                     n_lim = len([e_ for e_ in limit_events if e_["seconds"] >= 0.06])
@@ -864,6 +869,11 @@ def main():
                         lt_ = now - meta["t"]
                         d_imp, d_lim, d_kerb = n_imp - meta["imp"], n_lim - meta["lim"], len(kerbs) - meta["kerb"]
                         clean_ = d_imp == 0 and d_lim == 0      # kerb strikes no longer count (user, 2026-11-19): only an impact or all four wheels beyond the white line makes a lap unclean
+                        if args.ilc > 0.0 and clean_:      # learn from this clean lap: move the aim point against the error the car had at each 10 m
+                            for k_, v_ in ilc_lap.items():
+                                if len(v_) >= 2:
+                                    ilc["corr"][k_] = max(-args.ilc_max, min(args.ilc_max, args.ilc_keep * ilc["corr"].get(k_, 0.0) - args.ilc * sum(v_) / len(v_)))
+                            print("ILC: %d bins learned, largest shift %.1f m" % (len(ilc["corr"]), max([abs(c_) for c_ in ilc["corr"].values()] or [0.0])), flush=True)
                         used_ = meta["push"]
                         if clean_:
                             meta["bad"] = 0
@@ -1090,8 +1100,12 @@ def main():
                     return 0.5 * (p.left - p.right)
                 return max(lo, min(hi, shift))
             lat_t, lat_here = aim_offset(target), aim_offset(w)
+            if args.ilc > 0.0 and chain is track.main and not merging and box_target is None:
+                lat_t = max(-(target.right - 1.0), min(target.left - 1.0, lat_t + ilc["corr"].get(int(target.dist // 10), 0.0)))
             want = track.yaw_of(target.x - target.hz * lat_t - x, target.z + target.hx * lat_t - z)
             lat = lat - lat_here
+            if args.ilc > 0.0 and chain is track.main and not merging and box_target is None and last_lap > start_lap:
+                ilc["acc"].setdefault(int(w.dist // 10), []).append(lat)
             pull = 0.0 if chain is track.pit else max(-20.0, min(20.0, args.center_gain * lat))
             off4 = chain is track.main and all(not any(k_ in sf.upper() for k_ in ("ROAD", "DRAIN")) for sf in tel["surfaces"])      # all four tyres off the road surface
             on_road = any(any(k_ in sf.upper() for k_ in ("ROAD", "DRAIN")) for sf in tel["surfaces"])
@@ -1476,7 +1490,7 @@ def main():
                     last_shift = now; shift(False)
             if args.debug_stop and args.debug_stop[0] <= now - t0 <= args.debug_stop[0] + args.debug_stop[1]:
                 shared["duty"], shared["brake"] = 0.0, 1.0      # test hook: hold the car still to exercise the stall recovery
-            if args.anti_stall and wheel_dev and chain is track.main and tel["rpm"] < args.stall_rpm and 200.0 < tel["rpm"] and speed < 20.0 and now - t0 > 20.0 and now - rec.get("t_anti", -99.0) > 1.5:      # a spin drops the revs below idle in a low gear with no clutch aid: the engine stalls; a driver dips the clutch before it dies
+            if args.anti_stall and wheel_dev and chain is track.main and tel["rpm"] < args.stall_rpm and 200.0 < tel["rpm"] and speed < 20.0 and shared["duty"] < 0.5 and now - t0 > 20.0 and now - rec.get("t_anti", -99.0) > 1.5:      # a spin drops the revs below idle in a low gear with no clutch aid: the engine stalls; a driver dips the clutch before it dies
                 rec["t_anti"] = now
                 print("t=%5.1f revs %.0f at %.1f m/s: clutch in so the engine does not stall" % (now - t0, tel["rpm"], speed), flush=True)
                 threading.Thread(target=clutch_slip, args=(1.0, 1.0, 0.5)).start()
