@@ -54,3 +54,4 @@ av_paths	our_options_main.txt`.
 - `gtr2-lap-estimate.py`: offline lap-time estimate of planner settings on a layout (power limited acceleration, downforce grip), within 2 to 3 s of real laps; `gtr2-shift-points.py`: best upshift rpm per gear from a car's own engine and gear files.
 - `gtr2_driving/racingline.py`: generic time-optimal racing line from road widths and grip numbers (numpy, cached per layout); `--line-opt` in `gtr2-drive-lap.py`.
 - `gtr2-vehicle-envelope.py`: the car's measured performance envelope from --sig-log files (lateral, braking and driving acceleration per speed bin, share of the combined friction ellipse used); shows how conservative the planner's grip numbers are.
+- `gtr2-ai-benchmark.py`: the game's own autopilot drives a car round a layout in a short solo race and the results file gives its best lap (Imola 4 with the Maserati MC12: 1:48.565); the benchmark the hands-free driver is compared with.
