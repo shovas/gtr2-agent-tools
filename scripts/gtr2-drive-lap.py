@@ -232,7 +232,7 @@ def main():
     ap.add_argument("--steer-scale-low", type=float, default=0.0, help="analog: steering scale (share of the lock) at low speed on the track, 0 = off; falls to --analog-steer between --steer-low-v1 and --steer-low-v2 m/s. The hairpins need more than the 0.6 of the lock: a car at 14 m/s turned on a 27 m radius where the track asked for 20")
     ap.add_argument("--steer-low-v1", type=float, default=15.0)
     ap.add_argument("--steer-low-v2", type=float, default=30.0)
-    ap.add_argument("--raw-cap", type=float, default=0.0, help="--live: cap the planned corner speed at (1 + this) times the corner speed of the unsmoothed file line (0 = off); the smoothed line (--line-smooth) allows 33% more speed than the file line at the Imola chicane near 1100 m, which the car cannot take")
+    ap.add_argument("--raw-cap", type=float, default=0.0, help="--live: cap the planned corner speed at (1 + this) times the corner speed of the unsmoothed file line (0 = off); the smoothed line (--line-smooth) allows 33 percent more speed than the file line at the Imola chicane near 1100 m, which the car cannot take")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
