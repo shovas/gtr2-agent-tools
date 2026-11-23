@@ -321,6 +321,7 @@ def main():
     ap.add_argument("--brake-allow", type=float, default=12.0, help="m/s^2 of longitudinal acceleration that our own braking explains on the main line and that impact detection ignores (0 counts it all; default 12)")
     ap.add_argument("--brake-max",type=float, default=0.9, help="brake pedal ceiling (default 0.9)")
     ap.add_argument("--brake-deadband", type=float, default=0.7, help="m/s over the target before braking starts (default 0.7)")
+    ap.add_argument("--throttle-base", type=float, default=0.45, help="the throttle at exactly the target speed (0.45 = the old fixed value); more of it means more drive through a corner at the planned speed, and the throttle only falls to zero when the car is --throttle-base / --throttle-gain m/s over the target")
     ap.add_argument("--throttle-gain", type=float, default=0.25, help="throttle change per m/s under the target speed (default 0.25)")
     ap.add_argument("--guard-deg", type=float, default=18.0)
     ap.add_argument("--guard-span", type=float, default=50.0)
@@ -1223,7 +1224,7 @@ def main():
                     target_v = max(4.0, target_v * max(args.lat_floor, 1.0 - over_l / args.lat_span))
             if args.trap_test > 0 and chain is track.main and tt["phase"] in (0, 1) and (tt["phase"] == 1 or abs(w.dist - args.trap_test) < 250.0 and now - t0 > 20.0 and last_lap == start_lap):
                 target_v = min(target_v, args.trap_speed)      # trap test: arrive and run off slowly
-            shared["duty"] = max(0.0, min(1.0, 0.45 + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
+            shared["duty"] = max(0.0, min(1.0, args.throttle_base + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
             shared["brake"] = max(0.0, min(args.brake_max, args.brake_gain * (speed - target_v - args.brake_deadband)))
             if args.brake_kin > 0.0 and chain is track.main and box_target is None and not merging and args.live:
                 # kinematic braking: the deceleration needed to reach the limiting corner's speed at its distance, v^2 - vc^2 over 2 d, as a share of the deceleration the car delivers (--brake-kin, about 14 m/s^2
