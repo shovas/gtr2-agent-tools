@@ -312,5 +312,53 @@
    "skip",
    ""
   ]
+ ],
+ "0870623": [
+  [
+   "highlight",
+   "Setup now sets the default game environment for you: Simulation mode, every driving aid off, and the corner and pit-spot marker graphics off."
+  ]
+ ],
+ "895628a": [
+  [
+   "improve",
+   "The Imola driver plans its braking with a friction ellipse (braking is limited by the cornering load already used) and brakes along that plan: clean 10-lap sessions without any fixed slow zones."
+  ]
+ ],
+ "519a076": [
+  [
+   "improve",
+   "Higher starting grip numbers for Imola: about 1 s faster laps."
+  ]
+ ],
+ "ad4f4d7": [
+  [
+   "improve",
+   "A stuck car now pulls away in reverse and first gear with held engine speed and a slipped clutch."
+  ]
+ ],
+ "3c591ee": [
+  [
+   "improve",
+   "The recovery after a spin counts its attempts per incident and backs up further when the car faces backwards."
+  ]
+ ],
+ "e070e39": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "7dac475": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "cbeb7e2": [
+  [
+   "skip",
+   ""
+  ]
  ]
 }
