@@ -834,7 +834,7 @@ def main():
                         mvx, mvz = x - sig["prev"][0], z - sig["prev"][1]
                         if mvx * mvx + mvz * mvz > 0.25 or stuck_:
                             wl_ = tel["wheels"]
-                            sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z), round(sig.get("tv", 0.0), 1), tel["gear"], int(tel["rpm"]), round(shared["duty"], 2), round(shared["brake"], 2), round(sig.get("lat", 0.0), 2), round(sig.get("line", 0.0), 2)))
+                            sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z), round(sig.get("tv", 0.0), 1), tel["gear"], int(tel["rpm"]), round(shared["duty"], 2), round(shared["brake"], 2), round(sig.get("lat", 0.0), 2), round(sig.get("line", 0.0), 2), round(sig.get("tvg", 0.0), 1)))
                     sig["prev"] = (x, z, now)
             if args.focus_test:
                 if ft["phase"] == 0 and now - t0 > args.focus_test[0] and speed > 25:
@@ -1232,6 +1232,7 @@ def main():
                     target_v = max(4.0, target_v * max(args.lat_floor, 1.0 - over_l / args.lat_span))
             if args.trap_test > 0 and chain is track.main and tt["phase"] in (0, 1) and (tt["phase"] == 1 or abs(w.dist - args.trap_test) < 250.0 and now - t0 > 20.0 and last_lap == start_lap):
                 target_v = min(target_v, args.trap_speed)      # trap test: arrive and run off slowly
+            sig["tvg"] = target_v      # the target speed after every guard (the logged plan_speed is before them)
             shared["duty"] = max(0.0, min(1.0, args.throttle_base + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
             shared["brake"] = max(0.0, min(args.brake_max, args.brake_gain * (speed - target_v - args.brake_deadband)))
             if args.brake_kin > 0.0 and chain is track.main and box_target is None and not merging and args.live:
@@ -1558,7 +1559,7 @@ def main():
                 sf_ = Path(__file__).resolve().parent / "gtr2_ui" / "runs" / ("signals_%s.csv" % time.strftime("%Y%m%d_%H%M%S"))
                 with sf_.open("w", encoding="utf-8") as f_:
                     f_.write("# layout %s car %s; sideslip and yawrate in degrees and degrees/s; events: track limits %s impacts %s\n" % (args.aiw, args.car_key, [(e_.get("t"), e_.get("seconds")) for e_ in limit_events if e_["seconds"] >= 0.06], [(i_["t"], i_["a"]) for i_ in impacts if not i_.get("pit")]))
-                    f_.write("t,speed,sideslip,yawrate,front_grip,rear_grip,lap,x,z,plan_speed,gear,rpm,duty,brake,lat_err,line_off\n")
+                    f_.write("t,speed,sideslip,yawrate,front_grip,rear_grip,lap,x,z,plan_speed,gear,rpm,duty,brake,lat_err,line_off,target_v\n")
                     for r_ in sig["rows"]:
                         f_.write(",".join(str(v_) for v_ in r_) + "\n")
                 print("signals logged to %s (%d rows)" % (sf_.name, len(sig["rows"])), flush=True)
