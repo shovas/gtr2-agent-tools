@@ -13,7 +13,7 @@ action.
 ## What may be published
 
 - Our own code, tests and notes: `scripts/`, `docs/`, `config/` (weather presets), `templates/`, `Tools/`, `README.md`,
-  `DEPENDENCIES.md`, `CLAUDE.md`, `AGENTS.md`, `CHANGES.md`, `LICENSE.md`.
+  `DEPENDENCIES.md`, `FEATURES.md`, `CAPABILITIES.md`, `CLAUDE.md`, `AGENTS.md`, `CHANGES.md`, `LICENSE.md`.
 - Reference pictures for page recognition under `scripts/gtr2_ui/baselines/1280x720/` (see "Pictures" below).
 - Findings about how the game behaves, written in our own words, with measured numbers.
 
