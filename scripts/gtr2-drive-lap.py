@@ -249,6 +249,7 @@ def main():
     ap.add_argument("--gear-first-max", type=float, default=8.0, help="with --gear-opt: no downshift into 1st above this speed, m/s (99 = the old rule)")
     ap.add_argument("--gear-opt", action="store_true", help="pick the gear with the most wheel thrust from the car's own torque curve and gear ratios (down under braking for the corner exit speed), instead of upshift at a fixed rpm and downshift below --down-rpm")
     ap.add_argument("--aim-comp-max", type=float, default=2.5, help="the most --aim-comp moves the aim point, metres")
+    ap.add_argument("--aim-comp-vmax", type=float, default=1000.0, help="--aim-comp only below this speed (m/s): the fast bends were thrown off the line by it, the slow corners are where the car cuts 3 to 5 m")
     ap.add_argument("--aim-comp", type=float, default=0.0, help="move the aim point outward by this fraction of the corner-cutting a pure-pursuit aim point would do (look x turn / 8); 0 = off")
     ap.add_argument("--edge-guard", type=float, default=0.0, help="live track-limit guard: degrees of extra heading correction back towards the line per metre the car is inside --edge-room of a white line (0 = off)")
     ap.add_argument("--edge-room", type=float, default=1.0, help="--edge-guard: distance in metres from the car's side to the white line where the guard starts")
@@ -1046,7 +1047,7 @@ def main():
                 # bends) were cut by 1.5 m or more with the circuit's 5 m + 1.2 per m/s, which put the car into the wall
                 look = max(args.pit_lookahead[0] + args.pit_lookahead[1] * speed, 1.5 * abs(lat))
             target = track.ahead(chain, k, look) if args.aim_step else track.ahead_point(chain, k, look, x, z)
-            if args.aim_comp != 0.0 and chain is track.main:
+            if args.aim_comp != 0.0 and chain is track.main and speed < args.aim_comp_vmax:
                 # aiming at a point on a bend cuts the corner by about look x turn / 8: move the aim point outward by that much (aim_comp 1 = all of it)
                 a0 = chain[k]
                 turn = math.atan2(a0.hx * target.hz - a0.hz * target.hx, a0.hx * target.hx + a0.hz * target.hz)      # positive: turning to the road's right
