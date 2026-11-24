@@ -24,7 +24,7 @@ NUM = r"[-+0-9.eE]+"
 
 
 class Waypoint:
-    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz", "off", "dry", "rhx", "rhz")
+    __slots__ = ("i", "x", "y", "z", "px", "pz", "left", "right", "dist", "branch", "ptrs", "hx", "hz", "off", "dry", "rhx", "rhz", "uleft", "uright")
 
 
 def parse(path=DEFAULT):
@@ -184,7 +184,7 @@ class Track:
         for w in chain:
             if not hasattr(w, "rhx"):
                 w.rhx, w.rhz = w.hx, w.hz      # the file line's own heading, kept for the planner's corner-speed cap (speed_limit_live rawcap)
-        base = [(w.x, w.z, w.hx, w.hz, w.left, w.right) for w in chain]
+        base = [(w.x, w.z, w.hx, w.hz, getattr(w, "uleft", w.left), getattr(w, "uright", w.right)) for w in chain]
         off = [0.0] * n                 # sideways shift of each waypoint, positive to the road's right (the sign of lateral())
         for _ in range(iters):
             pos = [(b[0] + o * -b[3], b[1] + o * b[2]) for b, o in zip(base, off)]

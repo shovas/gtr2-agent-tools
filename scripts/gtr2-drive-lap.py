@@ -195,6 +195,7 @@ def main():
     ap.add_argument("--trap-pull", type=float, default=35.0, help="--trap-test: degrees of heading offset towards the left while running off")
     ap.add_argument("--lat-guard", action="store_true", help="a driver who is running wide slows: the target speed falls as the sideways error from the line grows beyond --lat-free (floor --lat-floor); on in live mode")
     ap.add_argument("--lat-free", type=float, default=2.5)
+    ap.add_argument("--line-obstacles", action="store_true", help="the line optimiser and --line-smooth keep clear of structures of the track's own collision meshes that stand inside the road width (the apex kerb blocks at Imola), not only of the road edges; the track-limit judging is unchanged")
     ap.add_argument("--commit-margin", type=float, default=0.0, help="--live with --ellipse: no throttle while the car is more than this many m/s above the lowest speed the profile ahead asks for (a driver who still has to slow for a corner does not go back to the throttle on the way in); 0 = off")
     ap.add_argument("--lat-span", type=float, default=8.0)
     ap.add_argument("--lat-floor", type=float, default=0.5)
@@ -404,6 +405,15 @@ def main():
     wheels_geom = limits.car_wheels(args.car_key) if args.car_key else None      # the real tyre positions and widths from the car's wheel meshes
     print("track limits by geometry: tyre positions %s" % ("read from the car's wheel meshes (track %.3f / %.3f m, tyre widths %.2f / %.2f m)" % (wheels_geom[0]["left"] - wheels_geom[1]["left"], wheels_geom[2]["left"] - wheels_geom[3]["left"], wheels_geom[0]["width"], wheels_geom[2]["width"]) if wheels_geom else "FIXED fallback (car files not readable)"), flush=True)
     wheels_geom = wheels_geom or limits.default_wheels(track_half=args.wheel_track / 2, width=2 * args.tyre_half)
+    if args.line_obstacles:      # structures of the track's own collision meshes inside the road width (kerb blocks, bollards): the line optimiser and the line smoothing treat them as the road edge
+        try:
+            import usable
+            trk_u = next((q for q in Path(args.aiw).parent.iterdir() if q.suffix.lower() == ".trk" and q.stem.lower() == Path(args.aiw).stem.lower()), None)
+            if trk_u is not None:
+                ul_, ur_ = usable.usable_widths(track, trk_u, Path(args.aiw).stem, log=lambda m: print(m, flush=True))
+                usable.apply(track, ul_, ur_, log=lambda m: print(m, flush=True))
+        except Exception as e_:
+            print("line obstacles not read (%s): the road edges stay the limit" % e_, flush=True)
     if args.line_opt:
         ph = racingline.Physics(lat=args.lat_accel, decel=args.decel, kk=args.live_k if args.live else 0.0)
         offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True), seed=([-w_.dry for w_ in track.main] if args.line_seed_dry else None))

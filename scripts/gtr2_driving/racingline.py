@@ -88,8 +88,8 @@ def geometry(track):
     ch = track.main
     c = np.array([[w.x - w.off * -w.hz, w.z - w.off * w.hx] for w in ch])
     r = np.array([[-w.hz, w.hx] for w in ch])
-    left = np.array([w.left for w in ch])
-    right = np.array([w.right for w in ch])
+    left = np.array([getattr(w, "uleft", w.left) for w in ch])      # usable.py: the width up to a structure inside the road, when it was computed
+    right = np.array([getattr(w, "uright", w.right) for w in ch])
     return c, r, left, right
 
 
@@ -165,7 +165,7 @@ def cache_key(track, ph, margin, seeded=False):
     h.update(json.dumps(asdict(ph), sort_keys=True).encode())
     h.update(("v2|%.2f|%d|%s|" % (margin, len(track.main), "seed" if seeded else "")).encode())
     for w in track.main[:: max(1, len(track.main) // 40)]:
-        h.update(("%.1f,%.1f,%.1f,%.1f;" % (w.x - w.off * -w.hz, w.z - w.off * w.hx, w.left, w.right)).encode())
+        h.update(("%.1f,%.1f,%.1f,%.1f;" % (w.x - w.off * -w.hz, w.z - w.off * w.hx, getattr(w, "uleft", w.left), getattr(w, "uright", w.right))).encode())
     return h.hexdigest()[:16]
 
 
