@@ -888,3 +888,5 @@ Per-incident analysis with the signal log, `gtr2-hit-locate.py` and the new `--w
 - Result with `--wall-clear 3.0 --spin-gm 0.04 --no-overlap 0.1` and the rest of the entry, 10 laps: 1:59.4, 1:56.6, **1:55.9**, 1:56.5, 1:57.4, 1:56.6, 1:57.2, 1:57.4, 1:56.8, 1:57.5: **10 of 10 clean**, no impact, no spin, no recovery. The push stays at 1.10 (the cap `--meta-max 1.10`). All three options are in the Imola entry now.
 
 - Game test, `--line-pin 0` (no pinned slow corners, smoothing raises the radii to 26 to 45 m offline), 10 laps: 1:59.0 to 2:03.6, **0 of 10 clean** (3 to 5 track-limit events per lap, spins at 2598 m and 2644 m, one impact at 3140 m). Worse than the pinned line (1:55.9 to 1:57.5, 10 of 10 clean): the wider arcs cut across the track limits or the kerbs more than they gain. Reverted; `--line-pin 45` stays.
+
+- Game test, `--brake-circle 1.0`, 5 laps: 1:58.1, 1:57.2, 1:56.6, **1:56.5**, 1:57.4, 5 of 5 clean. Same as the baseline (1:55.9 to 1:57.5 over 10 laps): no measurable gain, no harm. Left off by default.
