@@ -56,3 +56,4 @@ av_paths	our_options_main.txt`.
 - `gtr2-vehicle-envelope.py`: the car's measured performance envelope from --sig-log files (lateral, braking and driving acceleration per speed bin, share of the combined friction ellipse used); shows how conservative the planner's grip numbers are.
 - `gtr2-ai-benchmark.py`: the game's own autopilot drives a car round a layout in a short solo race and the results file gives its best lap (Imola 4 with the Maserati MC12: 1:48.565); the benchmark the hands-free driver is compared with.
 - `gtr2-record-telemetry.py`: record the shared-memory telemetry to a CSV at the highest rate; `gtr2-compare-laps.py REF.csv SIGNALS.csv`: the time one lap loses to a reference lap per 100 m (the AI benchmark's recording against the driver's signal log).
+- `gtr2-pdf-text.py`: text of a PDF with the standard library only (for the reference books in `..\gtr2-agent-tools-reference`; writes outside the repository, never commit the books).
