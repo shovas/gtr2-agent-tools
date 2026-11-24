@@ -196,6 +196,7 @@ def main():
     ap.add_argument("--lat-guard", action="store_true", help="a driver who is running wide slows: the target speed falls as the sideways error from the line grows beyond --lat-free (floor --lat-floor); on in live mode")
     ap.add_argument("--lat-free", type=float, default=2.5)
     ap.add_argument("--line-obstacles", action="store_true", help="the line optimiser and --line-smooth keep clear of structures of the track's own collision meshes that stand inside the road width (the apex kerb blocks at Imola), not only of the road edges; the track-limit judging is unchanged")
+    ap.add_argument("--obstacle-gap", type=float, default=0.3, help="--line-obstacles: the clearance (m) kept between the car's outline and such a structure; the follower's error is about 1 m rms, so 0.3 leaves it touching on a lap without learned corrections")
     ap.add_argument("--commit-margin", type=float, default=0.0, help="--live with --ellipse: no throttle while the car is more than this many m/s above the lowest speed the profile ahead asks for (a driver who still has to slow for a corner does not go back to the throttle on the way in); 0 = off")
     ap.add_argument("--lat-span", type=float, default=8.0)
     ap.add_argument("--lat-floor", type=float, default=0.5)
@@ -410,7 +411,7 @@ def main():
             import usable
             trk_u = next((q for q in Path(args.aiw).parent.iterdir() if q.suffix.lower() == ".trk" and q.stem.lower() == Path(args.aiw).stem.lower()), None)
             if trk_u is not None:
-                ul_, ur_ = usable.usable_widths(track, trk_u, Path(args.aiw).stem, log=lambda m: print(m, flush=True))
+                ul_, ur_ = usable.usable_widths(track, trk_u, Path(args.aiw).stem, gap=args.obstacle_gap, log=lambda m: print(m, flush=True))
                 usable.apply(track, ul_, ur_, log=lambda m: print(m, flush=True))
         except Exception as e_:
             print("line obstacles not read (%s): the road edges stay the limit" % e_, flush=True)
