@@ -252,6 +252,9 @@ def main():
     ap.add_argument("--steer-low-v1", type=float, default=15.0)
     ap.add_argument("--steer-low-v2", type=float, default=30.0)
     ap.add_argument("--raw-cap", type=float, default=0.0, help="--live: cap the planned corner speed at (1 + this) times the corner speed of the unsmoothed file line (0 = off); the smoothed line (--line-smooth) allows 33 percent more speed than the file line at the Imola chicane near 1100 m, which the car cannot take")
+    ap.add_argument("--warmup", type=float, default=0.0, help="tyre warm-up: weave this many metres either side of the aim line on the out lap, on stretches planned faster than --warmup-vmin (0 = off)")
+    ap.add_argument("--warmup-vmin", type=float, default=55.0)
+    ap.add_argument("--warmup-period", type=float, default=70.0, help="--warmup: metres per weave cycle")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -1133,6 +1136,8 @@ def main():
             lat_t, lat_here = aim_offset(target), aim_offset(w)
             if args.ilc > 0.0 and chain is track.main and not merging and box_target is None:
                 lat_t = max(-(target.right - 1.0), min(target.left - 1.0, wall_clamp(lat_t + ilc["corr"].get(int(target.dist // 10), 0.0), target.dist)))
+            if args.warmup > 0.0 and chain is track.main and tel["lap"] == 0 and speed > 25.0 and sig.get("tv", 0.0) > args.warmup_vmin and not merging and box_target is None:
+                lat_t = max(-(target.right - 1.5), min(target.left - 1.5, lat_t + args.warmup * math.sin(2.0 * math.pi * target.dist / args.warmup_period)))      # tyre warm-up: weave on the out lap straights
             sig["aim"] = lat_t      # --sig-log: the aim point's sideways shift from the line (learned corrections, wall clearance, compensation)
             want = track.yaw_of(target.x - target.hz * lat_t - x, target.z + target.hx * lat_t - z)
             lat = lat - lat_here
