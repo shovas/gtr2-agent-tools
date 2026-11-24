@@ -164,6 +164,7 @@ def main():
     ap.add_argument("--anti-stall", action="store_true", help="wheel device: clutch in when the revs fall under --stall-rpm below 20 m/s (a spin with no clutch aid stalls the engine and nothing restarts it)")
     ap.add_argument("--stall-rpm", type=float, default=1300.0)
     ap.add_argument("--spin-gm", type=float, default=0.0, help="--anti-stall with --grip-map: after a spin, the planner's grip factor of the 140 m before it goes down by this fraction (0.04 = 4 percent) for the rest of the session")
+    ap.add_argument("--brake-circle", type=float, default=0.0, help="--live: the brake pedal is limited to sqrt(1 - (lateral acceleration used / lateral limit)^2) of --brake-max, the lateral limit being this factor (0.8 to 1.2) times the live grip model; 0 = off")
     ap.add_argument("--no-overlap", type=float, default=0.0, help="the throttle is closed while the brake pedal is over this value (0.1 = a little brake already closes it; 0 = off, the old behaviour: brake 0.7 with throttle 1.0 on the entry to the 1469 m corner)")
     ap.add_argument("--spin-deg", type=float, default=30.0, help="--anti-stall: the clutch goes in at once when the car slides sideways by more than this many degrees at speed (a spin: the revs collapse in under a second)")
     ap.add_argument("--aim-step", action="store_true", help="aim at whole waypoints as before (the aim point jumps a waypoint spacing each time the nearest waypoint advances); the default interpolates the aim point exactly the lookahead distance along the line from the car")
@@ -1579,6 +1580,10 @@ def main():
                                 threading.Thread(target=clutch_slip, args=(1.0,)).start()
                         last_move = now
                         print("t=%5.1f back in gear %d, driving on" % (now - t0, tel["gear"]), flush=True)
+            if args.brake_circle > 0.0 and args.live and chain is track.main and rec["phase"] is None:      # the circle of traction (IRDC manual, Korf, Pacejka 1.3.4): the more of the grip the cornering uses, the less brake the tyres can add; braking also moves load forward and makes the car oversteer
+                lim_c = args.brake_circle * live["a_lat"] * (1.0 + live["kk"] * speed * speed)
+                used_c = min(1.0, abs(math.radians(yawrate) * speed) / max(lim_c, 1.0))
+                shared["brake"] = min(shared["brake"], args.brake_max * math.sqrt(max(0.0, 1.0 - used_c * used_c)))
             if args.no_overlap > 0.0 and chain is track.main and rec["phase"] is None and shared["brake"] > args.no_overlap:      # brake and throttle together (the throttle follows the speed error against the current target, the brake the corner ahead): the engine fights the brakes and the front tyres lose grip; with the brake on, the throttle is off
                 shared["duty"] = 0.0
             if args.stuck_launch and rec.get("launch", 0.0) > now and speed < 5.0 and tel["gear"] >= 1:
