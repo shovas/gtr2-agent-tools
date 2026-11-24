@@ -195,6 +195,7 @@ def main():
     ap.add_argument("--trap-pull", type=float, default=35.0, help="--trap-test: degrees of heading offset towards the left while running off")
     ap.add_argument("--lat-guard", action="store_true", help="a driver who is running wide slows: the target speed falls as the sideways error from the line grows beyond --lat-free (floor --lat-floor); on in live mode")
     ap.add_argument("--lat-free", type=float, default=2.5)
+    ap.add_argument("--commit-margin", type=float, default=0.0, help="--live with --ellipse: no throttle while the car is more than this many m/s above the lowest speed the profile ahead asks for (a driver who still has to slow for a corner does not go back to the throttle on the way in); 0 = off")
     ap.add_argument("--lat-span", type=float, default=8.0)
     ap.add_argument("--lat-floor", type=float, default=0.5)
     ap.add_argument("--limit-brake-pen", type=float, default=0.0, help="live braking map: a track-limit event within 4 s of hard braking lowers the braking numbers of the speed bands from the limit speed up to the braking start speed by this share (0 = off)")
@@ -1297,6 +1298,12 @@ def main():
                 if speed > target_v - 1.5 and bff["a"] > 0.5:
                     ff_ = min(1.0, args.brake_ff * bff["a"] / max(decel_plan, 4.0))
                     shared["brake"] = min(args.brake_max, max(shared["brake"], ff_ + shared["brake"] * 0.5))
+            if args.commit_margin > 0.0 and chain is track.main and box_target is None and not merging and args.live and args.ellipse and speed > 12.0:
+                prof_c = getattr(track, "last_profile", None)
+                if prof_c and len(prof_c) > 2:
+                    v_low = min(q_[1] for q_ in prof_c)
+                    if speed > v_low + args.commit_margin and speed > prof_c[0][1] - args.kin_window:      # the car is at the braking envelope and a corner ahead still needs less speed than the car has: no throttle until the apex speed is reached, whatever the speed target does in between
+                        shared["duty"] = 0.0
             if box_target is not None or merging:       # creeping out of the box: gentle throttle (a full launch reached 6.5 m/s in 3 m)
                 cap = args.box_throttle
                 if box_target is not None and not (speed < 0.4 and now - t0 > 2.5):      # the straight run out of the box: a walking-pace roll over the sill at the garage mouth (0.4 reached it at 3.5 to 4 m/s and jolted 15 to 54 m/s^2); 0.15 gives 2 m/s, no jolt. A car that has not moved after 2.5 s gets the old ceiling
