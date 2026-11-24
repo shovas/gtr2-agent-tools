@@ -195,6 +195,7 @@ def main():
     ap.add_argument("--trap-pull", type=float, default=35.0, help="--trap-test: degrees of heading offset towards the left while running off")
     ap.add_argument("--lat-guard", action="store_true", help="a driver who is running wide slows: the target speed falls as the sideways error from the line grows beyond --lat-free (floor --lat-floor); on in live mode")
     ap.add_argument("--lat-free", type=float, default=2.5)
+    ap.add_argument("--line-k", type=float, default=None, help="--line-opt: the downforce growth of the cornering grip the line optimiser plans with (default: --live-k, the planner's own), so the planner's value can be tested without moving the line")
     ap.add_argument("--line-obstacles", action="store_true", help="the line optimiser and --line-smooth keep clear of structures of the track's own collision meshes that stand inside the road width (the apex kerb blocks at Imola), not only of the road edges; the track-limit judging is unchanged")
     ap.add_argument("--obstacle-gap", type=float, default=0.3, help="--line-obstacles: the clearance (m) kept between the car's outline and such a structure; the follower's error is about 1 m rms, so 0.3 leaves it touching on a lap without learned corrections")
     ap.add_argument("--commit-margin", type=float, default=0.0, help="--live with --ellipse: no throttle while the car is more than this many m/s above the lowest speed the profile ahead asks for (a driver who still has to slow for a corner does not go back to the throttle on the way in); 0 = off")
@@ -416,7 +417,7 @@ def main():
         except Exception as e_:
             print("line obstacles not read (%s): the road edges stay the limit" % e_, flush=True)
     if args.line_opt:
-        ph = racingline.Physics(lat=args.lat_accel, decel=args.decel, kk=args.live_k if args.live else 0.0)
+        ph = racingline.Physics(lat=args.lat_accel, decel=args.decel, kk=(args.line_k if args.line_k is not None else args.live_k) if args.live else 0.0)
         offs = racingline.cached_offsets(track, Path(args.aiw).stem, ph, margin=args.line_opt_margin, log=lambda m: print("racing line: " + m, flush=True), seed=([-w_.dry for w_ in track.main] if args.line_seed_dry else None))
         if args.line_opt_zones:      # the optimised line only inside these lap-distance ranges (from, to, ...), fading to the file line over --line-opt-fade metres outside them
             import numpy as np_z
