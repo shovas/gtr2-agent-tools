@@ -106,3 +106,20 @@ Rules for every item: from data, no fixed zones, no aids, no on-screen indicator
 11. **Pacejka's equations, if a model is wanted:** Magic Formula coefficients for a car tyre (4.3.2, appendix 3) and the brush-model combined-slip weighting (3.2.3) to build a single-track model of the Maserati for the follower simulator (grip 15 to 17 reproduces the game); relaxation length (chapter 7) to model the steering lag. Only worth it if the offline simulator is to be used to design a controller.
 
 Offline work that needs no game (do first when work resumes): item 6 (radii and apex positions against the AI lap), item 7 (speed-bin table), item 11 (model for the simulator).
+
+## Offline results (2026-11-23 evening, plan items 6 and 7; no game)
+
+Minimum path radius per 100 m of the AI lap (from its recorded positions, 6 m resampling, three-point curvature) against our candidate lines, in metres (the same method for all):
+
+| line | 400 m | 1100 m | 1400 m | 2600 m | 3100 m | 3800 m | 4500 m |
+|---|---|---|---|---|---|---|---|
+| AI lap | 63 | 58 | 30 | 56 | 62 | 39 | 41 |
+| the file line smoothed (25 passes, margin 1.8, pin 45) | 31 | 31 | 31 | 18 | 17 | 21 | 21 |
+| optimiser, any margin 0.6 to 1.6, physics lat 10, decel 12 (cached lines) | 35 | 35 | 27 | 21 | 18 | 26 | 21 |
+| optimiser, margin 0.8, lat 16, decel 14, slope 0.12 (default) | 33 | 37 | 29 | 22 | 19 | 27 | 25 |
+| the same with slope 0.20 | 34 | 34 | 28 | 24 | 19 | 32 | 25 |
+| slope 0.30, rmin 10 | 34 | 33 | 28 | 23 | 22 | 30 | 26 |
+| slope 0.45, rmin 10 | 34 | 33 | 28 | 23 | 23 | 38 | 25 |
+
+- The optimiser's own estimated lap is 107.7 to 108.6 s on every setting (the AI's lap is 108.0 to 108.6 s), yet its radii in the slow corners stay at 18 to 38 m while the AI's are 39 to 63 m. So **neither the margin nor the sideways-slope limit explains the AI's wide arcs**: the optimiser finds a line as fast as the AI's on paper with a much tighter path. Either the AI takes a geometrically different path through the hairpins (it uses the full road and the kerbs, sweeping about -6 to +6 m from the AIW line, more than the road edge allows to the optimiser's margins) or the optimiser's lap estimate is too generous in the slow corners (power-limited acceleration out of a 20 m radius at 16 m/s^2 lateral). The test that separates the two is the game: a line built to the AI's radii (not copied from it: e.g. an optimiser whose cost includes the exit speed and a larger minimum radius `rmin`) against the current zoned line.
+- Item 7 (grip table): the AI lap's lateral acceleration (v^2 times the path curvature and the car's ax_lat) is p90 16 to 18 m/s^2 and p98 about 20 m/s^2 at 20 to 40 m/s, p90 12 to 13 at 40 to 60 m/s: the planner's `a_lat (1 + k v^2)` with `--live-lat 16` is 17.1 at 20 m/s and 20.6 at 40 m/s: at the AI's level, so the grip number is no longer the loss; the radius is.
