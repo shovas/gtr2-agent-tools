@@ -890,3 +890,5 @@ Per-incident analysis with the signal log, `gtr2-hit-locate.py` and the new `--w
 - Game test, `--line-pin 0` (no pinned slow corners, smoothing raises the radii to 26 to 45 m offline), 10 laps: 1:59.0 to 2:03.6, **0 of 10 clean** (3 to 5 track-limit events per lap, spins at 2598 m and 2644 m, one impact at 3140 m). Worse than the pinned line (1:55.9 to 1:57.5, 10 of 10 clean): the wider arcs cut across the track limits or the kerbs more than they gain. Reverted; `--line-pin 45` stays.
 
 - Game test, `--brake-circle 1.0`, 5 laps: 1:58.1, 1:57.2, 1:56.6, **1:56.5**, 1:57.4, 5 of 5 clean. Same as the baseline (1:55.9 to 1:57.5 over 10 laps): no measurable gain, no harm. Left off by default.
+
+- Game test, `--meta-max 1.20` (push may rise past 1.10), 5 laps: 1:59.4, 1:58.0, 1:57.2, **1:57.0**, 1:57.3, 5 of 5 clean, push 1.16 at the end, one impact at 3120 m on lap 5 (the apex kerb, a wall learned). No faster than the cap of 1.10 (best 1:56.5 to 1:55.9): the car is grip-limited by the corners, more push does not turn into lap time. Reverted.
