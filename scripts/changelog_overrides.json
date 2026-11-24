@@ -360,5 +360,137 @@
    "skip",
    ""
   ]
+ ],
+ "ed7e03e": [
+  [
+   "highlight",
+   "The racing line now keeps clear of kerb blocks and other structures that stand inside the road width, read from the track's own collision meshes: Imola's apex kerb no longer gets hit."
+  ]
+ ],
+ "55de499": [
+  [
+   "highlight",
+   "Three causes of incidents fixed (apex-kerb hits, spins that stalled the engine, brake and throttle at the same time): 10 of 10 clean laps at Imola."
+  ]
+ ],
+ "23714f7": [
+  [
+   "highlight",
+   "The driver learns the line lap by lap: the repeatable corner cut of the steering shrinks."
+  ]
+ ],
+ "af42eb7": [
+  [
+   "highlight",
+   "Imola: a higher corner-grip estimate and a gentler starting push keep the first lap clean."
+  ]
+ ],
+ "9a948ee": [
+  [
+   "highlight",
+   "New AI benchmark script: the game's own autopilot laps the Maserati at Imola, so our laps can be compared with it."
+  ]
+ ],
+ "8457c75": [
+  [
+   "highlight",
+   "Imola chicanes and hairpins are driven on the optimised line (kerb riding, wide entry, late apex)."
+  ]
+ ],
+ "cb7b127": [
+  [
+   "improve",
+   "New telemetry recorder and a lap comparison per 100 m."
+  ]
+ ],
+ "45e8bb2": [
+  [
+   "improve",
+   "The driver learns walls from impacts and clutches in when the car starts to spin."
+  ]
+ ],
+ "001d1f5": [
+  [
+   "improve",
+   "The clutch goes in before a spin can stall the engine."
+  ]
+ ],
+ "5003d87": [
+  [
+   "fix",
+   "The lap campaign rebuilds the finished laps from the driver log when a session ends inside a lap."
+  ]
+ ],
+ "7fd85b0": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "2bc4a23": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "d56cb48": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "2f61366": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "d0ce681": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "b7d374f": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "7fd4a93": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "15848b4": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "eab25b0": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "219033d": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "427b7a6": [
+  [
+   "skip",
+   ""
+  ]
+ ],
+ "ec4e2be": [
+  [
+   "skip",
+   ""
+  ]
  ]
 }
