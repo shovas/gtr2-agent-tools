@@ -28,3 +28,18 @@ The conclusion: the follower needs to plan over a horizon (what steering will ke
 
 - Not started in code. Nothing in `scripts/` implements this plan yet.
 - Blocking question for step 1: whether a designed or pursuit session at the 639 m or 642 m bend (with the signal log) is enough to calibrate the tyre limit, or whether the game's spin needs a steering-rate limit in the model as well.
+
+## Calibration result (offline, 2026-11-25): the simulator's grip limit is below the game's
+
+From the last 12 signal logs (v x yaw rate, lateral acceleration the game car actually produces, by speed):
+
+| speed (m/s) | median | p95 | max |
+|---|---|---|---|
+| 10 to 20 | 6.3 | 16.3 | 41.2 |
+| 20 to 30 | 8.7 | 18.0 | 46.2 |
+| 30 to 40 | 4.9 | 17.8 | 75.5 |
+| 40 to 50 | 1.4 | 15.9 | 40.7 |
+| 50 to 60 | 2.5 | 14.8 | 32.5 |
+| 60 to 70 | 4.1 | 15.1 | 26.7 |
+
+The 95th percentile is 15 to 18 m/s^2 at every speed; the simulator's grip limit (`--grip`, 12 m/s^2) is below it, so the simulator understeers where the game does not. The maxima (up to 75 m/s^2) are spins and kerb strikes, not grip. A single grip value does not fix the offline pursuit fit (grip 14 already gives pursuit 1.54 m, below the game's 1.7 to 1.9 m), so the mismatch is not only the grip limit: the simulator also lacks the game's rear-tyre loss, which is what the spin needs. Step 1 is therefore a model change (a rear-slip limit that depends on sideslip and load transfer), calibrated on the measured p95 and on the 639 m spin, not a change of one number. Offline check of this: the simulator should spin the designed controller at 639 m when its rear-slip limit is reached at the logged sideslip (about 8 deg at 46 m/s).
