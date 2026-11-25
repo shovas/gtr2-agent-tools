@@ -107,3 +107,17 @@ Source: `scripts/gtr2_ui/runs/signals_20261125_140358.csv` (the session that sto
 **Test (2026-11-25):** the designed follower with `--trail-floor 0.5` (brake never below half the pedal). The first two attempts did not run: the first returned zero seconds because the previous game was still open (`GTR2 is already running`), the second because the game folder had run-generated changes (`UserData` and `ReplayData` uncommitted: Shovas.PLR, Career.blt, SIM_OFFICIAL.bch, Imola.Vcr and logs). Those changes were reverted to the committed profile with `git checkout` and the untracked run files removed; the lap-check writes its own environment (Speed Sensitive Steering 0.6, Steer Ratio Speed 25) before every run, so the committed profile is the correct base. Result of the run: see below.
 
 **Result of the trail-floor 0.5 test (2026-11-25, designed follower, lap 1):** not a valid test of the stall. The run stopped at the pit exit (x -992, z -317, lap 0, recovery attempts 2), before reaching the 639 to 670 m zone. The control with the committed `--trail-floor 0.0`, same command and same reverted game state, stopped at 663 m, 445 (inside the known zone), so the revert itself did not change the stall. Reading: the floor change alters behaviour on the pit chain (the limiter acts from 12 m/s), so it cannot be judged at 642 m until the pit exit is handled. The limiter is therefore not shown to cause the 642 m stall. Next test that isolates it: apply the floor only above the pit speed (or start the floor after the first 300 m), then rerun the pair.
+
+## Designed versus pursuit through the same corner (2026-11-25, signal logs 140358 designed, 152120 pursuit)
+
+Matched by position (within 6 m) on lap 1, the two runs are the same to about x 454 (both 65 to 67 m/s, yaw 11 to 15 deg/s, steering small). They diverge in the braking zone:
+
+| x, z (m) | designed speed / planned | pursuit speed / planned |
+|---|---|---|
+| 409, 246 | 65.8 / 80.3 | 65.0 / 129.2 |
+| 454, 290 | 67.5 / 70.4 | 65.3 / 60.7 |
+| 504, 324 | 62.8 / 59.4 | 53.5 / 51.7 |
+| 555, 344 | 52.6 / 42.0 | 40.7 / 39.6 |
+| 595, 359 | 42.4 / 30.4 | 25.5 / 24.7 |
+
+Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters the sweeping bend about 10 m/s slower; both cars rotate the same way there. The designed run carried its speed into the bend and was then a few m/s over the plan when the rotation started. The sessions did not have identical planner state (the live grip map learns per session), so this is a strong pointer, not proof. Test: designed follower with `--brake-plan-share 0.85` (earlier braking), one 12-lap session with signal log.
