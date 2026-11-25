@@ -70,3 +70,15 @@ Reading: grip 12 reproduces the game for pursuit, but the simulator then ranks d
 `--follower designed` with `--sig-log` and the committed entry: the car stalled on lap 1 at 639 m (x=639, z=437, about 317 s; recovery attempt 1, still for 4.8 s, then the driver stopped). The stall watcher caught it live (alerts in `runs/stall_alerts.log`); the campaign ended with no clean lap (no stop request: only one recovery attempt, below the default trigger of three).
 
 Tracking before the stall, from the log: lateral error rms 1.4 m at 200 to 400 m (max 3.1 m) and 1.1 m at 400 to 650 m (max 2.7 m); steering rms 0.34 with a maximum of 0.66 at 400 to 650 m (yaw up to 48 deg/s). That is close to the simulator's 0.99 m rms for the whole lap, so the simulator's tracking is roughly right for designed. The earlier game failure (2.97 m rms, 17 m off) was a different setup (a zoned line at live-lat 16). The problem in this run is the stall, not the tracking. Open question: what makes the car stall at 639 m with the designed follower (the lap-1 stall cause is still not identified).
+
+## The lap-1 spin of the designed session (diagnosed 2026-11-25, from the signal log and the driver log)
+
+Not a stall to begin with. Sequence (signal log times, which match the driver's run time at this point):
+
+- 238.0 s: braking at 60 m/s (brake 0.91), steering small (-0.1), 2.2 m off the line.
+- 239.4 s: brake released to 0 at 46 m/s; the steering command goes from -0.58 to **-1.00 (full lock)** by 239.8 s while the car is still only 1.2 to 1.5 m off the line (the driver's heading error is -23 deg).
+- 239.8 to 240.8 s: yaw rate swings -37 to +28 deg/s, sideslip rises to 8.6 deg, speed falls 46 to 35 m/s. The rear steps out.
+- 240.8 to 242.5 s: off the road at about (650, 420), 14 to 42 m off the line, heading error to -105 deg; barrier hit at 243 s (80.7 m/s^2, Barrier30).
+- 316 to 326 s: the car is stopped at (639, 437) in reverse (gear -1); the driver's recovery attempts and the stale status follow. The 639 m location is the stop, not the cause.
+
+Hypothesis (not confirmed): the designed follower divides its command by the speed steering gain, which is small at speed, so a moderate heading error at 46 m/s saturates the steering at full lock, and the brake release at the same moment leaves the car with no load-transfer help. The simulator cannot test this (it does not spin at these settings; its grip-limit calibration misses the spin). Test to run next: log the designed command (the value before clipping) on the same corner, and check whether a speed-dependent cap on the command (for example a rate or magnitude limit above about 35 m/s) removes the full-lock step without raising the lateral error elsewhere.
