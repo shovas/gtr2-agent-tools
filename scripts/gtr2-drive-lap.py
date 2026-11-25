@@ -256,6 +256,7 @@ def main():
     ap.add_argument("--warmup-vmin", type=float, default=55.0)
     ap.add_argument("--warmup-period", type=float, default=70.0, help="--warmup: metres per weave cycle")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
+    ap.add_argument("--throttle-circle", type=float, default=0.0, help="friction circle on the throttle: the drive is scaled by sqrt(1 - (v x yaw rate / this)^2) in m/s^2 (0 = off); a throttle step in a corner with lateral load left over the grip breaks the rear loose (2026-11-25 log: full throttle at 36 m/s when the brake came off at 2467 m, sideslip -2.5 to -4.5 deg and yaw 41 deg/s at 2492 m)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
     ap.add_argument("--live", action="store_true", help="live grip model: cornering and braking limits scale with the measured tyre load (downforce) and adapt while driving from the tyres' grip fraction, wheel lock and impacts (needs --dyn's wheel data); replaces --lat-accel and --decel on the racing line")
@@ -1375,6 +1376,9 @@ def main():
             if args.trail_circle > 0.0 and chain is track.main and speed > 12.0 and shared["brake"] > 0.0:
                 frac_ = min(1.0, abs(math.radians(yawrate)) * speed / args.trail_circle)
                 shared["brake"] *= max(args.trail_floor, math.sqrt(max(0.0, 1.0 - frac_ * frac_)))
+            if args.throttle_circle > 0.0 and chain is track.main and speed > 12.0 and shared["duty"] > 0.0:
+                ay_ = speed * abs(math.radians(yawrate))
+                shared["duty"] *= math.sqrt(max(0.0, 1.0 - (ay_ / args.throttle_circle) ** 2))
             if chain is track.main and off4 and tt["phase"] == 1:
                 shared["duty"], shared["brake"] = 0.0, 0.4      # trap test: let the trap stop the car
             elif args.trap_escape and chain is track.main and off4 and speed < 8.0 and tel["gear"] >= 1:
