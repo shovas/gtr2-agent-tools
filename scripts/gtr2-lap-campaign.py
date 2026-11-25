@@ -46,7 +46,21 @@ def main():
             extra += " --fresh-memory"
         cmd = [sys.executable, "-I", str(HERE / "gtr2-lap-check.py"), a.layout, "--car", a.car, "--input", a.input, "--timeout", str(total + 600), "--drive-args=" + extra.strip()] + (["--profile", a.profile] if a.profile else [])
         t0 = time.time()
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # stall watcher (automatic, reports only; it cannot touch the game): clears the last session's status, watches this session and writes its alerts to runs/stall_alerts.log
+        status = HERE / "gtr2_ui" / "runs" / "live_status.json"
+        for stale_ in (status, status.with_name("stop_request.json")):
+            if stale_.exists():
+                stale_.unlink()
+        alerts = HERE / "gtr2_ui" / "runs" / "stall_alerts.log"
+        with alerts.open("a", encoding="utf-8") as f:
+            f.write("--- session %d started %s\n" % (session, time.strftime("%Y-%m-%d %H:%M:%S")))
+        with alerts.open("a", encoding="utf-8") as out:
+            watch = subprocess.Popen([sys.executable, "-I", str(HERE / "gtr2-watch.py")], stdout=out, stderr=subprocess.STDOUT)
+            try:
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            finally:
+                watch.terminate()
+                watch.wait(timeout=10)
         res = last_result() or {}
         x = res.get("result") or {}
         laps = x.get("session_laps") or []
@@ -60,6 +74,9 @@ def main():
         with OUT.open("a", encoding="utf-8") as f:
             f.write(json.dumps({"layout": a.layout, "car": a.car, "session": session, "laps": laps, "best_clean": best, "outcome": x.get("outcome"), "seconds": round(time.time() - t0)}) + "\n")
         print("session %d: %d laps, %d clean, best clean %s s, outcome %s" % (session, len(laps), len(clean), "%.2f" % best if best else "none", x.get("outcome")), flush=True)
+        if str(x.get("outcome") or "").startswith("stop requested"):
+            print("stopped after session %d: the stall watcher asked for a stop; investigate the log before the next session" % session, flush=True)
+            break
         if best is None:
             print("no clean lap: stopping", flush=True)
             break

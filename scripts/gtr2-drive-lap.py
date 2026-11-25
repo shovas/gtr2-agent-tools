@@ -256,6 +256,7 @@ def main():
     ap.add_argument("--warmup-vmin", type=float, default=55.0)
     ap.add_argument("--warmup-period", type=float, default=70.0, help="--warmup: metres per weave cycle")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
+    ap.add_argument("--yaw-rise-cut", type=float, default=0.0, help="drive cut while the yaw rate is rising fast: the drive is scaled by 1 - K x (yaw acceleration - 0.5 rad/s^2), measured from the game's yaw rate (0 = off); the 2026-11-25 log had full throttle as the brake came off at 2467 m and yaw went from 15 to 41 deg/s by 2492 m")
     ap.add_argument("--throttle-circle", type=float, default=0.0, help="friction circle on the throttle: the drive is scaled by sqrt(1 - (v x yaw rate / this)^2) in m/s^2 (0 = off); a throttle step in a corner with lateral load left over the grip breaks the rear loose (2026-11-25 log: full throttle at 36 m/s when the brake came off at 2467 m, sideslip -2.5 to -4.5 deg and yaw 41 deg/s at 2492 m)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
     ap.add_argument("--dyn-min-brake", type=float, default=0.3, help="--dyn: lowest brake scale")
@@ -1379,6 +1380,14 @@ def main():
             if args.throttle_circle > 0.0 and chain is track.main and speed > 12.0 and shared["duty"] > 0.0:
                 ay_ = speed * abs(math.radians(yawrate))
                 shared["duty"] *= math.sqrt(max(0.0, 1.0 - (ay_ / args.throttle_circle) ** 2))
+            if args.yaw_rise_cut > 0.0 and chain is track.main and speed > 12.0:
+                w_ = math.radians(yawrate)
+                last_ = getattr(args, "_yr", None)
+                args._yr = (w_, now)
+                if last_ is not None and now > last_[1]:
+                    rate_ = (abs(w_) - abs(last_[0])) / (now - last_[1])
+                    if rate_ > 0.5:
+                        shared["duty"] *= max(0.0, 1.0 - args.yaw_rise_cut * (rate_ - 0.5))
             if chain is track.main and off4 and tt["phase"] == 1:
                 shared["duty"], shared["brake"] = 0.0, 0.4      # trap test: let the trap stop the car
             elif args.trap_escape and chain is track.main and off4 and speed < 8.0 and tel["gear"] >= 1:
@@ -1620,6 +1629,30 @@ def main():
             if n % args.every == 0:
                 print("t=%5.1f %s k=%3d lat=%+5.1f herr=%+6.1f v=%4.1f->%4.1f gear=%d lap=%d" % (
                     now - t0, "main" if chain is track.main else "pit ", k, lat, herr, speed, target_v, tel["gear"], tel["lap"]), flush=True)
+            wd_ = getattr(args, "_wd", None) or {"t": 0.0}      # live status for gtr2-watch.py: rewritten once a second, never blocks the loop
+            args._wd = wd_
+            if now - wd_["t"] > 1.0:
+                wd_["t"] = now
+                try:
+                    st_ = {"time": round(now, 2), "run_s": round(now - t0, 1), "lap": tel["lap"], "speed": round(speed, 1), "gear": tel["gear"],
+                           "x": round(x, 1), "z": round(z, 1), "still_s": round(now - last_move, 1), "recover_attempts": rec["n"], "recovering": rec["phase"] is not None}
+                    tmp_ = Path(__file__).resolve().parent / "gtr2_ui" / "runs" / "live_status.json.tmp"
+                    tmp_.write_text(json.dumps(st_), encoding="utf-8")
+                    os.replace(tmp_, tmp_.with_suffix(""))
+                except OSError:
+                    pass
+                stopreq_ = Path(__file__).resolve().parent / "gtr2_ui" / "runs" / "stop_request.json"      # written by gtr2-watch.py; the driver exits through its normal cleanup (inputs released, result written)
+                if stopreq_.exists():
+                    try:
+                        why_ = json.loads(stopreq_.read_text(encoding="utf-8")).get("reason", "watcher")
+                    except (OSError, ValueError):
+                        why_ = "watcher"
+                    try:
+                        stopreq_.unlink()
+                    except OSError:
+                        pass
+                    result["outcome"] = "stop requested: " + why_
+                    break
             if now - last_move > 8.0:
                 result["outcome"] = "stopped moving at x=%.0f z=%.0f" % (x, z); break
             time.sleep(0.02)

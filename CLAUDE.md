@@ -93,6 +93,8 @@ Always run Python tools with `-I` (isolated). Run one test file/tour: `gtr2-nav.
 | `docs/driving-theory.md` | race-driving and tyre theory from the reference books and open papers (racing line, braking, the friction circle, the nadir, Pacejka, iterative learning), where the books are, and the ranked plan for putting it into the driver |
 | `docs/crash-and-compat-layer.md` | start-up crash and the compatibility layer, crash dump reader and what the dump showed |
 | `docs/setup-and-config.md` | the setup script and `gtr2-tools.json` |
+| `docs/lap-session-monitoring.md` | live status of a lap session, the stall watcher (`gtr2-watch.py`), stop requests, what is verified and what is not, how the campaign uses them |
+| `docs/imola-slow-corner-2400-2900.md` | Imola 2400 to 2900 m: the causal chain from the logs, every throttle and planner experiment with its result, and what not to repeat |
 | `docs/publishing.md` | what may be pushed to GitHub, privacy and safety rules, the pre-push procedure and scanner |
 
 ## Working notes (game files)
