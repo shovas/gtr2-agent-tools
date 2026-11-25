@@ -21,10 +21,10 @@ HCG = 0.245
 M, IZ, L, WF = 1290.0, 1230.0, 2.70, 0.44      # MC12: mass with a little fuel, yaw inertia (.hdc), wheelbase, front weight share
 A, B = L * (1.0 - WF), L * WF                  # centre of gravity to the front and to the rear axle
 G = 9.81
-NAMES = ["ks", "v0", "tau", "mu_f", "mu_r", "cf", "cr"]
-START = np.array([0.10, 40.0, 0.15, 1.6, 1.8, 14.0, 14.0])
-LOW = np.array([0.02, 10.0, 0.02, 0.8, 0.8, 4.0, 4.0])
-HIGH = np.array([0.60, 200.0, 0.60, 3.5, 3.5, 80.0, 80.0])
+NAMES = ["ks", "v0", "tau", "mu_f", "mu_r", "cf", "cr", "bmax", "rb"]
+START = np.array([0.10, 40.0, 0.15, 1.6, 1.8, 14.0, 14.0, 16.0, 0.35])
+LOW = np.array([0.02, 10.0, 0.02, 0.8, 0.8, 4.0, 4.0, 8.0, 0.15])
+HIGH = np.array([0.60, 200.0, 0.60, 3.5, 3.5, 80.0, 80.0, 24.0, 0.70])
 
 
 def load(path, laps):
@@ -54,11 +54,12 @@ def windows(d, n):
 
 
 def simulate(p, d, starts, n, sgn_steer, sgn_beta):
-    ks, v0, tau, mu_f, mu_r, cf, cr = p
+    ks, v0, tau, mu_f, mu_r, cf, cr, bmax, rb = p
     t = d["t"]
     idx = starts[:, None] + np.arange(n)[None, :]
     T = t[idx] - t[idx][:, :1]
     V = d["speed"][idx]
+    BR = d["brake"][idx]
     AX = np.gradient(V, 0.12, axis=1)      # longitudinal acceleration from the logged speed (m/s^2, negative when braking)
     S = sgn_steer * d["steer"][idx]
     r = np.radians(d["yawrate"][starts]) * 1.0
@@ -77,17 +78,19 @@ def simulate(p, d, starts, n, sgn_steer, sgn_beta):
         vk = V[:, j] * (1 - frac) + V[:, j + 1] * frac
         sk = S[:, j] * (1 - frac) + S[:, j + 1] * frac
         axk = AX[:, j] * (1 - frac) + AX[:, j + 1] * frac
+        brk = BR[:, j] * (1 - frac) + BR[:, j + 1] * frac
         target = ks / (1.0 + (vk / v0) ** 2) * sk
         delta += (target - delta) * (dt / tau)
         vk = np.maximum(vk, 5.0)
         af = delta - (beta + A * r / vk)
         ar = -(beta - B * r / vk)
-        shift = M * axk * HCG / L                # load moves to the front when braking (ax < 0), to the rear when accelerating
+        shift = np.where(brk > 0.02, -M * bmax * brk, M * axk) * HCG / L                # load moves to the front when braking (ax < 0), to the rear when accelerating
         fzf = np.maximum(M * G * (1 - WF) * (1 + 0.0004 * vk * vk) - shift, 100.0)
         fzr = np.maximum(M * G * WF * (1 + 0.0004 * vk * vk) + shift, 100.0)
         # friction circle: the share of the grip the braking or the drive uses is not left for cornering
-        fxf = np.where(axk < 0, 0.65, 0.0) * M * axk
-        fxr = np.where(axk < 0, 0.35, 1.0) * M * axk
+        fb = -M * bmax * brk                       # brake force from the pedal (negative), split front and rear by the brake bias
+        fxf = np.where(brk > 0.02, (1.0 - rb) * fb, 0.0)
+        fxr = np.where(brk > 0.02, rb * fb, np.maximum(M * axk, 0.0))
         cf_ = np.sqrt(np.maximum(0.05, 1.0 - (fxf / (mu_f * fzf)) ** 2))
         cr_ = np.sqrt(np.maximum(0.05, 1.0 - (fxr / (mu_r * fzr)) ** 2))
         fyf = mu_f * fzf * cf_ * np.sin(1.3 * np.arctan(cf * af))
