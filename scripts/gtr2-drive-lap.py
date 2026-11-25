@@ -256,6 +256,8 @@ def main():
     ap.add_argument("--warmup-vmin", type=float, default=55.0)
     ap.add_argument("--warmup-period", type=float, default=70.0, help="--warmup: metres per weave cycle")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
+    ap.add_argument("--designed-cap", type=float, default=0.0, help="--follower designed: cap on the magnitude of the steering command above --designed-cap-speed (0 = off). The designed gains divide by the speed steering gain, so at 46 m/s a 23 deg heading error already commands about -0.9 (the 2026-11-25 lap-1 spin)")
+    ap.add_argument("--designed-cap-speed", type=float, default=35.0, help="--designed-cap: the speed above which the cap applies (m/s)")
     ap.add_argument("--yaw-rise-cut", type=float, default=0.0, help="drive cut while the yaw rate is rising fast: the drive is scaled by 1 - K x (yaw acceleration - 0.5 rad/s^2), measured from the game's yaw rate (0 = off); the 2026-11-25 log had full throttle as the brake came off at 2467 m and yaw went from 15 to 41 deg/s by 2492 m")
     ap.add_argument("--throttle-circle", type=float, default=0.0, help="friction circle on the throttle: the drive is scaled by sqrt(1 - (v x yaw rate / this)^2) in m/s^2 (0 = off); a throttle step in a corner with lateral load left over the grip breaks the rear loose (2026-11-25 log: full throttle at 36 m/s when the brake came off at 2467 m, sideslip -2.5 to -4.5 deg and yaw 41 deg/s at 2492 m)")
     ap.add_argument("--dyn-min", type=float, default=0.25, help="--dyn: lowest throttle scale")
@@ -1215,6 +1217,8 @@ def main():
                             gl = stn["g"][b]
                 if args.follower == "designed":
                     shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl)
+                    if args.designed_cap > 0.0 and speed > args.designed_cap_speed:
+                        shared["steer"] = max(-args.designed_cap, min(args.designed_cap, shared["steer"]))
                 else:
                     shared["steer"] = follower.stanley(track, chain, k, x, z, yaw, speed, yawrate, lat, k_cross=args.st_k, ks=args.st_ks, ff=args.st_ff, preview=args.st_preview, damp=args.st_damp, wheelbase=args.wheelbase, gain=gl)
             else:
