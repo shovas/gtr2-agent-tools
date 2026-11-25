@@ -158,3 +158,11 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - **Same bend, pursuit (152120) against designed (153825):** both enter at about 36 to 38 m/s. At x -538 to -541, z -44 to -48 pursuit steers 0.04 to 0.17 with heading error 2.4 to 5.6 degrees and yaw 6 to 10 deg/s. The designed run at the nearby point (x -536 to -554, z -39 to -80) steers 0.43 with heading error 12.7 degrees and yaw 22 to 37 deg/s.
 - **Mechanism (a candidate, not yet proven):** the designed follower measures its heading error against the line direction at the nearest waypoint, which lags at the entry of a bend. The heading error is then too large, and the steer demand at about 40 m/s over-rotates the car. Pursuit measures against an aim point 60 m ahead, so its error is small.
 - **Test (162327's sibling, 2026-11-25):** the designed follower with the heading measured 8 m ahead (`--st-head-ahead 8`) on the earlier-braking base (0.85 everywhere). Control: 153825. Judge by the steer and heading error at the entry of the bend, then by the spin.
+
+### Heading measured 8 m ahead (`--st-head-ahead 8`, earlier-braking base, clean retry 170607, 2026-11-25)
+
+- **Bend entry changed as predicted:** heading error 2.3 to 3.3 degrees and steering 0.05 to 0.08 at x -545 to -538, z -55 to -43, where the control (153825) had 12.7 degrees and 0.43.
+- **The spin bend was passed on every lap:** five laps through it (about 2570 m) with no spin. The control spun there on lap 6; zone braking spun on lap 8.
+- **Laps:** 129.0, 141.9, 130.4, 143.6 s, all marked not clean. Slower than pursuit (117 to 120 s), so the heading fix alone is not a lap-time gain.
+- **New stop:** after lap 5 (715 s) the car stopped at x -1015, z -285 facing 147 degrees away from the line. This is the pit-exit stall pattern (x -992 to -1165) seen in earlier logs; it is a separate problem, not the bend.
+- **Reading:** the nearest-waypoint heading lag was a real cause of the entry over-steer; measuring the heading ahead removes the spin in that bend. The next limits are the not-clean laps and the pit-exit stop.
