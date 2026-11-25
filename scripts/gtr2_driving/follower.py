@@ -58,13 +58,17 @@ def stanley(track, chain, k, x, z, yaw, speed, yawrate, lat, k_cross=1.0, ks=3.0
     return max(-1.0, min(1.0, cmd))
 
 
-def designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=1.2, zeta=0.9, ff=1.0, preview=0.25, damp=0.0, wheelbase=2.7, table=G_TABLE, gain=None):
+def designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=1.2, zeta=0.9, ff=1.0, preview=0.25, damp=0.0, wheelbase=2.7, table=G_TABLE, gain=None, head_ahead=0.0):
     """Stanley-like follower with gains designed from speed: lateral error e and heading error psi obey
     e'' = -(v a / L) e' - (v^2 b / L) e, so a = 2 zeta wn L / v and b = wn^2 L / v^2 give the closed loop natural frequency wn (rad/s) and
     damping zeta whatever the speed (the plain Stanley gains are far too high at speed once the steering path has a delay)."""
     sp = max(speed, 1.0)
     w = chain[k]
-    yaw_line = yaw_of(w.hx, w.hz)
+    if head_ahead > 0.0:      # heading of the line head_ahead metres ahead, not the nearest waypoint (which lags at the entry of a bend)
+        pw = track.ahead_point(chain, k, head_ahead, x, z)
+        yaw_line = yaw_of(pw.hx, pw.hz)
+    else:
+        yaw_line = yaw_of(w.hx, w.hz)
     psi_e = math.radians(wrap(yaw_line - yaw))
     a = min(2.0 * zeta * wn * wheelbase / max(sp, 3.0), 1.0)
     b = min(wn * wn * wheelbase / (max(sp, 3.0) ** 2), 0.08)
