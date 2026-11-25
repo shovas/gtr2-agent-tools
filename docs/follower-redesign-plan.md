@@ -60,3 +60,10 @@ A scratch dynamic bicycle (front and rear tyres with saturation at mu x load, co
 - **Model, both followers, same start:** rear grip mu 1.2 to 1.6, stiffness 100 000 to 120 000 N/rad. Designed spins at 1.4 to 3.4 s (about 80 to 120 m later); pursuit spins at 3.6 to 4.2 s. The spin location is close to the game's, but it is the same for both followers and insensitive to rear grip.
 - **Reading:** the model spins from this state whatever the controller does, so the car model is unstable there (its understeer or balance is wrong), and the designed-follower spin is not identified by it yet. The game car is stable from the same state. The next fix is the car's balance (front and rear stiffness, mass distribution) against the logged yaw response (the steering gain and yaw rate already measured: yaw gain k about 0.021 to 0.029 rad/s per command per m/s), before any follower is judged on the model.
 - Scratch scripts only (`rearslip_start.py`), not in the repository.
+
+### Step 1, the car balance fitted (2026-11-25)
+
+- `gtr2-model-fit.py` on the 13:31 log (laps 1 to 3, 65 windows): front grip mu_f 0.80 (at its lower bound), rear grip mu_r 3.44, front stiffness 34.1, rear 40.4 (the fitter's tyre form, sin(1.3 atan(c alpha)) times mu times load); yaw rate explained 80 percent, rms error 7.4 deg/s, sideslip rms 2.6 deg. Reading: the car understeers (front limited first, rear strong).
+- Scratch model with these values from the logged start: **no spin in 40 s** for either controller; the car ends 1.0 to 1.7 m from the line. So the fitted balance does not contain the game's spin.
+- Reading: the spin came as the brake was released at about 240 s (brake 0.2 to 0.3 with no throttle, then a yaw swing). The fit has no brake-induced loss at the rear (the `rb` split is 0.15, not identified) and no load transfer under braking into the corner. The next model step is the braking and load transfer at the rear (brake force on the rear axle, the weight that moves forward and back), then refit on a designed session that includes the brake release.
+- Scratch scripts only (`rearslip_fit.py`), not in the repository.
