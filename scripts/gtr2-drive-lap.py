@@ -203,6 +203,8 @@ def main():
     ap.add_argument("--lat-floor", type=float, default=0.5)
     ap.add_argument("--limit-brake-pen", type=float, default=0.0, help="live braking map: a track-limit event within 4 s of hard braking lowers the braking numbers of the speed bands from the limit speed up to the braking start speed by this share (0 = off)")
     ap.add_argument("--brake-margin", action="store_true", help="per-corner brake marker: a track-limit event within 4 s of hard braking moves the braking for that corner --bm-add m earlier (up to --bm-max), healing --bm-heal m per clean lap; on in live mode")
+    ap.add_argument("--brake-plan-zones", type=float, nargs="+", default=[], help="lap-distance ranges FROM TO [FROM TO ...] in metres where the braking horizon (the car's lap distance plus its braking look-ahead) uses --brake-plan-zone-share instead of --brake-plan-share; empty = no zones")
+    ap.add_argument("--brake-plan-zone-share", type=float, default=1.0, help="--brake-plan-zones: the braking share inside the zones")
     ap.add_argument("--brake-plan-share", type=float, default=1.0, help="live braking map: the planner uses this share of the map's deceleration (below 1 brakes earlier and arrives at corners at the planned speed instead of a few m/s over it)")
     ap.add_argument("--bm-add", type=float, default=30.0)
     ap.add_argument("--bm-min-speed", type=float, default=45.0, help="--brake-margin: only a stop that began above this speed (m/s) counts: a touch of the edge after a slow-corner stop is not a braking miss (Imola 4, 24 m/s: it cost 4 s a lap)")
@@ -1255,11 +1257,20 @@ def main():
                 steer_travel += abs(shared["steer"] - last_steer)
             last_steer = shared["steer"]
 
+            def bpz_share(chain_, k_, v_, d_):
+                # --brake-plan-zones: the braking share inside the zones is --brake-plan-zone-share; elsewhere --brake-plan-share
+                if not args.brake_plan_zones:
+                    return args.brake_plan_share
+                zz_ = list(zip(args.brake_plan_zones[0::2], args.brake_plan_zones[1::2]))
+                L_ = chain_[-1].dist + (chain_[1].dist - chain_[0].dist)
+                horizon_ = 25.0 + v_ * v_ / (2.0 * max(d_, 1.0))
+                dl_ = (chain_[k_].dist + horizon_) % L_
+                return args.brake_plan_zone_share if any(a_ <= dl_ <= b_ for a_, b_ in zz_) else args.brake_plan_share
             decel_plan = args.decel
             if args.brake_adapt and padec:
                 db = lambda sp_: int(min(sp_, 79.0) // 10)
                 decel_plan = min(padec.get(db(speed), args.decel), padec.get(db(speed / 2.0), args.decel))
-                decel_plan *= args.brake_plan_share      # plan with part of what the map says the car can do: the pedal only acts on a speed error, so a plan at the limit is reached late
+                decel_plan *= bpz_share(chain, k, speed, decel_plan)      # plan with part of what the map says the car can do: the pedal only acts on a speed error, so a plan at the limit is reached late
             window = 25.0 + speed * speed / (2.0 * decel_plan)
             if args.live and chain is track.main:
                 a_brk_p = decel_plan if args.brake_adapt else live["a_brk"]      # the braking map's number when it is on

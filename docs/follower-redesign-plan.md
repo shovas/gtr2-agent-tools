@@ -144,3 +144,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Peak yaw in that bend in the treatment: 75.7 deg/s at x -524, z -31, with steering at full lock and sideslip -28 degrees.
 - Reading: the floor does not remove the spin in this bend; the treatment is slower and more variable than the control. The limiter floor is not the fix. Rejected for this bend on one paired session (two sessions would be needed to call it definitively, but the spin repeated in the same place).
 - Next: the spin bend itself. Entry speed (48 m/s) and braking while the yaw rises are the common factor; test an earlier brake plan only into that bend (a position-limited speed cap), judged by yaw and speed there, before any lap-time claim.
+
+### Correction: where the two problems are (lap distance, from `gtr2_driving/racingline` on 4Imol.AIW, 2026-11-25)
+
+- The **640 m stall** is at lap distance about **3936 m** (x 642, z 439). Earlier braking (`--brake-plan-share 0.85`) fixed it: five laps past it.
+- The **lap-6 spin** is at lap distance about **2570 m** (x -524 to -486, z -31 to -6), inside the 2400 to 2900 m section. It is a different problem, not the 640 m stall, and the earlier entries of this file that place the spin bend at the 640 m zone are wrong.
+- Both problems have a separate lap-distance zone, so the braking change can be applied per zone. New option: `--brake-plan-zones FROM TO ...` with `--brake-plan-zone-share` (the braking share inside the zones; elsewhere `--brake-plan-share`).
+- Test running: `--brake-plan-share 0.85 --brake-plan-zones 2300 2800 --brake-plan-zone-share 0.6`, one 12-lap designed session with the signal log. Control: the 153825 run (0.85 everywhere), which spun at about 2570 m on lap 6. If the spin still happens at 2570 m with the stronger zone braking, braking into that bend is not the lever.
