@@ -40,7 +40,7 @@ All run output is in `gtr2_ui/runs/`, which is git-ignored.
   - The driver consumed the stop request within 3 s and ended the run with the outcome `stop requested: manual stop test` (`runs/lap_drive.log`).
   - The status file stopped updating at 247.7 s, and the watcher reported "status not updated for 3 s" (the stale alert) in `stall_alerts.log`.
   - The campaign printed "stopped after session 1: the stall watcher asked for a stop" and started no second session. It exited with code 0, and the game closed.
-  - **Not verified:** that the vJoy buttons were released at the exit. The run went through the driver's normal exit, which releases them, but nothing checked it. Check with the joystick poll (`gtr2_driving/vjoy.py`) before relying on it.
+  - vJoy release, checked separately with the game closed (2026-11-25): button 2 read as down inside the `VJoy` context and as up (dwButtons 0) after the exit, through winmm `joyGetPosEx` on device 0. The stop request ends the run through the same `with` exit, so the release is covered by this check. The game itself was not running, so the check does not show what the game saw.
   - An earlier attempt of this test wrote the stop file to the wrong folder (a shell `cd` and `&` mistake), so the driver never saw a request. Use absolute paths in such tests.
 
 ## Usage

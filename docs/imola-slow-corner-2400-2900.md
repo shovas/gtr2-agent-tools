@@ -36,6 +36,10 @@ Throttle law (`gtr2-drive-lap.py`, the duty line after the target speed): `duty 
 - The first-lap stall at about 1165 m is sensitive to small changes in drive or rotation. It is also the known first-lap event in 8 of 14 earlier sessions. Any test of the drive needs a control with the same entry, and a stall at 1165 m is a driver/first-lap effect, not evidence about the 2400 to 2900 m section.
 - Planner changes (curvature window) and the follower's lateral error are the next candidates. The planner is not the cause of the mid-bend throttle, but the 2400 to 2900 m section loses time because the car cannot hold the line the planner gives (lateral error to -4.6 m at the minimum).
 
+## Follower alternatives (already tested, do not repeat without a new reason)
+
+`--follower stanley` and `--follower designed` (`gtr2_driving/follower.py`) were tested on Imola earlier (see `docs/analog-driving.md`, the entries around lines 502, 730, 867, 936 and 975). Stanley spun on the out lap (430 m, 113 degrees) and at 1150 and 1171 m; designed had 9 to 14 track-limit events with 2.97 m rms error, and in another run 126.65 s clean at most. Neither beat pure pursuit. Changing the follower's gain or form again is therefore not a new test.
+
 ## Ideas not yet tested
 
 - Brake release finished before the apex as an explicit rule on the yaw rate rising (listed in `docs/analog-driving.md`, not implemented).
