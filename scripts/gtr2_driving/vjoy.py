@@ -39,11 +39,17 @@ class VJoy:
         self.d.ResetVJD(self.dev)
         for a in AXES:  # reset leaves sliders at 0; centre all so the game sees no phantom input
             self.axis(a, 0.5)
+        self._release_buttons()      # ResetVJD does not clear a button a killed feeder left pressed (2026-11-24: button 2 stayed down, shift down cancelled shift up, the car never left first gear)
         return self
+
+    def _release_buttons(self):
+        for n in range(1, 33):
+            self.d.SetBtn(0, self.dev, n)
 
     def __exit__(self, *a):
         for a in AXES:
             self.axis(a, 0.5)
+        self._release_buttons()
         self.d.RelinquishVJD(self.dev)
 
     def axis(self, name, frac):
