@@ -80,6 +80,7 @@ def main():
     for i in range(n_):
         loss[int(5 * i // 100)] += 5.0 / max(act[i], 3) - 5.0 / max(vi[i], 3)
     print("  largest loss per 100 m: " + ", ".join("%d m %.2f s" % (k * 100, x) for k, x in sorted(loss.items(), key=lambda kv: -kv[1])[:6]))
+    print("  all 100 m losses: " + " ".join("%d:%.2f" % (k * 100, loss[k]) for k in sorted(loss)))
     # braking
     if "brake" in v[0]:
         br = [r for r in v if r["brake"] > 0.05]
