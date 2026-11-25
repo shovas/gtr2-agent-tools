@@ -528,5 +528,29 @@
    "skip",
    ""
   ]
+ ],
+ "0fea712": [
+  [
+   "highlight",
+   "Imola with the Maserati: tighter trail-braking limit, best clean lap 1:54.4, laps at full push about 0.35 s faster"
+  ]
+ ],
+ "bafcb98": [
+  [
+   "highlight",
+   "Imola with the Maserati: the brake may now be released fully in the corners, best clean lap 1:53.7, laps about 1 s faster"
+  ]
+ ],
+ "f76cd9d": [
+  [
+   "improve",
+   "New offline tool that fits a car model to a recorded driving session (steering response, tyre grip) without the game"
+  ]
+ ],
+ "da2e34a": [
+  [
+   "improve",
+   "The session report lists the time lost in every 100 m of the lap"
+  ]
  ]
 }
