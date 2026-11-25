@@ -121,3 +121,11 @@ Matched by position (within 6 m) on lap 1, the two runs are the same to about x 
 | 595, 359 | 42.4 / 30.4 | 25.5 / 24.7 |
 
 Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters the sweeping bend about 10 m/s slower; both cars rotate the same way there. The designed run carried its speed into the bend and was then a few m/s over the plan when the rotation started. The sessions did not have identical planner state (the live grip map learns per session), so this is a strong pointer, not proof. Test: designed follower with `--brake-plan-share 0.85` (earlier braking), one 12-lap session with signal log.
+
+## Designed with earlier braking (`--brake-plan-share 0.85`, 2026-11-25, signal log 153825): first designed session past the 640 m zone
+
+- Five laps completed on the designed follower: 126.1, 127.8, 128.4, 127.6 and 148.5 s. The sixth lap stopped at x -481, z 1 (not at 640 m).
+- Every lap was marked not clean. The track-limit events were at x -880 to -930, z 120 to 190 (the pit-exit merge), and there was one kerb impact at the start-finish line (Kerbs21, 71 m/s^2 at x -3, z -1). The pursuit control had the same start-finish kerb on its lap 1.
+- Entry: at x 542, z 338 the car was at 52 m/s with brake 0.99 and planned 40 m/s, i.e. braking before the bend; the earlier designed runs were at 65 m/s there.
+- Reading: the earlier braking lets the designed follower through the 640 m zone (the stall was an entry-speed problem, as the position-matched comparison suggested). Laps are about 7 to 8 s slower than pursuit's 117 to 120 s, and the pit-exit merge needs its own look.
+- Next: the lap-6 stop at x -481, and the pit-exit track-limit events, before any tuning of the designed follower.
