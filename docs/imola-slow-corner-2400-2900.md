@@ -52,3 +52,15 @@ Throttle law (`gtr2-drive-lap.py`, the duty line after the target speed): `duty 
 - Compare the best clean lap and the 2400 to 2900 m loss with the control of the same day. Use `gtr2-session-report.py` and `gtr2-corner-budget.py` on the newest `signals_*.csv`.
 - Watch the live status with `gtr2-watch.py` (see `docs/lap-session-monitoring.md`).
 - Write every result here, including the rejected ones, with the session count and the best clean lap.
+
+## Offline follower simulator (2026-11-25): calibration result
+
+`scripts/gtr2-follower-sim.py Imola/4Imol` (the bicycle model, grip limit `--grip` 12 m/s^2 by default):
+
+| Follower | grip 10 | grip 12 (default) | grip 14 | Game (measured, earlier sessions) |
+|---|---|---|---|---|
+| pursuit | 3.81 m rms, p95 9.6 m | **1.95 m rms, p95 4.0 m, max 8.4 m** | 1.54 m | 1.7 to 1.9 m rms, p95 3.3 to 3.6 m |
+| designed | 2.66 m rms | **0.99 m rms, p95 1.9 m, max 3.3 m** | 1.00 m | 2.97 m rms, 17 m off at 600 m |
+| stanley | (grip 12: 1.57 m rms, p95 3.7 m, max 6.8 m) | | | spins on the out lap (game) |
+
+Reading: grip 12 reproduces the game for pursuit, but the simulator then ranks designed as the best follower by a wide margin, while the game ranks it the worst. No single grip value fits both. The simulator therefore cannot choose a follower yet. What it misses is whatever makes designed fail in the game (candidates: the speed-dependent steering gain table at high steering rates, the rack's real rate limit, the delay, and the tyre slip at the limit, none of which the bicycle model has). Fixing that needs a logged designed session with the `steer` column, not more grip sweeps. Until then, offline results for designed or stanley are not evidence.
