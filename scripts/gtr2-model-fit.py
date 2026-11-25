@@ -27,13 +27,18 @@ LOW = np.array([0.02, 10.0, 0.02, 0.8, 0.8, 4.0, 4.0, 8.0, 0.15])
 HIGH = np.array([0.60, 200.0, 0.60, 3.5, 3.5, 80.0, 80.0, 24.0, 0.70])
 
 
+KEEP = ("t", "speed", "sideslip", "yawrate", "steer", "brake", "lap")
+
+
 def load(path, laps):
     """one or several (comma separated) --sig-log files, joined (windows never cross a file boundary: the time jumps)."""
     parts = []
     for one in path.split(","):
         rows = [r for r in csv.reader(open(one)) if r and not r[0].startswith("#")]
         h = rows[0]
-        parts.append({k: np.array([float(r[i]) for r in rows[1:]]) for i, k in enumerate(h)})
+        if "steer" not in h or len(rows) < 100:      # older logs have no steering command column
+            continue
+        parts.append({k: np.array([float(r[i]) for r in rows[1:]]) for i, k in enumerate(h) if k in KEEP})
     d = {k: np.concatenate([q[k] + (1e5 * i if k == "t" else 0.0) for i, q in enumerate(parts)]) for k in parts[0]}
     keep = (d["lap"] >= laps[0]) & (d["lap"] <= laps[1])
     return {k: v[keep] for k, v in d.items()}
