@@ -136,3 +136,11 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - **Same pattern as the 642 m stall:** trail braking while the yaw is already rising, then a counter-steer that comes too late. The brake was still applied at 0.31 to 0.36 when the yaw was 8 to 22 deg/s, which is the trail-limiter region.
 - **Pit-exit track-limit events are not designed-specific.** The pursuit sig-log session (152120) logged a track-limit event at x -892, z 168.5, the same place as the designed events at x -880 to -930, z 120 to 190. So the merge is a track-geometry issue for every follower.
 - **Next:** test one change at this bend only: the trail limiter with floor 0.5 and min-speed 25 (the isolating test, which has still not run past the pit), or an earlier entry at the same bend. Judge it by the same bend's yaw and speed, not by the lap time.
+
+### Paired test: limiter floor 0.5 above 25 m/s on the earlier-braking designed follower (2026-11-25, signal log 160047)
+
+- Control (153825, floor 0, earlier braking): five laps past 640 m at 126 to 148 s, then a spin at lap 6 (x -486, z -6).
+- Treatment (160047, floor 0.5 above 25 m/s, earlier braking): seven laps, all not clean, at 127.7, 142.1, 165.5, 129.8, 161.4, 150.7 and 138.4 s. Lap 8 stopped at x -508, z -14, in the same bend as the control's spin.
+- Peak yaw in that bend in the treatment: 75.7 deg/s at x -524, z -31, with steering at full lock and sideslip -28 degrees.
+- Reading: the floor does not remove the spin in this bend; the treatment is slower and more variable than the control. The limiter floor is not the fix. Rejected for this bend on one paired session (two sessions would be needed to call it definitively, but the spin repeated in the same place).
+- Next: the spin bend itself. Entry speed (48 m/s) and braking while the yaw rises are the common factor; test an earlier brake plan only into that bend (a position-limited speed cap), judged by yaw and speed there, before any lap-time claim.
