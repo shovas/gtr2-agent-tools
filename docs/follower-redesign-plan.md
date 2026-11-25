@@ -129,3 +129,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Entry: at x 542, z 338 the car was at 52 m/s with brake 0.99 and planned 40 m/s, i.e. braking before the bend; the earlier designed runs were at 65 m/s there.
 - Reading: the earlier braking lets the designed follower through the 640 m zone (the stall was an entry-speed problem, as the position-matched comparison suggested). Laps are about 7 to 8 s slower than pursuit's 117 to 120 s, and the pit-exit merge needs its own look.
 - Next: the lap-6 stop at x -481, and the pit-exit track-limit events, before any tuning of the designed follower.
+
+### Lap 6 of the 153825 session and the pit-exit track-limit events (2026-11-25)
+
+- **Lap 6 is a spin, not a stall.** At 868 to 875 s the car entered a bend at about 48 m/s (x -551, z -136) with brake 0.31 to 0.36 and steering +0.23 to +0.43 into rising yaw (8, 22, 37 deg/s). Steering then went to -0.58 (counter), and yaw reversed to -105 deg/s with sideslip 65 degrees at x -486, z -6. It came to rest at x -475, z 0, 10 s later, facing 137 to 160 degrees away from the line, and the recovery never freed it.
+- **Same pattern as the 642 m stall:** trail braking while the yaw is already rising, then a counter-steer that comes too late. The brake was still applied at 0.31 to 0.36 when the yaw was 8 to 22 deg/s, which is the trail-limiter region.
+- **Pit-exit track-limit events are not designed-specific.** The pursuit sig-log session (152120) logged a track-limit event at x -892, z 168.5, the same place as the designed events at x -880 to -930, z 120 to 190. So the merge is a track-geometry issue for every follower.
+- **Next:** test one change at this bend only: the trail limiter with floor 0.5 and min-speed 25 (the isolating test, which has still not run past the pit), or an earlier entry at the same bend. Judge it by the same bend's yaw and speed, not by the lap time.
