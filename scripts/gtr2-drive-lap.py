@@ -256,6 +256,7 @@ def main():
     ap.add_argument("--warmup-vmin", type=float, default=55.0)
     ap.add_argument("--warmup-period", type=float, default=70.0, help="--warmup: metres per weave cycle")
     ap.add_argument("--trail-floor", type=float, default=0.0, help="--trail-circle: the lowest brake scale (0 = the brake may be fully released)")
+    ap.add_argument("--trail-min-speed", type=float, default=0.0, help="--trail-circle: the limiter acts only above this speed in m/s (0 = from 12 m/s, as before); isolates the limiter from the pit chain")
     ap.add_argument("--designed-curve", type=float, default=0.0, help="--follower designed: speed curve on the steering command: the road angle the grip allows at each speed, atan(wheelbase x this multiplier x 12 m/s^2 / v^2), divided by the steering gain at that speed, is the largest command (0 = off; 1.0 = the simulator's 12 m/s^2 grip; a single sensitivity multiplier, 50 percent is the neutral point in the plan of 2026-11-25)")
     ap.add_argument("--designed-cap", type=float, default=0.0, help="--follower designed: cap on the magnitude of the steering command above --designed-cap-speed (0 = off). The designed gains divide by the speed steering gain, so at 46 m/s a 23 deg heading error already commands about -0.9 (the 2026-11-25 lap-1 spin)")
     ap.add_argument("--designed-cap-speed", type=float, default=35.0, help="--designed-cap: the speed above which the cap applies (m/s)")
@@ -1383,7 +1384,7 @@ def main():
                 if not (args.trap_escape and off4 and speed < 8.0 and tt["phase"] != 1):
                     shared["duty"] *= dyn["tc"]      # in a trap the slip control would cut the throttle on every spin of the wheels: the escape holds the engine speed instead (below)
                 shared["brake"] *= dyn["abs"]
-            if args.trail_circle > 0.0 and chain is track.main and speed > 12.0 and shared["brake"] > 0.0:
+            if args.trail_circle > 0.0 and chain is track.main and speed > max(12.0, args.trail_min_speed) and shared["brake"] > 0.0:
                 frac_ = min(1.0, abs(math.radians(yawrate)) * speed / args.trail_circle)
                 shared["brake"] *= max(args.trail_floor, math.sqrt(max(0.0, 1.0 - frac_ * frac_)))
             if args.throttle_circle > 0.0 and chain is track.main and speed > 12.0 and shared["duty"] > 0.0:
