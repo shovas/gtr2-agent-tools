@@ -166,3 +166,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - **Laps:** 129.0, 141.9, 130.4, 143.6 s, all marked not clean. Slower than pursuit (117 to 120 s), so the heading fix alone is not a lap-time gain.
 - **New stop:** after lap 5 (715 s) the car stopped at x -1015, z -285 facing 147 degrees away from the line. This is the pit-exit stall pattern (x -992 to -1165) seen in earlier logs; it is a separate problem, not the bend.
 - **Reading:** the nearest-waypoint heading lag was a real cause of the entry over-steer; measuring the heading ahead removes the spin in that bend. The next limits are the not-clean laps and the pit-exit stop.
+
+### The pit-exit stop is a corner-exit excursion (lap 5 of 170607, 2026-11-25)
+
+- **What happened:** from 724 s the car drifted up to 15 m off the line between x -700 and -1000 (lap distance about 650 to 800 m on the line). At 731 s the planned speed jumped from 52 to 127 m/s (the live planner had released the corner), throttle went to 1.0 while steering was still -0.6 to -1.0, and yaw swung from -17 to +35 deg/s. The car came to rest at x -1015, z -285 facing 147 degrees away from the line.
+- **Offline profile (default physics, `racingline.lap_time`, not the live planner):** the speed falls to 26 m/s at 651 m and rises slowly to 49 m/s at 796 m, so the corner is long and still curving at the point where the live plan went to full speed.
+- **Hypothesis (not yet tested):** the live planner's corner window ends at the apex of a long, opening corner, so it allows full throttle while the line still curves. The designed follower then has to hold a large steering angle through a corner the throttle is pushing it out of.
+- **Test to run:** print the live planner's target speed along lap distance 600 to 800 m in one run (the `tvg` / `plan_speed` column), compare it with the offline profile, then, if it is short, extend the corner limit to the end of the curve (the curvature span option) and rerun the lap-5 segment.
