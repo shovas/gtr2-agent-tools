@@ -64,3 +64,9 @@ Throttle law (`gtr2-drive-lap.py`, the duty line after the target speed): `duty 
 | stanley | (grip 12: 1.57 m rms, p95 3.7 m, max 6.8 m) | | | spins on the out lap (game) |
 
 Reading: grip 12 reproduces the game for pursuit, but the simulator then ranks designed as the best follower by a wide margin, while the game ranks it the worst. No single grip value fits both. The simulator therefore cannot choose a follower yet. What it misses is whatever makes designed fail in the game (candidates: the speed-dependent steering gain table at high steering rates, the rack's real rate limit, the delay, and the tyre slip at the limit, none of which the bicycle model has). Fixing that needs a logged designed session with the `steer` column, not more grip sweeps. Until then, offline results for designed or stanley are not evidence.
+
+## First logged designed-follower session (2026-11-25, one session, lap 1 only)
+
+`--follower designed` with `--sig-log` and the committed entry: the car stalled on lap 1 at 639 m (x=639, z=437, about 317 s; recovery attempt 1, still for 4.8 s, then the driver stopped). The stall watcher caught it live (alerts in `runs/stall_alerts.log`); the campaign ended with no clean lap (no stop request: only one recovery attempt, below the default trigger of three).
+
+Tracking before the stall, from the log: lateral error rms 1.4 m at 200 to 400 m (max 3.1 m) and 1.1 m at 400 to 650 m (max 2.7 m); steering rms 0.34 with a maximum of 0.66 at 400 to 650 m (yaw up to 48 deg/s). That is close to the simulator's 0.99 m rms for the whole lap, so the simulator's tracking is roughly right for designed. The earlier game failure (2.97 m rms, 17 m off) was a different setup (a zoned line at live-lat 16). The problem in this run is the stall, not the tracking. Open question: what makes the car stall at 639 m with the designed follower (the lap-1 stall cause is still not identified).
