@@ -51,3 +51,11 @@ scripts\.venv\Scripts\python.exe -I scripts\gtr2-watch.py --once
 ```
 
 The second command prints the current status (or "no status file yet"). Do not run `gtr2-recover.py` while a session is running.
+
+## Failures seen on 2026-11-25 after 17:00 (infrastructure, not the controller)
+
+- **A run that times out inside the driver leaves the game open on a non-menu screen.** Every later lap-check then printed `not on the main menu` and ended with a `TimeoutExpired`. The message comes from the cleanup step after the run (`cmd_exit`), not from the start.
+- **The lap-check's `TimeoutExpired` gave no driver output.** Its driver output is captured, so the stage lines were lost. Run the driver directly to a file when a run hangs (`gtr2-drive-lap.py` with the same arguments).
+- **`vJoy device 1 not available (status 2)`** was seen once, when a leftover recovery process still held the device. A direct acquire test (`VJoy(1).__enter__`) passed after the processes exited. Check the device this way before blaming the driver.
+- **`gtr2-recover.py --force --revert` once hung for more than 10 minutes** (its game-menu exit waited). Stop it by process id, then close the game by process name, and revert the game folder with git (`checkout -- UserData ReplayData`, then `clean -fd`). The lap-check refuses to start while the game folder has uncommitted changes.
+- **Rule:** after any hung run, do this order: stop the runner and recovery processes, close the game, revert the game folder, confirm the vJoy device, then the control run, then the test run. A control run with the committed settings must pass before a test result is read.
