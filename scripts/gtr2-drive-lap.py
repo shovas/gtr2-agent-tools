@@ -218,6 +218,7 @@ def main():
     ap.add_argument("--steer-live-max", type=float, default=1.4)
     ap.add_argument("--st-learn", action="store_true", help="--follower stanley: adapt the steering gain per speed bin from the yaw response (off: use the measured table)")
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
+    ap.add_argument("--fgrip-steer", type=float, default=0.0, help="--follower designed with the wheel data (--dyn): when the front tyres' measured grip falls below this fraction, the steering command is scaled by grip / this, so the front tyres are not pushed further into saturation at turn-in (0 = off; about 0.9 to test)")
     ap.add_argument("--st-head-ahead", type=float, default=0.0, help="--follower designed: the heading error is measured to the line this many metres ahead (0 = the nearest waypoint, as before); the nearest waypoint lags the heading at the entry of a bend")
     ap.add_argument("--st-zeta",type=float, default=0.8, help="--follower designed: damping ratio")
     ap.add_argument("--st-k", type=float, default=1.0, help="--follower stanley: cross-track gain (1/s)")
@@ -1222,6 +1223,9 @@ def main():
                             gl = stn["g"][b]
                 if args.follower == "designed":
                     shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl, head_ahead=args.st_head_ahead)
+                    fg_ = shared.get("fgrip")
+                    if args.fgrip_steer > 0.0 and fg_ is not None and fg_ < args.fgrip_steer:
+                        shared["steer"] *= max(0.0, fg_ / args.fgrip_steer)      # front tyres near saturation: less steering (friction-circle steering limit)
                     if args.designed_curve > 0.0:
                         v_c = max(speed, 3.0)
                         lim_c = min(1.0, math.atan(args.wheelbase * 12.0 * args.designed_curve / (v_c * v_c)) / max(follower.steer_gain(v_c), 0.02))
@@ -1369,6 +1373,7 @@ def main():
                 base = sorted(dyn["base"])[len(dyn["base"]) // 2] if len(dyn["base"]) >= 20 else -0.03
                 slip_drive = (rr / fr - 1.0 - base) if fr > 3.0 else 0.0
                 target = max(args.dyn_min, 1.0 - args.dyn_gain * max(0.0, slip_drive - args.dyn_slip))
+                shared["fgrip"] = min(w["grip"] for w in wl[:2])      # front tyres' grip for the steering limit (--fgrip-steer), read one control step later
                 if min(wl[2]["grip"], wl[3]["grip"]) < args.dyn_grip:
                     target = min(target, 0.5)
                 dyn["tc"] = target if target < dyn["tc"] else min(1.0, dyn["tc"] + args.dyn_recover * dt_d)
