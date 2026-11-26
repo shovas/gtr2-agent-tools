@@ -235,3 +235,9 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Provoking control: three spins in four sessions (laps 4, 6 and 7).
 - Per bend lap: about 7% (3 in about 42 laps) against about 11% (3 in about 28). Not significant, and the effect is at most small.
 - **Decision: not adopted.** `--fgrip-steer` stays off. The front-tyre margin at turn-in is the mechanism, but a steering-side limit does not remove it reliably. The next lever is the turn-in speed or the turn-in demand itself, tested on the provoking setting with eight sessions per arm.
+
+### Turn-in demand: heading measured 16 m ahead on the provoking setting (four sessions, 2026-11-26)
+
+- Session 1 stalled at x 631, z 444 (the 640 m point), before the bend. Session 2 spun in the bend on lap 6 (135 deg/s). Session 3 stopped at the bend exit (x -483, z 9) on lap 6, peak 116 deg/s (counted as a spin, as for the directional session with the same stop). Session 4 ran seven laps with no spin (peak 87 deg/s).
+- Two bend spins in four sessions, against three in four for the 8 m heading control. Not a reduction, and one early stall at 640 m.
+- **Decision: not adopted.** The 16 m heading is not better than the 8 m heading on this setting, and it adds the 640 m stall. Keep 8 m.
