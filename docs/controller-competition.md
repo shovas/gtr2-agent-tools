@@ -160,3 +160,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - 706 usable laps (100 to 140 s, from the 2026-11-24 to 26 signal logs): the fastest fifth (111.5 to 115.9 s) against the slowest fifth (130.4 to 139.6 s), compared by mean speed in 50 m map cells with at least 40 samples.
 - The cell comparison is not usable as it stands. The largest differences (+20 to +25 m/s at x -950, z -50 to 100) come from laps passing those cells at different points of their lap, not from different speeds. No lap there dropped below 5 m/s, so these are not stalls.
 - Next (to answer the question properly): align every lap by lap distance (the lap check records the distance at each event; the signal log needs a distance column), then compare speed at equal distance. Until then no section is named as the place the fast laps gain time.
+
+### Lap-distance alignment: where the fastest and slowest laps differ (2026-11-26)
+
+- Lap distance rebuilt by summing the distance between logged positions from each lap's start (median lap 4882 m, 706 laps). Fastest fifth (111.5 to 115.9 s) against slowest fifth (130.4 to 139.6 s), speed at equal distance.
+- The largest difference is **700 to 950 m**: fast laps average 56 m/s and slow laps 36 m/s in that stretch (slow laps' minimum 28 m/s, so no stop or recovery). Elsewhere the two groups match within about 2 m/s, including the 2400 to 2450 m bend.
+- Caveat: the slow laps come from other sessions and settings (the logs are not one configuration), so this is a difference between configurations as much as a driving effect. Before a corner is named, check which settings each slow lap used, then re-measure in that stretch with one setting.
+- The 700 to 950 m stretch is where the time differences between configurations sit, so it is the next place to look for the 1.86 s to the 1:50.8 target.
