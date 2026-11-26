@@ -196,3 +196,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - **Reading:** this is the first change that keeps the bend from spinning for eight laps in one run. It is one session, so it needs a repeat against the same control before it counts. It is not yet a lap-time gain.
 
 - **Repeat of version 2 (191219):** spin in the 2570 m bend on lap 3 (peak yaw 138 deg/s, x -489, z 3; the car stopped there). So version 2 is not a reliable fix: one run of eight clean bend laps and one spin on lap 3. Treat the first run as luck until a paired set of at least four sessions per arm shows the difference. The limit stays off by default.
+
+### Paired test of the directional front-grip limit (8 sessions, 8 laps each, alternating C T, 193128 to 212629, 2026-11-25)
+
+- Spin in the 2570 m bend counted as yaw of 120 deg/s or more. Control (C, sessions 1, 3, 5, 7): no bend spin in any session (peaks 84 to 107 deg/s; sessions 5 and 7 stopped at the pit exit, not in the bend). Treatment (T, `--fgrip-steer 0.9` directional, sessions 2, 4, 6, 8): spin on lap 3 (session 2, peak 130) and lap 6 (session 8, peak 149); sessions 4 and 6 had none.
+- Count: control 0 of 4 sessions with a bend spin; treatment 2 of 4. Fisher's exact p about 0.5, not significant, but the limit is not better and may be worse.
+- **Decision: rejected.** The earlier clean eight-lap run was luck. `--fgrip-steer` stays off by default. The option is kept in the tool for the record.
+- Side finding: the control's bend peaks on laps 1 to 6 stayed below 110 deg/s, while the earlier 181941 control spun on lap 7 at 133 deg/s. The spin rate in the bend varies between sessions for the same settings, so any future bend comparison needs at least four sessions per arm.
