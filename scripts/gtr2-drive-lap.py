@@ -417,6 +417,18 @@ def main():
     STAGE = lambda name: print("STAGE %s epoch=%.3f" % (name, time.time()), flush=True)      # start-up timing: compared with gtr2-lap-check.py's own stamps
     STAGE("script_started")
     track = trackmap.Track(args.aiw)
+    def designed_limits_(steer_, speed, yawrate, fg_):
+        # post-call limits of the designed follower, in the same order as before: front-grip steering limit (only steering that adds to the
+        # rotation), speed curve, fixed cap above a speed. All off by default.
+        if args.fgrip_steer > 0.0 and fg_ is not None and fg_ < args.fgrip_steer and steer_ * yawrate > 0.0:
+            steer_ *= max(0.0, fg_ / args.fgrip_steer)
+        if args.designed_curve > 0.0:
+            v_c = max(speed, 3.0)
+            lim_c = min(1.0, math.atan(args.wheelbase * 12.0 * args.designed_curve / (v_c * v_c)) / max(follower.steer_gain(v_c), 0.02))
+            steer_ = max(-lim_c, min(lim_c, steer_))
+        if args.designed_cap > 0.0 and speed > args.designed_cap_speed:
+            steer_ = max(-args.designed_cap, min(args.designed_cap, steer_))
+        return steer_
     plan_tab_ = None
     if args.plan_file:      # --plan-file: a saved speed plan by lap distance (see the option's help)
         import json as json_p
@@ -1240,15 +1252,7 @@ def main():
                             gl = stn["g"][b]
                 if args.follower == "designed":
                     shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl, head_ahead=args.st_head_ahead)
-                    fg_ = shared.get("fgrip")
-                    if args.fgrip_steer > 0.0 and fg_ is not None and fg_ < args.fgrip_steer and shared["steer"] * yawrate > 0.0:      # only steering that adds to the rotation: a counter-steer is never cut (the first test cut it and the car spun)
-                        shared["steer"] *= max(0.0, fg_ / args.fgrip_steer)      # front tyres near saturation: less steering (friction-circle steering limit)
-                    if args.designed_curve > 0.0:
-                        v_c = max(speed, 3.0)
-                        lim_c = min(1.0, math.atan(args.wheelbase * 12.0 * args.designed_curve / (v_c * v_c)) / max(follower.steer_gain(v_c), 0.02))
-                        shared["steer"] = max(-lim_c, min(lim_c, shared["steer"]))
-                    if args.designed_cap > 0.0 and speed > args.designed_cap_speed:
-                        shared["steer"] = max(-args.designed_cap, min(args.designed_cap, shared["steer"]))
+                    shared["steer"] = designed_limits_(shared["steer"], speed, yawrate, shared.get("fgrip"))      # the designed follower's post-call limits (one place, see designed_limits_)
                 else:
                     shared["steer"] = follower.stanley(track, chain, k, x, z, yaw, speed, yawrate, lat, k_cross=args.st_k, ks=args.st_ks, ff=args.st_ff, preview=args.st_preview, damp=args.st_damp, wheelbase=args.wheelbase, gain=gl)
             else:

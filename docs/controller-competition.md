@@ -110,3 +110,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - **Consequence:** a plug-in interface cannot just wrap the existing functions. Pursuit's logic has to move into a module with its state passed in, and that move changes no behaviour only if it is checked in the game (or offline against the logged states at each step).
 - **Plan for the step:** (1) move the three post-call limits into a shared post-processing function; (2) move the pursuit branch into `follower.py` with its inputs as arguments; (3) check the move offline by replaying a logged state sequence through the old and new code and requiring identical steering commands; (4) one 3-lap session as the final check.
 - Not started: this is a refactor of about 100 lines in the driver and needs the offline replay test before any game run.
+
+### To-do 4 step 1 done (2026-11-26)
+
+- The designed follower's three post-call limits (front-grip steering limit, speed curve, fixed cap) moved into one function `designed_limits_` in the driver, called once. Same order, same arguments. Checked by reading and by parsing and option help. **Not yet checked in the game:** a 3-lap session with the designed settings should match a session from before the change.
+- Next: step 2 (pursuit inline logic into `follower.py`), then step 3 (offline replay of logged states through old and new code).
