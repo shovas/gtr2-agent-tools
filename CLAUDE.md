@@ -96,6 +96,7 @@ Always run Python tools with `-I` (isolated). Run one test file/tour: `gtr2-nav.
 | `docs/lap-session-monitoring.md` | live status of a lap session, the stall watcher (`gtr2-watch.py`), stop requests, what is verified and what is not, how the campaign uses them |
 | `docs/imola-slow-corner-2400-2900.md` | Imola 2400 to 2900 m: the causal chain from the logs, every throttle and planner experiment with its result, and what not to repeat |
 | `docs/publishing.md` | what may be pushed to GitHub, privacy and safety rules, the pre-push procedure and scanner |
+| `docs/external-conv-review.md` | read-only review of the sibling conversion repo: replay heading convention (atan2(dx,dz), 180 degrees from ours), ghost steering channel, what is and is not relevant to driving |
 
 ## Working notes (game files)
 
