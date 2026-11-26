@@ -75,7 +75,7 @@ def wait_game_closed(seconds: int = 90) -> bool:
 
 def run_session(arm: str, options: str, laps: int, timeout_s: int, n: int = 0) -> dict:
     sid = "%s%d_%s" % (arm, n, time.strftime("%Y%m%d%H%M%S"))     # unique id: a result can be traced to its own check output
-    rec = {"arm": arm, "options": options, "sid": sid, "n": n}
+    rec = {"arm": arm, "options": options, "sid": sid, "n": n, "laps": laps}
     closed = wait_game_closed()
     if not closed:
         rec.update(seconds=0, error="infrastructure: GTR2 still running 90 s after the previous session; session not started", infra=True)
@@ -93,6 +93,10 @@ def run_session(arm: str, options: str, laps: int, timeout_s: int, n: int = 0) -
     text = out_path.read_text(encoding="utf-8", errors="replace")
     refusal = next((ln for ln in text.splitlines() if any(r in ln for r in REFUSALS)), None)
     new = sorted(set(RUNS.glob("signals_*.csv")) - before, key=lambda p: p.stat().st_mtime)
+    stall = next((ln.strip() for ln in text.splitlines() if "stopped moving" in ln or "lap not completed" in ln), None)
+    if stall:
+        rec["outcome"] = "stall"      # a driving failure (the car stopped), not an infrastructure failure: it counts against the controller
+        rec["stall"] = stall
     if refusal:
         rec.update(error="infrastructure: lap check refused to start: " + refusal.strip(), infra=True)
     elif new:
@@ -123,6 +127,7 @@ def main() -> int:
     ap.add_argument("--laps", type=int, default=8, help="timed laps per session (default 8)")
     ap.add_argument("--timeout", type=int, default=1300, help="seconds allowed per session (default 1300)")
     ap.add_argument("--dry-run", action="store_true", help="print the planned sessions and do nothing else")
+    ap.add_argument("--log", default="paired.jsonl", help="records file in gtr2_ui/runs (default paired.jsonl; smoke tests use their own file so they never mix into the comparison)")
     a = ap.parse_args()
     plan = []
     for i in range(1, a.pairs + 1):
@@ -135,7 +140,7 @@ def main() -> int:
     if not PY.exists():
         print("scripts\\.venv is missing: run gtr2-setup.py first", file=sys.stderr)
         return 1
-    log = RUNS / "paired.jsonl"
+    log = RUNS / a.log
     RUNS.mkdir(parents=True, exist_ok=True)
     recs = []
     for n, (arm, opts) in enumerate(plan, 1):
