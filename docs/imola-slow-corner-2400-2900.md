@@ -130,3 +130,10 @@ Hypothesis (not confirmed): the designed follower divides its command by the spe
 - The two spins in arm B came at entries of 52.4 and 53.9 m/s, and in both sessions the faster laps did not spin.
 - One-sided Fisher exact test for 2 spins against 0 with these lap counts: p about 0.26. Not significant. The direction is consistent with entry speed raising the spin odds, and the test does not show it.
 - Conclusion: entry speed raises the spin odds at most modestly; the decisive factor is something else in the lap. The next experiment should vary that factor (braking profile or steering at turn-in) rather than entry speed alone.
+
+## Brake release in the bend: a second candidate (all paired sessions, 2026-11-26)
+
+- Measured as the first point between z -200 and -60 where the brake falls from above 0.2 to 0.05 or less, in each bend lap that has one: 157 laps, 5 spins.
+- Spin laps release at z -116, 44.8 m/s median (release speeds 42 to 48 m/s); clean laps at z -109, 40.5 m/s median. Steering at release is similar (0.39 against 0.35).
+- Split at 44 m/s (chosen after looking, so post hoc): 3 spins in 31 laps at or above it, 2 in 126 below. One-sided exact p = 0.053.
+- Reading: the spins come when the car is still fast at the point it stops braking into the bend, which fits the entry-speed result and says where the speed matters. It does not yet separate from the entry speed (the two are correlated). Next: a test that holds the entry speed and changes only the release point (brake held later or earlier), with a threshold fixed in advance.
