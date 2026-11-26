@@ -106,3 +106,11 @@ Hypothesis (not confirmed): the designed follower divides its command by the spe
 - **After the trigger the spin is a grip failure.** On the spin lap the car holds about 45 m/s through z -100 to -60 while the front grip stays near 0.4. The non-spin laps are at 38 to 40 m/s there and the grip recovers to 0.6 to 0.7 by z -85. Steering reaches full counter-lock only after the slide passes -25 deg (grip near 0).
 - **Caveat.** Two spins in 13 fast laps is not a statistic; the comparison is observational (the laps differ in their braking too). The next test is a planned speed change at z -145 with everything else fixed.
 - **Earlier entry-window analysis was wrong to look only at the first 2 s.** The spin peak comes 1 to 2 s into the bend, so the peak within the first 2 s of entry does not separate the laps.
+
+## Entry-speed test: frozen plan against the same plan with the bend entry raised by 5 m/s (four pairs, 2026-11-26)
+
+- Arm A: frozen plan (plan_181941_lap3). Arm B: the same plan with +5 m/s over lap distance 2390 to 2440 m (tapering to zero over 15 m each side), `plan_fast5.json`. Eight laps per session, `--follower designed --st-head-ahead 8`, no other change.
+- **The manipulation worked.** Speed at z -145 (the bend entry): arm A median 46.9 m/s, arm B median 51.0 m/s, 32 bend laps each.
+- **Spins:** arm A 0 of 32 bend laps (4 sessions); arm B 1 of 32 (4 sessions; spin in lap 7, session 8, where the entry speed was 52.2 m/s).
+- **Reading:** one spin against none, at equal laps, is not a difference (the chance of a single spin landing in one arm by chance is one half). The direction matches the observational finding (spins above 50 m/s at z -145), but the observational count was 2 in 13 laps and this test has 1 in 32 for the raised arm. Not a conclusion either way.
+- **Next:** the spin rate at this bend is low under both plans (under 10 per cent per bend lap in every arm tested), so separating 5 per cent from 15 per cent needs roughly 60 bend laps per arm, which is about eight sessions per arm at eight laps. Either run that, or use a larger entry-speed change to raise the spin rate first (the 2 spins observed above 50 m/s were both at 52.9 to 53.4 m/s entry).
