@@ -41,3 +41,10 @@ The one-read estimator's worst case is set by the 0.1 deg resolution divided by 
 2. Measure whether the isolated spikes move the steering command (paired steer before and after each spike, across all sessions).
 3. Decide whether `--yaw-window` becomes the default, only after a paired comparison shows no loss in the 2570 m bend.
 4. The earlier note that a 0.1 s sample of the sideslip and yaw is enough to see a slide still holds for sustained spins; this file only concerns single-sample spikes.
+
+## Frozen speed-plan outliers (38 m/s): a logging comparison, not a plan failure (2026-11-26)
+
+- In the two plan-acceptance logs (044344 and 045232), 647 and 536 samples differ by more than 5 m/s between the applied target (`target_v`) and the live planner's column (`plan_speed`). The "38 m/s" maximum came from that comparison, not from the applied plan.
+- `plan_speed` is the live planner's value, which the frozen plan does not replace. Its large values (127 to 145 m/s) sit at the start of lap 1 and on the main straight, where the live planner has no limit, while `target_v` follows the frozen plan.
+- Of the large differences, 81 and 75 are in the pit-exit box (x below -850, z below -250), which is a separate chain: the plan only covers the main chain.
+- Consequence: the acceptance check must compare `target_v` between the two sessions (both plan-applied), not against `plan_speed`, and must exclude the pit chain. The median difference between the two applied targets was 0.00 m/s (the earlier acceptance result); the outliers at a few points still need the lap-distance binning at the lap boundary checked.
