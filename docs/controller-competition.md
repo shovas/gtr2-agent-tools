@@ -115,3 +115,5 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - The designed follower's three post-call limits (front-grip steering limit, speed curve, fixed cap) moved into one function `designed_limits_` in the driver, called once. Same order, same arguments. Checked by reading and by parsing and option help. **Not yet checked in the game:** a 3-lap session with the designed settings should match a session from before the change.
 - Next: step 2 (pursuit inline logic into `follower.py`), then step 3 (offline replay of logged states through old and new code).
+
+- **Game check of step 1 (051229, three laps, standard designed settings):** no traceback, first lap 129.3 s (earlier designed laps 126 to 131 s), mean |steer| 0.19 at speed above 15 m/s. The session stopped at the pit exit on lap 2 (the known pit-exit pattern). This is a smoke test that the moved function runs and does not change the car's pace; an exact comparison would need identical randomness, which the game does not give.
