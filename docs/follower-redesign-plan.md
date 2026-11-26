@@ -176,7 +176,7 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 
 ### Live lateral limit 13 m/s^2 (vs 16) on the heading-ahead configuration (183516 against control 181941, 2026-11-25)
 
-- **Control (heading 8 m ahead, live lateral 16, 181941):** six laps at 128 to 161 s, all not clean; the bend entry healthy every lap (heading error about 2 degrees); spin in the 2570 m bend on lap 7 (x -478, z 2, peak yaw -133 deg/s).
+- **Control (heading 8 m ahead, live lateral 16, 181941):** six laps at 128 to 161 s, all not clean; the bend entry healthy every lap (heading error about 2 degrees); spin in the 2570 m bend on lap 5 (x -478, z 2, peak yaw 133 deg/s; lap 4 peaked at 116; corrected from an earlier note that said lap 7, checked against the per-lap peaks of 181941).
 - **Treatment (live lateral 13, 183516):** five laps at 132.6 to 135.0 s, steadier but slower; bend peak yaw 41 to 47 deg/s on laps 1 to 5; spin in the same bend on lap 6 (x -511, z -4, peak yaw -130 deg/s, speed 17 m/s).
 - **Reading:** a lower lateral prior makes the laps steadier and slower but does not stop the spin in the 2570 m bend. The planner's lateral limit is not the lever for this spin. Rejected for the bend; keep the 16 prior.
 - **Where this leaves the bend spin:** entry steering is fixed (heading ahead), braking into the bend is not the lever (zone share 0.6 spun on lap 8), and the planner's lateral prior is not the lever (13 spun on lap 6). The spin is a late, recurring event in the same place; the next thing to look at is the yaw response to the trail-braking release just before the rotation (what the car does in the 0.5 s before yaw exceeds 25 deg/s), not another speed plan.
