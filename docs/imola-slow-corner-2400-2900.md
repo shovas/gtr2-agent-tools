@@ -137,3 +137,10 @@ Hypothesis (not confirmed): the designed follower divides its command by the spe
 - Spin laps release at z -116, 44.8 m/s median (release speeds 42 to 48 m/s); clean laps at z -109, 40.5 m/s median. Steering at release is similar (0.39 against 0.35).
 - Split at 44 m/s (chosen after looking, so post hoc): 3 spins in 31 laps at or above it, 2 in 126 below. One-sided exact p = 0.053.
 - Reading: the spins come when the car is still fast at the point it stops braking into the bend, which fits the entry-speed result and says where the speed matters. It does not yet separate from the entry speed (the two are correlated). Next: a test that holds the entry speed and changes only the release point (brake held later or earlier), with a threshold fixed in advance.
+
+## Brake-release test (mid-bend target minus 4 m/s over 2440 to 2475 m, entry unchanged), first pair (2026-11-26)
+
+- Arm A (frozen plan): session 1, no spin, median lap 130.04 s. Arm B (mid-bend target cut): session 2, no spin, median lap 130.09 s.
+- The cut binds: achieved speed at z -130 was 43.8 m/s in arm A and 39.5 m/s in arm B (targets 42.7 and 38.3). Both arms reach about 37 to 39 m/s at z -100, so the car recovers the speed later in the bend.
+- Stopping rule, set before session 4: stop after the second pair if its lap-time difference is under 0.2 s and neither arm spins. Otherwise run the remaining pairs.
+- Note: both sessions lap at about 130 s, slower than the 125 to 127 s of earlier designed-follower sessions, so this plan's overall pace is slower than the baseline. Lap-time comparisons here are only within this plan family.
