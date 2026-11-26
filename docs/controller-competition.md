@@ -103,3 +103,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Built the plan from lap 3 of session 181941 (457 points, lap distance and target speed). Two three-lap sessions, both with `--plan-file` and no other change: 044344 and 045232.
 - Target speed at 493 shared lap distances (10 m bins): median difference 0.00 m/s, 90th percentile 0.75 m/s, maximum 38 m/s at a few points (not yet explained; pit or start rows are the likely cause). The plan is applied: the median difference from the saved plan in session 044344 is 0.02 m/s.
 - Result: the plan is shared. To-do 3 is done for the main chain. The maximum outliers are open.
+
+### To-do 4 audit: follower plug-in interface (2026-11-26)
+
+- The driver dispatches followers inline (`gtr2-drive-lap.py`, the designed and Stanley calls at the steering step, around lines 1241 to 1254). The designed branch adds its own limits after the call (`--fgrip-steer`, `--designed-curve`, `--designed-cap`); the pursuit branch is not a call to `follower.pursuit` at all: it is inline, with the aim point, the aim compensation, the live gain (`--steer-live`) and the heading error it uses coming from the driver's own state.
+- **Consequence:** a plug-in interface cannot just wrap the existing functions. Pursuit's logic has to move into a module with its state passed in, and that move changes no behaviour only if it is checked in the game (or offline against the logged states at each step).
+- **Plan for the step:** (1) move the three post-call limits into a shared post-processing function; (2) move the pursuit branch into `follower.py` with its inputs as arguments; (3) check the move offline by replaying a logged state sequence through the old and new code and requiring identical steering commands; (4) one 3-lap session as the final check.
+- Not started: this is a refactor of about 100 lines in the driver and needs the offline replay test before any game run.
