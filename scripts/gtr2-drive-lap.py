@@ -1265,7 +1265,7 @@ def main():
                     if len(ks_) >= 20:
                         y_ = sorted(ks_[-200:])[len(ks_[-200:]) // 2] * (b_ * 10 + 5.0)
                         sl_ = max(args.steer_live_min, min(args.steer_live_max, args.steer_live_ref / max(y_, 0.1)))
-                shared["steer"] = max(-1.0, min(1.0, sl_ * (herr / args.steer_gain - yawrate / args.damping)))
+                shared["steer"] = follower.pursuit_steer(herr, yawrate, args.steer_gain, args.damping, sl_)      # the steering law (follower.py); the target is chosen here
             if args.steer_id and chain is track.main:
                 # online identification of the steering: yaw rate per unit of command per metre/second (k = yaw rate / (steer x speed)), from steady stretches only
                 cmd_ = shared["steer"]

@@ -32,6 +32,13 @@ def yaw_of(dx, dz):
     return math.degrees(math.atan2(-dx, -dz))
 
 
+def pursuit_steer(herr, yawrate, steer_gain_deg, damping, live_scale=1.0):
+    """The pursuit steering law alone: the heading error to the aim point over a gain, minus a yaw damping term, scaled by the live loop
+    gain (1 when off), clipped to the wheel. The driver chooses the aim point and the heading error (target selection, pit and box logic,
+    edge guard); this turns that error into the command."""
+    return max(-1.0, min(1.0, live_scale * (herr / steer_gain_deg - yawrate / damping)))
+
+
 def pursuit(track, chain, k, x, z, yaw, speed, yawrate, look_base=5.0, look_slope=1.2, steer_gain_deg=25.0, damping=90.0):
     """The existing follower: heading error to the point look metres ahead, over a gain, minus a yaw damping term."""
     look = look_base + look_slope * speed

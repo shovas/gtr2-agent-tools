@@ -117,3 +117,7 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Next: step 2 (pursuit inline logic into `follower.py`), then step 3 (offline replay of logged states through old and new code).
 
 - **Game check of step 1 (051229, three laps, standard designed settings):** no traceback, first lap 129.3 s (earlier designed laps 126 to 131 s), mean |steer| 0.19 at speed above 15 m/s. The session stopped at the pit exit on lap 2 (the known pit-exit pattern). This is a smoke test that the moved function runs and does not change the car's pace; an exact comparison would need identical randomness, which the game does not give.
+
+- **To-do 4 step 2 (pursuit):** the pursuit steering law moved to `follower.pursuit_steer(herr, yawrate, steer_gain, damping, live_scale)`, called by the driver. The target selection (aim point, aim compensation, box and pit logic, edge guard, wall clamp) stays in the driver by design: it depends on the driver's state, and the follower is the steering law, the driver the target.
+- **Step 3 (offline replay of the steering law):** 200,000 random cases of heading error, yaw rate, gain, damping and live scale: maximum difference 0.0 against the old inline formula. The default scale gives the same value. This checks the arithmetic, not a full game replay; the target selection is unchanged code.
+- Next: a three-lap game session with the pursuit settings, to confirm pursuit behaves as before (the designed check was done).
