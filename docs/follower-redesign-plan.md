@@ -216,3 +216,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Control (same base, four sessions): no bend spin (peaks 84 to 107 deg/s).
 - **Reading:** both arms had zero bend spins, so this test cannot show that the lower speed at turn-in reduces spins. The spin rate in these sessions was too low to measure a difference. Not adopted as a fix; the lap-time effect is not shown either.
 - **Next:** the spin rate changes between sessions with the same settings, so a bend-spin comparison needs at least eight sessions per arm, or a test that provokes the spin (a higher turn-in demand) so both arms spin often enough to compare.
+
+### Provoking setting: braking share 1.0 in 2300 to 2800 m (four sessions, 231635 to 001307, 2026-11-25 to 26)
+
+- Bend spin (yaw 120 deg/s or more) in three of four sessions, on laps 4, 6 and 7 (peaks 140, 135, 168 deg/s). The session with no spin peaked at 96 deg/s.
+- Control at the 0.85 base (four sessions, same 8-lap budget): no bend spin in any session (peaks 84 to 107 deg/s). Fisher's exact (one-sided) about 0.07.
+- **Reading:** raising the speed into the 2300 to 2800 m zone makes the 2570 m bend spin in most sessions. This is a usable test bed: a candidate fix can be judged on spins per session here, with four sessions per arm.
+- **Next:** test the directional front-grip limit (`--fgrip-steer 0.9`) on this provoking setting, four sessions, against these four provoking sessions as the control.
