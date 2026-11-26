@@ -248,3 +248,9 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Per bend lap: about 17% (2 in about 12 laps) against 11% (3 in about 28) for the share 1.0 control. Not a reduction.
 - The 640 m stall shows up more often in this setting (two of four here, one of four with the heading at 16 m). It is a cost of the lower entry speed or the earlier braking.
 - **Decision: not adopted.** Lowering the entry speed does not reduce the turn-in spin. The turn-in front-tyre margin is not fixed by speed alone.
+
+### Paired run 2 through gtr2-paired.py (six sessions, 2026-11-26)
+
+- Arm A: provoking planner (braking share 1.0 in 2300 to 2800 m, heading 8 m ahead). Arm B: frozen plan from control session 181941 (`--plan-file`).
+- Arm A: spin in lap 6 (peak 134 deg/s) and in lap 7 (peak 178 deg/s); no spin in one session. Arm B: no spin in two sessions; one session (6) wrote no signal log.
+- Combined with run 1 (`paired.jsonl`, 10 records): arm A 2 spins in 5 sessions with bend logs (34 bend laps); arm B 0 in 4 (32 bend laps). Too few sessions for a decision (eight per arm is the minimum). The pattern points the same way as the earlier provoking runs, but this is not a test of the frozen plan yet.

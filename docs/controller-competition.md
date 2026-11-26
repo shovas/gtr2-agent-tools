@@ -128,3 +128,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A: the provoking planner (braking share 1.0 in 2300 to 2800 m, heading 8 m ahead). Arm B: the same car with the frozen speed plan from control session 181941 (`--plan-file`). Two pairs, so **two sessions per arm** (an earlier note said four; that was wrong).
 - Result: no bend spin in any of the four sessions (A 10 bend laps, B 16 bend laps). Too few sessions to read; the provoking arm had three spins in four sessions in the earlier run, so 0 of 2 here is within chance of that rate.
 - Next: more pairs (at least four pairs per arm for a decision), and a check that the provoking setting still spins in this game state before reading the frozen plan against it.
+
+### Second paired run (2026-11-26): arm A 2 spins in 5 sessions, arm B 0 in 4
+
+- Run 2 (three pairs, `paired_run2.out`): A spun in lap 6 (session 1) and lap 7 (session 5), no spin in session 3. B had no spin in sessions 2 and 4. Session 6 (B) wrote no signal log (the session did not reach the driver's end), so it has no bend data and is not counted.
+- Tally of all records in `gtr2_ui/runs/paired.jsonl` (10 lines): arm A 2 spins in 5 sessions with bend logs, 34 bend laps (about 6% per bend lap); arm B 0 spins in 4 sessions, 32 bend laps.
+- Still below the eight sessions per arm the decision needs. Read this as a hint that the provoking planner spins more, not as a result. Next: a failed-session check (why session 6 wrote no log) and more pairs.
