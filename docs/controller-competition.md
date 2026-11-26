@@ -97,3 +97,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - **What exists:** the planner's learned inputs are the grip map (`gm`) and the braking map (`padec`). `--no-memory` and `--fresh-memory` control whether they are loaded from the memory file, and `--live-off grip_map,brake_adapt,...` switches the online adaptation off.
 - **Gap:** the adaptation still runs unless every live system is switched off, and the driver writes the memory file at session end, so a comparison session can change the plan for the next one. Nothing records the plan a session used, so two sessions cannot be shown to have the same plan.
 - **Next (to-do 3 done when):** the driver writes the plan it used (the per-distance target speed and the grip and braking numbers) to the session's result file, and a `--plan-file` option loads a saved plan with every adaptation switched off. Acceptance: two sessions given the same plan file show the same target speed at every distance, before any follower difference is read.
+
+### To-do 3 result: `--plan-file` acceptance (2026-11-26)
+
+- Built the plan from lap 3 of session 181941 (457 points, lap distance and target speed). Two three-lap sessions, both with `--plan-file` and no other change: 044344 and 045232.
+- Target speed at 493 shared lap distances (10 m bins): median difference 0.00 m/s, 90th percentile 0.75 m/s, maximum 38 m/s at a few points (not yet explained; pit or start rows are the likely cause). The plan is applied: the median difference from the saved plan in session 044344 is 0.02 m/s.
+- Result: the plan is shared. To-do 3 is done for the main chain. The maximum outliers are open.
