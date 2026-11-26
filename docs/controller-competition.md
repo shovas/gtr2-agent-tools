@@ -134,3 +134,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Run 2 (three pairs, `paired_run2.out`): A spun in lap 6 (session 1) and lap 7 (session 5), no spin in session 3. B had no spin in sessions 2 and 4. Session 6 (B) wrote no signal log (the session did not reach the driver's end), so it has no bend data and is not counted.
 - Tally of all records in `gtr2_ui/runs/paired.jsonl` (10 lines): arm A 2 spins in 5 sessions with bend logs, 34 bend laps (about 6% per bend lap); arm B 0 spins in 4 sessions, 32 bend laps.
 - Still below the eight sessions per arm the decision needs. Read this as a hint that the provoking planner spins more, not as a result. Next: a failed-session check (why session 6 wrote no log) and more pairs.
+
+### Leaderboard v1 and validation findings (2026-11-26)
+
+- `scripts/gtr2-leaderboard.py` builds the markdown and JSON from the raw records. Controllers are the paired arm options; spins have a 95 % Wilson interval and a Beta(1, 1) posterior probability; infrastructure failures are counted apart; status is provisional below eight sessions.
+- **Clean-lap flags are not reliable enough to rank on.** A lap flagged clean sat in a session whose record says it exceeded track limits five times; a 3.5 s "lap" appeared at Monza. The leaderboard counts a lap only when its session is clean, the lap is flagged clean, and its time is between 60 and 400 s.
+- With that strict rule the best Imola clean lap in the lap records is 1:55.4, and the median is 2:01.0 (322 clean laps, 3434 unclean or failed). That does not match the confirmed 1:52.98 in our notes. Until the 1:52.98 lap is traced to its record and signal log, the notes and the leaderboard disagree, and the leaderboard is the conservative one.
+- Next: link each lap record to its controller (a controller id in the lap result), trace 1:52.98 and 1:52.7 to their records, and add the lap times of the paired sessions to the paired records.
