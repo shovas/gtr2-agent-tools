@@ -173,3 +173,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Per-session lap medians: sessions from 2026-11-24 23:00 to 2026-11-25 about 13:00 run at 112 to 117 s; sessions after about 14:00 on 2026-11-25 (and all of 2026-11-26) run at about 130 s. The split is sharp, not gradual.
 - The signal logs have the same 20 columns in both eras, so the logs cannot say which follower or settings ran. Candidates: a change of follower, or the learned memory (the grip and braking maps the driver keeps between sessions and saves only when a session is faster).
 - Test running now (`paired_memory.jsonl`): pursuit with its saved memory against pursuit with `--no-memory` (nothing loaded or saved), two pairs of eight laps. If `--no-memory` reproduces about 130 s and the saved memory gives 115 s, the era is the memory state, and the frozen-plan comparisons need their memory state fixed too.
+
+### Memory test result: the memory is not the era (2026-11-26)
+
+- Pursuit with saved memory: session 1, median 119.0 s, no spin. Pursuit with `--no-memory`: session 2, median 115.0 s, no spin. Fresh memory is not slower; the saved memory does not explain the 130 s laps.
+- So the 130 s era is most likely the designed follower (the paired sessions since about 14:00 on 2026-11-25 are all designed-follower runs, at 126 to 131 s in the docs). The fast era (112 to 117 s) is pursuit.
+- Consequence: the 700 to 950 m difference (fast laps 56 m/s average, the later laps 36 m/s) is most likely where the designed follower loses its time against pursuit. That turns the designed follower's weak section into a measured target: its speed over 700 to 950 m, against pursuit at the same distances.
+- The paired memory test is kept (two pairs). It stays a useful control of the memory state, but the era question is answered: it is not memory.
