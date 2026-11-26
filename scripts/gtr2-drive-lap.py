@@ -366,6 +366,7 @@ def main():
     ap.add_argument("--finish-extra", type=float, default=4.0, help="seconds to keep driving after that, then stop")
     ap.add_argument("--stop-at-merge", type=float, default=0.0, metavar="SECONDS", help="garage-exit test: stop SECONDS after merging onto the pit lane line (outcome 'merged')")
     ap.add_argument("--total", type=float, default=900.0, help="give up after this many seconds")
+    ap.add_argument("--yaw-window", type=float, default=0.0, help="yaw rate from the yaw change over at least this many seconds (0 = the old one-read difference, the default); the one-read rate spikes when two reads come close together")
     ap.add_argument("--every", type=int, default=60, help="print a status line every N loops")
     ap.add_argument("--dry-run", action="store_true", help="read the telemetry and the track, print the plan, press no keys")
     ap.add_argument("--fixed", action="store_true", help="fixed-limit mode: the planner uses --lat-accel and --decel as given (and the per-track \"<stem>:fixed\" numbers of track_params.json) and none of the live systems start by themselves. The default for --fast is live: the cornering grip map, the braking map (--brake-ctl --brake-adapt), wheel control (--dyn), contact learning and stall recovery, starting from generic priors and adapting to what the car does")
@@ -776,6 +777,7 @@ def main():
         t0 = time.time()
         chain, k = chain0, None
         prev_yaw, prev_t, last_move, n, last_shift = None, time.time(), time.time(), 0, 0.0
+        yaw_hist = []      # --yaw-window: (time, yaw) samples, so the rate spans a minimum time
         wall_hits = []      # --wall-clear: (lap distance, lateral position) of every impact on the main line
         mv = {"x": 0.0, "z": 0.0, "t": 0.0, "slide": 0.0}      # the direction of travel against the heading, from the last 0.1 s of position changes (a spin: the car slides sideways)
         ilc = {"corr": {}, "acc": {}}      # --ilc: learned aim point shift per 10 m of the lap (positive = left, like the aim offset) and this lap's sideways errors
@@ -892,7 +894,13 @@ def main():
             x, z = tel["pos"][0], tel["pos"][2]
             yaw, speed = tel["yaw"], tel["speed"]
             dt = max(now - prev_t, 1e-3)
-            yawrate = 0.0 if prev_yaw is None else wrap(yaw - prev_yaw) / dt
+            if args.yaw_window > 0.0:      # yaw rate over at least yaw_window seconds: one short read interval cannot amplify a yaw step
+                yaw_hist.append((now, yaw))
+                while len(yaw_hist) > 2 and now - yaw_hist[1][0] >= args.yaw_window:
+                    yaw_hist.pop(0)
+                yawrate = 0.0 if len(yaw_hist) < 2 else wrap(yaw - yaw_hist[0][1]) / max(now - yaw_hist[0][0], 1e-3)
+            else:
+                yawrate = 0.0 if prev_yaw is None else wrap(yaw - prev_yaw) / dt
             prev_yaw, prev_t = yaw, now
             if args.sig_log:
                 if sig["prev"] is None or now - sig["prev"][2] >= 0.1:

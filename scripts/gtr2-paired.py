@@ -56,21 +56,50 @@ def revert_game() -> None:
     subprocess.run(["git", "-C", str(GAME), "clean", "-fdq", "--", "UserData", "ReplayData"], check=False)
 
 
-def run_session(arm: str, options: str, laps: int, timeout_s: int) -> dict:
+REFUSALS = ("GTR2 is already running", "uncommitted changes", "nothing was started")
+
+
+def game_running() -> bool:
+    out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq GTR2.exe", "/NH"], capture_output=True, text=True, check=False).stdout
+    return "GTR2.exe" in out
+
+
+def wait_game_closed(seconds: int = 90) -> bool:
+    end = time.time() + seconds
+    while game_running():
+        if time.time() > end:
+            return False
+        time.sleep(3)
+    return True
+
+
+def run_session(arm: str, options: str, laps: int, timeout_s: int, n: int = 0) -> dict:
+    sid = "%s%d_%s" % (arm, n, time.strftime("%Y%m%d%H%M%S"))     # unique id: a result can be traced to its own check output
+    rec = {"arm": arm, "options": options, "sid": sid, "n": n}
+    closed = wait_game_closed()
+    if not closed:
+        rec.update(seconds=0, error="infrastructure: GTR2 still running 90 s after the previous session; session not started", infra=True)
+        return rec
     revert_game()
     drive = "--session-laps %d --total %d %s --sig-log" % (laps, 130 * laps + 200, options)
     before = set(RUNS.glob("signals_*.csv"))
+    out_path = RUNS / ("paired_%s.out" % sid)
     t0 = time.time()
-    subprocess.run([str(PY), "-I", str(HERE / "gtr2-lap-check.py"), "Imola4Imol", "--car", "gt/maserati_mc12", "--input", "wheel",
-                    "--timeout", str(timeout_s), "--drive-args=" + drive], cwd=str(ROOT), check=False,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    with out_path.open("w", encoding="utf-8") as out:
+        subprocess.run([str(PY), "-I", str(HERE / "gtr2-lap-check.py"), "Imola4Imol", "--car", "gt/maserati_mc12", "--input", "wheel",
+                        "--timeout", str(timeout_s), "--drive-args=" + drive], cwd=str(ROOT), check=False,
+                       stdout=out, stderr=subprocess.STDOUT)
+    rec.update(seconds=round(time.time() - t0), check_output=out_path.name)
+    text = out_path.read_text(encoding="utf-8", errors="replace")
+    refusal = next((ln for ln in text.splitlines() if any(r in ln for r in REFUSALS)), None)
     new = sorted(set(RUNS.glob("signals_*.csv")) - before, key=lambda p: p.stat().st_mtime)
-    rec = {"arm": arm, "options": options, "seconds": round(time.time() - t0)}
-    if new:
+    if refusal:
+        rec.update(error="infrastructure: lap check refused to start: " + refusal.strip(), infra=True)
+    elif new:
         rec.update(bend_metrics(new[-1]))
         rec["signals"] = new[-1].name
     else:
-        rec["error"] = "no signal log written (the session did not reach the driver's end)"
+        rec.update(error="no signal log written (the session did not reach the driver's end; see check_output)", infra=True)
     return rec
 
 
@@ -80,8 +109,9 @@ def summarise(recs: list[dict]) -> str:
         rs = [r for r in recs if r["arm"] == arm and "bend_laps" in r]
         spins = sum(1 for r in rs if r["spin"])
         laps = sum(r["bend_laps"] for r in rs)
-        out.append("arm %s: %d sessions with a bend log, %d spins, %d bend laps, spin rate per bend lap %s"
-                   % (arm, len(rs), spins, laps, ("%.0f%%" % (100.0 * spins / laps)) if laps else "n/a"))
+        infra = sum(1 for r in recs if r["arm"] == arm and r.get("infra"))
+        out.append("arm %s: %d sessions with a bend log, %d spins, %d bend laps, spin rate per bend lap %s; %d infrastructure failures (not counted)"
+                   % (arm, len(rs), spins, laps, ("%.0f%%" % (100.0 * spins / laps)) if laps else "n/a", infra))
     return "\n".join(out)
 
 
@@ -109,8 +139,7 @@ def main() -> int:
     RUNS.mkdir(parents=True, exist_ok=True)
     recs = []
     for n, (arm, opts) in enumerate(plan, 1):
-        rec = run_session(arm, opts, a.laps, a.timeout)
-        rec["n"] = n
+        rec = run_session(arm, opts, a.laps, a.timeout, n)
         recs.append(rec)
         with log.open("a", encoding="utf-8") as f:
             f.write(json.dumps(rec) + "\n")

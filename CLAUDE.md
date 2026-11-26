@@ -97,6 +97,7 @@ Always run Python tools with `-I` (isolated). Run one test file/tour: `gtr2-nav.
 | `docs/imola-slow-corner-2400-2900.md` | Imola 2400 to 2900 m: the causal chain from the logs, every throttle and planner experiment with its result, and what not to repeat |
 | `docs/publishing.md` | what may be pushed to GitHub, privacy and safety rules, the pre-push procedure and scanner |
 | `docs/external-conv-review.md` | read-only review of the sibling conversion repo: replay heading convention (atan2(dx,dz), 180 degrees from ours), ghost steering channel, what is and is not relevant to driving |
+| `docs/telemetry-anomalies.md` | single-sample yaw-rate spikes: the one-read yaw-rate estimator and its offline reproduction, the `--yaw-window` option, what is still to confirm in the game |
 
 ## Working notes (game files)
 
