@@ -228,3 +228,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 
 - Bend spin (120 deg/s or more) in one of four sessions (lap 7, peak 162). Session 1: no spin across seven laps. Session 2 stopped at the old 640 m stall, before the bend. Session 3 stopped on lap 3 at x -960, before the bend. Provoking control: spin in three of four.
 - Reading: a possible reduction (1 of 4 against 3 of 4), but two sessions failed before the bend, and four sessions per arm are not enough. Running four more directional sessions (5 to 8) to reach eight per arm before any decision.
+
+### Directional front-grip on the provoking setting, all eight sessions (2026-11-26)
+
+- Bend spin (120 deg/s or more in the 2570 m bend): sessions 4 (lap 7, 162 deg/s), 7 (lap 5, 121, stopped at the bend exit) and 8 (laps 4 and 5, 125 and 123). Sessions 1, 5 and 6 ran seven or six laps with no spin; sessions 2 and 3 stopped before the bend (at the 640 m stall and on lap 3).
+- Provoking control: three spins in four sessions (laps 4, 6 and 7).
+- Per bend lap: about 7% (3 in about 42 laps) against about 11% (3 in about 28). Not significant, and the effect is at most small.
+- **Decision: not adopted.** `--fgrip-steer` stays off. The front-tyre margin at turn-in is the mechanism, but a steering-side limit does not remove it reliably. The next lever is the turn-in speed or the turn-in demand itself, tested on the provoking setting with eight sessions per arm.
