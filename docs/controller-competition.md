@@ -141,3 +141,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - **Clean-lap flags are not reliable enough to rank on.** A lap flagged clean sat in a session whose record says it exceeded track limits five times; a 3.5 s "lap" appeared at Monza. The leaderboard counts a lap only when its session is clean, the lap is flagged clean, and its time is between 60 and 400 s.
 - With that strict rule the best Imola clean lap in the lap records is 1:55.4, and the median is 2:01.0 (322 clean laps, 3434 unclean or failed). That does not match the confirmed 1:52.98 in our notes. Until the 1:52.98 lap is traced to its record and signal log, the notes and the leaderboard disagree, and the leaderboard is the conservative one.
 - Next: link each lap record to its controller (a controller id in the lap result), trace 1:52.98 and 1:52.7 to their records, and add the lap times of the paired sessions to the paired records.
+
+### Correction: the clean-lap rule is per lap (2026-11-26)
+
+- The strict session rule above was wrong. The 1:52.98 lap (2026-11-24 23:49, lap 9) is clean by its own flags (no track-limit event, no impact), but its session is unclean because of laps 1 and 12. The session flag cannot decide a single lap.
+- The leaderboard now counts a lap when the lap is clean, has no track-limit event and no impact, and its time is between 60 and 400 s.
+- Under that rule the best Imola clean lap is **1:52.66** (2026-11-25 00:17, lap 11; that session also had five track-limit events, all on other laps). The median clean lap is 2:03.3 across all sessions, because it includes laps in sessions that were not running the pace setup.
+- Consequence: the confirmed baseline is 1:52.66 (the best per-lap clean lap), not 1:52.98; the notes should say so once the lap is checked against its signal log.

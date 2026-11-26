@@ -126,13 +126,13 @@ def clean_pace(results: list[dict]) -> list[dict]:
         if not laps:
             fails[key] += 1
             continue
-        # A lap counts only when the session record is clean AND the lap is flagged clean AND its time is plausible.
-        # The per-lap flag alone was seen to mark laps clean in sessions the record calls unclean (track-limit events), and a
-        # 3.5 s "lap" appeared, so both checks are needed until the lap flags are validated.
-        session_clean = bool(r.get("clean"))
+        # A lap counts when the lap itself is clean: its flag is set, it has no track-limit event and no impact, and its time is
+        # plausible. The session flag is not used: one unclean lap (the warm-up lap, or a later lap) makes the session unclean but
+        # not the other laps (the 1:52.98 lap is one of those). A 3.5 s "lap" appeared once, hence the plausible range.
         for lap in laps:
             t = lap.get("time")
-            ok = session_clean and lap.get("clean") and isinstance(t, (int, float)) and 60.0 <= float(t) <= 400.0
+            ok = (lap.get("clean") and lap.get("track_limits", 1) == 0 and lap.get("impacts", 1) == 0
+                  and isinstance(t, (int, float)) and 60.0 <= float(t) <= 400.0)
             if ok:
                 by[key].append(float(t))
             else:
