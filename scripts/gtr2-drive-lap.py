@@ -218,6 +218,7 @@ def main():
     ap.add_argument("--steer-live-max", type=float, default=1.4)
     ap.add_argument("--st-learn", action="store_true", help="--follower stanley: adapt the steering gain per speed bin from the yaw response (off: use the measured table)")
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
+    ap.add_argument("--plan-file", default="", help="a saved speed plan (JSON {\"dist\": [...], \"v\": [...]}, lap distance in metres and target speed in m/s, as written from a signal log's target_v column): on the main chain the target speed is this table at the car's lap distance, replacing the planner's live target, so two sessions can share one plan (empty = off)")
     ap.add_argument("--fgrip-steer", type=float, default=0.0, help="--follower designed with the wheel data (--dyn): when the front tyres' measured grip falls below this fraction, the steering command is scaled by grip / this, so the front tyres are not pushed further into saturation at turn-in (0 = off; about 0.9 to test)")
     ap.add_argument("--st-head-ahead", type=float, default=0.0, help="--follower designed: the heading error is measured to the line this many metres ahead (0 = the nearest waypoint, as before); the nearest waypoint lags the heading at the entry of a bend")
     ap.add_argument("--st-zeta",type=float, default=0.8, help="--follower designed: damping ratio")
@@ -416,6 +417,22 @@ def main():
     STAGE = lambda name: print("STAGE %s epoch=%.3f" % (name, time.time()), flush=True)      # start-up timing: compared with gtr2-lap-check.py's own stamps
     STAGE("script_started")
     track = trackmap.Track(args.aiw)
+    plan_tab_ = None
+    if args.plan_file:      # --plan-file: a saved speed plan by lap distance (see the option's help)
+        import json as json_p
+        pj_ = json_p.loads(Path(args.plan_file).read_text(encoding="utf-8"))
+        plan_tab_ = sorted(zip([float(d_) for d_ in pj_["dist"]], [float(v_) for v_ in pj_["v"]]))
+        if not plan_tab_:
+            raise SystemExit("--plan-file %s has no points" % args.plan_file)
+    def plan_at_(d_):
+        # linear interpolation in the saved table; the lap is periodic, so distances past the last point use the table's end
+        pts_ = plan_tab_
+        if d_ <= pts_[0][0] or d_ >= pts_[-1][0]:
+            return pts_[0][1] if d_ <= pts_[0][0] else pts_[-1][1]
+        for (d0_, v0_), (d1_, v1_) in zip(pts_, pts_[1:]):
+            if d0_ <= d_ <= d1_:
+                return v0_ + (v1_ - v0_) * (d_ - d0_) / max(d1_ - d0_, 1e-9)
+        return pts_[-1][1]
     bounds_ = limits.Boundaries(track.main, trim=args.limit_trim)      # the boundary lines from the file as it is, before any line smoothing moves the waypoints
     wheels_geom = limits.car_wheels(args.car_key) if args.car_key else None      # the real tyre positions and widths from the car's wheel meshes
     print("track limits by geometry: tyre positions %s" % ("read from the car's wheel meshes (track %.3f / %.3f m, tyre widths %.2f / %.2f m)" % (wheels_geom[0]["left"] - wheels_geom[1]["left"], wheels_geom[2]["left"] - wheels_geom[3]["left"], wheels_geom[0]["width"], wheels_geom[2]["width"]) if wheels_geom else "FIXED fallback (car files not readable)"), flush=True)
@@ -1311,6 +1328,8 @@ def main():
                     target_v = max(4.0, target_v * max(args.lat_floor, 1.0 - over_l / args.lat_span))
             if args.trap_test > 0 and chain is track.main and tt["phase"] in (0, 1) and (tt["phase"] == 1 or abs(w.dist - args.trap_test) < 250.0 and now - t0 > 20.0 and last_lap == start_lap):
                 target_v = min(target_v, args.trap_speed)      # trap test: arrive and run off slowly
+            if plan_tab_ is not None and chain is track.main:      # --plan-file: the saved plan replaces the live target at this lap distance
+                target_v = plan_at_(chain[k].dist)
             sig["tvg"] = target_v      # the target speed after every guard (the logged plan_speed is before them)
             shared["duty"] = max(0.0, min(1.0, args.throttle_base + args.throttle_gain * (target_v - speed))) if speed > 1.5 else 1.0
             shared["brake"] = max(0.0, min(args.brake_max, args.brake_gain * (speed - target_v - args.brake_deadband)))
