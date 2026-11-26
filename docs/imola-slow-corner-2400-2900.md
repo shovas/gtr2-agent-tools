@@ -120,3 +120,6 @@ Hypothesis (not confirmed): the designed follower divides its command by the spe
 - Session 4 (arm B, +8 m/s over 2390 to 2440 m, `plan_fast8.json`) spun in lap 7 (peak 130 deg/s). Entry speed at z -145 in that lap was 52.4 m/s; the same session's laps 6 and 8 entered at 55.3 and 55.1 m/s and did not spin.
 - So entry speed is not sufficient for the spin. The spin lap is not the fastest entry, and the faster laps are not spinning. Something else in the lap (the braking profile, the steering state at turn-in, or the grip at the entry) decides the outcome, and the entry speed only sets its odds.
 - Arm B entries in this session: 48 to 55 m/s, against about 47 m/s for the frozen plan (arm A).
+
+- Session 6 (arm B, +8 m/s) spun in lap 5 (peak 138 deg/s) at a 53.9 m/s entry; laps 6 to 8 entered at 54 to 55 m/s and did not spin. The second spin again falls in a lap that is not the fastest entry of its session.
+- Tally through session 6: arm A 0 spins in 3 sessions (24 bend laps); arm B 2 spins in 3 sessions (24 bend laps). Sessions 7 and 8 pending.
