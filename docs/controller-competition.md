@@ -91,3 +91,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Deterministic and feedback driven; no open-loop input playback.
 - Nothing is pushed without the user's go-ahead.
 - Offline results only screen candidates; the game decides.
+
+## 7. To-do 3 status: frozen speed plan (2026-11-26)
+
+- **What exists:** the planner's learned inputs are the grip map (`gm`) and the braking map (`padec`). `--no-memory` and `--fresh-memory` control whether they are loaded from the memory file, and `--live-off grip_map,brake_adapt,...` switches the online adaptation off.
+- **Gap:** the adaptation still runs unless every live system is switched off, and the driver writes the memory file at session end, so a comparison session can change the plan for the next one. Nothing records the plan a session used, so two sessions cannot be shown to have the same plan.
+- **Next (to-do 3 done when):** the driver writes the plan it used (the per-distance target speed and the grip and braking numbers) to the session's result file, and a `--plan-file` option loads a saved plan with every adaptation switched off. Acceptance: two sessions given the same plan file show the same target speed at every distance, before any follower difference is read.
