@@ -203,3 +203,9 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Count: control 0 of 4 sessions with a bend spin; treatment 2 of 4. Fisher's exact p about 0.5, not significant, but the limit is not better and may be worse.
 - **Decision: rejected.** The earlier clean eight-lap run was luck. `--fgrip-steer` stays off by default. The option is kept in the tool for the record.
 - Side finding: the control's bend peaks on laps 1 to 6 stayed below 110 deg/s, while the earlier 181941 control spun on lap 7 at 133 deg/s. The spin rate in the bend varies between sessions for the same settings, so any future bend comparison needs at least four sessions per arm.
+
+### Turn-in demand against the front-tyre margin (all bend logs, 2026-11-25)
+
+- At the first turn-in in the 2570 m bend the demand is the same in every log: steering 0.26 to 0.31, heading error 10.3 to 11.7 degrees, speed 30 to 38 m/s.
+- What differs is the front grip in the next 0.6 s: 0.35 to 0.41 in the sessions that spun or came close (200548, 210739), about 0.75 in the sessions that held. Readings of 0.00 in 181941 and 183516 look like sensor dropouts and are not used.
+- Reading: the turn-in steering is a reproducible demand; whether the front tyres keep their margin decides the spin. The next lever is the margin itself, so the planner should arrive at turn-in with more front grip in hand (slightly lower speed at the apex) or the follower should ask for less front lateral force at turn-in while the heading error is large. Both change the turn-in demand, so each needs a paired test with at least four sessions per arm.
