@@ -123,3 +123,10 @@ Hypothesis (not confirmed): the designed follower divides its command by the spe
 
 - Session 6 (arm B, +8 m/s) spun in lap 5 (peak 138 deg/s) at a 53.9 m/s entry; laps 6 to 8 entered at 54 to 55 m/s and did not spin. The second spin again falls in a lap that is not the fastest entry of its session.
 - Tally through session 6: arm A 0 spins in 3 sessions (24 bend laps); arm B 2 spins in 3 sessions (24 bend laps). Sessions 7 and 8 pending.
+
+## +8 m/s entry test: final result (four pairs, 2026-11-26)
+
+- Arm A (frozen plan): 0 spins in 30 bend laps over four sessions. Arm B (+8 m/s entry at the bend): 2 spins in 32 bend laps (sessions 4 and 6), 6 per cent per bend lap, sessions 2 and 8 with no spin.
+- The two spins in arm B came at entries of 52.4 and 53.9 m/s, and in both sessions the faster laps did not spin.
+- One-sided Fisher exact test for 2 spins against 0 with these lap counts: p about 0.24. Not significant. The direction is consistent with entry speed raising the spin odds, and the test does not show it.
+- Conclusion: entry speed raises the spin odds at most modestly; the decisive factor is something else in the lap. The next experiment should vary that factor (braking profile or steering at turn-in) rather than entry speed alone.
