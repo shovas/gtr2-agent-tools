@@ -187,3 +187,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Then the yaw jumps past 25 deg/s, and the front grip (logged `front_grip`) falls from about 0.9 to 0.4 to 0.6 in 0.3 s. The rear grip stays 0.8 to 0.98 until the snap. The spin happens when the front tyres saturate under steering at this speed; the non-spinning laps reach the same state and recover.
 - So the mechanism is front-tyre saturation during turn-in, not the planner's speed (zone braking and lateral prior did not stop it) and not the heading reference (fixed).
 - **Next candidate (new, not built):** a front-grip-aware steering limit. When the measured front grip drops below about 0.9 during turn-in, the steering command is limited (a friction-circle steering cap) so the front tyres are not pushed further into saturation. This is different from the fixed steering caps tested earlier: it reacts to the measured tyre state, and it is off unless the front grip falls. Test it as a paired session against the 181941 control.
+
+### Front-grip steering limit (`--fgrip-steer 0.9`), two versions (2026-11-25)
+
+- **Version 1, proportional (183957):** scaled all steering by front grip / 0.9 when the front grip was below 0.9. Lap 1 spun at about 154 s (x -711, z 360s, steering counter-steering at -0.56) because the limit cut the counter-steer. Rejected.
+- **Version 2, only steering that adds to the rotation (190326):** the same limit, applied only when the steering and the yaw rate have the same sign (steer times yaw rate positive). Counter-steer is never cut.
+- Result of version 2: nine laps, 130 to 146 s (lap 8 185 s), all not clean. Peak yaw in the 2570 m bend was 45, 49, 81, 82, 64, 39, 39 and 38 deg/s on laps 1 to 8: no spin in the bend. The control (181941) spun there on lap 7 and the 183516 lateral test on lap 6. Lap 9 stopped at x -630, z -475, away from the bend.
+- **Reading:** this is the first change that keeps the bend from spinning for eight laps in one run. It is one session, so it needs a repeat against the same control before it counts. It is not yet a lap-time gain.

@@ -1224,7 +1224,7 @@ def main():
                 if args.follower == "designed":
                     shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl, head_ahead=args.st_head_ahead)
                     fg_ = shared.get("fgrip")
-                    if args.fgrip_steer > 0.0 and fg_ is not None and fg_ < args.fgrip_steer:
+                    if args.fgrip_steer > 0.0 and fg_ is not None and fg_ < args.fgrip_steer and shared["steer"] * yawrate > 0.0:      # only steering that adds to the rotation: a counter-steer is never cut (the first test cut it and the car spun)
                         shared["steer"] *= max(0.0, fg_ / args.fgrip_steer)      # front tyres near saturation: less steering (friction-circle steering limit)
                     if args.designed_curve > 0.0:
                         v_c = max(speed, 3.0)
