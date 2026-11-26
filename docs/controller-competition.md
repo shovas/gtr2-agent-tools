@@ -167,3 +167,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - The largest difference is **700 to 950 m**: fast laps average 56 m/s and slow laps 36 m/s in that stretch (slow laps' minimum 28 m/s, so no stop or recovery). Elsewhere the two groups match within about 2 m/s, including the 2400 to 2450 m bend.
 - Caveat: the slow laps come from other sessions and settings (the logs are not one configuration), so this is a difference between configurations as much as a driving effect. Before a corner is named, check which settings each slow lap used, then re-measure in that stretch with one setting.
 - The 700 to 950 m stretch is where the time differences between configurations sit, so it is the next place to look for the 1.86 s to the 1:50.8 target.
+
+### The slow laps are a later era, not a random sample (2026-11-26)
+
+- Per-session lap medians: sessions from 2026-11-24 23:00 to 2026-11-25 about 13:00 run at 112 to 117 s; sessions after about 14:00 on 2026-11-25 (and all of 2026-11-26) run at about 130 s. The split is sharp, not gradual.
+- The signal logs have the same 20 columns in both eras, so the logs cannot say which follower or settings ran. Candidates: a change of follower, or the learned memory (the grip and braking maps the driver keeps between sessions and saves only when a session is faster).
+- Test running now (`paired_memory.jsonl`): pursuit with its saved memory against pursuit with `--no-memory` (nothing loaded or saved), two pairs of eight laps. If `--no-memory` reproduces about 130 s and the saved memory gives 115 s, the era is the memory state, and the frozen-plan comparisons need their memory state fixed too.
