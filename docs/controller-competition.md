@@ -154,3 +154,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - **1:52.66** (lap 11, session 2026-11-25 00:17:54, signal log `signals_20261125_001740.csv`): the lap's span in the signal log is 112.5 s; the lap check says 112.66 s. Agreement within the sampling of the log (0.1 to 0.2 s).
 - **1:52.98** (lap 9, session 2026-11-24 23:49:37, signal log `signals_20261124_234925.csv`): the signal span is 112.9 s against 112.98 s in the lap check. Agreement within sampling.
 - Both laps are supported by their own logs. The best clean lap under the per-lap rule is therefore 1:52.66, and the 1:52.98 baseline in the notes is a real clean lap, not a bad record. The target 1:50.8 is 1.86 s faster than 1:52.66.
+
+### Where the fast laps gain time: a first look at the logs (2026-11-26, not conclusive)
+
+- 706 usable laps (100 to 140 s, from the 2026-11-24 to 26 signal logs): the fastest fifth (111.5 to 115.9 s) against the slowest fifth (130.4 to 139.6 s), compared by mean speed in 50 m map cells with at least 40 samples.
+- The cell comparison is not usable as it stands. The largest differences (+20 to +25 m/s at x -950, z -50 to 100) come from laps passing those cells at different points of their lap, not from different speeds. No lap there dropped below 5 m/s, so these are not stalls.
+- Next (to answer the question properly): align every lap by lap distance (the lap check records the distance at each event; the signal log needs a distance column), then compare speed at equal distance. Until then no section is named as the place the fast laps gain time.
