@@ -148,3 +148,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - The leaderboard now counts a lap when the lap is clean, has no track-limit event and no impact, and its time is between 60 and 400 s.
 - Under that rule the best Imola clean lap is **1:52.66** (2026-11-25 00:17, lap 11; that session also had five track-limit events, all on other laps). The median clean lap is 2:03.3 across all sessions, because it includes laps in sessions that were not running the pace setup.
 - Consequence: the confirmed baseline is 1:52.66 (the best per-lap clean lap), not 1:52.98; the notes should say so once the lap is checked against its signal log.
+
+### Baseline check against the signal logs (2026-11-26)
+
+- **1:52.66** (lap 11, session 2026-11-25 00:17:54, signal log `signals_20261125_001740.csv`): the lap's span in the signal log is 112.5 s; the lap check says 112.66 s. Agreement within the sampling of the log (0.1 to 0.2 s).
+- **1:52.98** (lap 9, session 2026-11-24 23:49:37, signal log `signals_20261124_234925.csv`): the signal span is 112.9 s against 112.98 s in the lap check. Agreement within sampling.
+- Both laps are supported by their own logs. The best clean lap under the per-lap rule is therefore 1:52.66, and the 1:52.98 baseline in the notes is a real clean lap, not a bad record. The target 1:50.8 is 1.86 s faster than 1:52.66.
