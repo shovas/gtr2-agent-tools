@@ -241,3 +241,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Session 1 stalled at x 631, z 444 (the 640 m point), before the bend. Session 2 spun in the bend on lap 6 (135 deg/s). Session 3 stopped at the bend exit (x -483, z 9) on lap 6, peak 116 deg/s (counted as a spin, as for the directional session with the same stop). Session 4 ran seven laps with no spin (peak 87 deg/s).
 - Two bend spins in four sessions, against three in four for the 8 m heading control. Not a reduction, and one early stall at 640 m.
 - **Decision: not adopted.** The 16 m heading is not better than the 8 m heading on this setting, and it adds the 640 m stall. Keep 8 m.
+
+### Turn-in margin lever: zone braking share 0.6 on the provoking setting (four sessions, 2026-11-26)
+
+- Two bend spins (sessions 2 and 4, laps 4 and 5, 147 and 139 deg/s) and two stalls at the 640 m point before the bend (sessions 1 and 3).
+- Per bend lap: about 17% (2 in about 12 laps) against 11% (3 in about 28) for the share 1.0 control. Not a reduction.
+- The 640 m stall shows up more often in this setting (two of four here, one of four with the heading at 16 m). It is a cost of the lower entry speed or the earlier braking.
+- **Decision: not adopted.** Lowering the entry speed does not reduce the turn-in spin. The turn-in front-tyre margin is not fixed by speed alone.
