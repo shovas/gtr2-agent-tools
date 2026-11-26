@@ -180,3 +180,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - So the 130 s era is most likely the designed follower (the paired sessions since about 14:00 on 2026-11-25 are all designed-follower runs, at 126 to 131 s in the docs). The fast era (112 to 117 s) is pursuit.
 - Consequence: the 700 to 950 m difference (fast laps 56 m/s average, the later laps 36 m/s) is most likely where the designed follower loses its time against pursuit. That turns the designed follower's weak section into a measured target: its speed over 700 to 950 m, against pursuit at the same distances.
 - The paired memory test is kept (two pairs). It stays a useful control of the memory state, but the era question is answered: it is not memory.
+
+### Time lost in 700 to 1000 m: designed era against pursuit era (2026-11-26)
+
+- Time per 50 m segment (mean over laps, lap distance from the logged positions): pursuit era 592 laps, designed era 106 laps.
+- Designed minus pursuit: +0.27 s (700 to 750 m), +0.61 (750 to 800), +0.71 (800 to 850), +0.54 (850 to 900), +0.43 (900 to 950), +0.29 (950 to 1000). Total about +2.9 s over the 300 m.
+- The whole gap between the eras is about 15 s (about 115 against 130 s). This stretch accounts for about a fifth of it, and the 1.86 s needed for the 1:50.8 target is smaller than the loss here.
+- Caveat: the eras differ in more than the follower (the designed era also has the paired-test settings), so this is where the two configurations differ most, not a measured effect of the follower alone. The clean test is a paired run of pursuit and designed with the same settings, timing these segments.
