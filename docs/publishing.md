@@ -62,7 +62,7 @@ licence exposure of this repository, so:
 2. Run the scanner: `python -I scripts\publish-check.py` (commits not yet on the remote and every tracked file) and, before a first
    public release or a visibility change, `python -I scripts\publish-check.py --all-history`. Exit code 1 means a BLOCK: do not
    push; fix (a removed line is not enough if the string is in history: say so and ask). REVIEW items need a human decision.
-3. Regenerate `CHANGES.md` (`scripts\changelog.py --write`) and commit it as `changelog:`.
+3. Check that `CHANGES.md` is current: it is regenerated with each commit that records important progress (`scripts\changelog.py --write`, committed with that commit or as `changelog:` right after it). If it is stale, regenerate it and commit it as `changelog:` before the push.
 4. Show the user: the commits that would be pushed (`git log origin/main..HEAD --oneline`), the scanner's output, the remote URL and
    branch, and whether the repository is public or private. Ask for the final approval in those words ("push N commits to
    <remote>/<branch>: yes?").
