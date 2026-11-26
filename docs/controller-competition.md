@@ -122,3 +122,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - **Step 3 (offline replay of the steering law):** 200,000 random cases of heading error, yaw rate, gain, damping and live scale: maximum difference 0.0 against the old inline formula. The default scale gives the same value. This checks the arithmetic, not a full game replay; the target selection is unchanged code.
 - Next: a three-lap game session with the pursuit settings, to confirm pursuit behaves as before (the designed check was done).
 - **Game check of the pursuit move (pursuit_check.out, three laps, default pursuit follower):** no traceback. Lap 1 125.8 s (not clean), lap 2 125.3 s clean. That is in the pursuit range for this session length (the earlier pursuit control laps were 119 to 122 s, with its learned memory), so the moved steering law runs and does not slow the car in an obvious way. A same-session comparison would still need the paired protocol.
+
+### First paired run through `gtr2-paired.py` (2026-11-26)
+
+- Arm A: the provoking planner (braking share 1.0 in 2300 to 2800 m, heading 8 m ahead). Arm B: the same car with the frozen speed plan from control session 181941 (`--plan-file`). Two pairs, so **two sessions per arm** (an earlier note said four; that was wrong).
+- Result: no bend spin in any of the four sessions (A 10 bend laps, B 16 bend laps). Too few sessions to read; the provoking arm had three spins in four sessions in the earlier run, so 0 of 2 here is within chance of that rate.
+- Next: more pairs (at least four pairs per arm for a decision), and a check that the provoking setting still spins in this game state before reading the frozen plan against it.
