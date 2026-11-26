@@ -209,3 +209,10 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - At the first turn-in in the 2570 m bend the demand is the same in every log: steering 0.26 to 0.31, heading error 10.3 to 11.7 degrees, speed 30 to 38 m/s.
 - What differs is the front grip in the next 0.6 s: 0.35 to 0.41 in the sessions that spun or came close (200548, 210739), about 0.75 in the sessions that held. Readings of 0.00 in 181941 and 183516 look like sensor dropouts and are not used.
 - Reading: the turn-in steering is a reproducible demand; whether the front tyres keep their margin decides the spin. The next lever is the margin itself, so the planner should arrive at turn-in with more front grip in hand (slightly lower speed at the apex) or the follower should ask for less front lateral force at turn-in while the heading error is large. Both change the turn-in demand, so each needs a paired test with at least four sessions per arm.
+
+### Turn-in margin test: braking share 0.6 in 2300 to 2800 m (four treatment sessions, 215633 to 225302, against the four control sessions of the paired set, 2026-11-25)
+
+- Treatment: no bend spin in any of four sessions (peaks 82 to 102 deg/s). Session 1 stopped at x 625, z 455 (the old 640 m stall area), the others at the 8-lap time budget.
+- Control (same base, four sessions): no bend spin (peaks 84 to 107 deg/s).
+- **Reading:** both arms had zero bend spins, so this test cannot show that the lower speed at turn-in reduces spins. The spin rate in these sessions was too low to measure a difference. Not adopted as a fix; the lap-time effect is not shown either.
+- **Next:** the spin rate changes between sessions with the same settings, so a bend-spin comparison needs at least eight sessions per arm, or a test that provokes the spin (a higher turn-in demand) so both arms spin often enough to compare.
