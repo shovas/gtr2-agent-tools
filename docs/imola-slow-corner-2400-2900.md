@@ -114,3 +114,9 @@ Hypothesis (not confirmed): the designed follower divides its command by the spe
 - **Spins:** arm A 0 of 32 bend laps (4 sessions); arm B 1 of 32 (4 sessions; spin in lap 7, session 8, where the entry speed was 52.2 m/s).
 - **Reading:** one spin against none, at equal laps, is not a difference (the chance of a single spin landing in one arm by chance is one half). The direction matches the observational finding (spins above 50 m/s at z -145), but the observational count was 2 in 13 laps and this test has 1 in 32 for the raised arm. Not a conclusion either way.
 - **Next:** the spin rate at this bend is low under both plans (under 10 per cent per bend lap in every arm tested), so separating 5 per cent from 15 per cent needs roughly 60 bend laps per arm, which is about eight sessions per arm at eight laps. Either run that, or use a larger entry-speed change to raise the spin rate first (the 2 spins observed above 50 m/s were both at 52.9 to 53.4 m/s entry).
+
+## +8 m/s entry test: first spin (2026-11-26)
+
+- Session 4 (arm B, +8 m/s over 2390 to 2440 m, `plan_fast8.json`) spun in lap 7 (peak 130 deg/s). Entry speed at z -145 in that lap was 52.4 m/s; the same session's laps 6 and 8 entered at 55.3 and 55.1 m/s and did not spin.
+- So entry speed is not sufficient for the spin. The spin lap is not the fastest entry, and the faster laps are not spinning. Something else in the lap (the braking profile, the steering state at turn-in, or the grip at the entry) decides the outcome, and the entry speed only sets its odds.
+- Arm B entries in this session: 48 to 55 m/s, against about 47 m/s for the frozen plan (arm A).
