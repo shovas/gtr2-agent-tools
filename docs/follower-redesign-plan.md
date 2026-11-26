@@ -223,3 +223,8 @@ Reading: the pursuit run brakes earlier in the 409 to 504 m stretch and enters t
 - Control at the 0.85 base (four sessions, same 8-lap budget): no bend spin in any session (peaks 84 to 107 deg/s). Fisher's exact (one-sided) about 0.07.
 - **Reading:** raising the speed into the 2300 to 2800 m zone makes the 2570 m bend spin in most sessions. This is a usable test bed: a candidate fix can be judged on spins per session here, with four sessions per arm.
 - **Next:** test the directional front-grip limit (`--fgrip-steer 0.9`) on this provoking setting, four sessions, against these four provoking sessions as the control.
+
+### Directional front-grip (`--fgrip-steer 0.9`) on the provoking setting, first four sessions (2026-11-26)
+
+- Bend spin (120 deg/s or more) in one of four sessions (lap 7, peak 162). Session 1: no spin across seven laps. Session 2 stopped at the old 640 m stall, before the bend. Session 3 stopped on lap 3 at x -960, before the bend. Provoking control: spin in three of four.
+- Reading: a possible reduction (1 of 4 against 3 of 4), but two sessions failed before the bend, and four sessions per arm are not enough. Running four more directional sessions (5 to 8) to reach eight per arm before any decision.
