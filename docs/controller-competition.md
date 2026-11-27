@@ -419,3 +419,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Apex at about (-1000, -275), yaw +24.6 deg/s there, so a right-hand corner: the outside is physical left, and the shift is positive. Arm A: pursuit on the fastest-decile plan. Arm B: the same plus `--apex-shift 1.5` over 1150 to 1200 m (a guessed magnitude, inside the track width; the wall clamp applies). Two pairs of eight laps, logged to `paired_apex.jsonl`, option committed as `85f2aaf`.
 - Decision rule (set before the run): the apex section (1150 to 1200 m) at least 0.1 s faster and the lap not slower, with no added stall: keep, and try 2.5 m. Section no faster: the arc shape is not the limit. Section slower or a stall: reject, the wider arc costs the exit.
+
+### Apex-shift test, pair 1 (2026-11-27): one stall in the apex-shift arm
+
+- Arm A (control, fastest-decile plan): eight laps, lap mean 119.05 s, apex (1150 to 1200 m) mean 1.574 s, no spin.
+- Arm B (1.5 m outward shift): stopped moving at x -1058, z -314 in lap 5, about 60 m before the apex and near the pit-exit area of the earlier stalls. Four laps before the stall: apex mean 1.502 s, lap mean 120.56 s. This is a driving stop, not an infrastructure failure, and it is counted as one. Whether the shift caused it is not known from one session.
+- Reading so far: the shifted arm's apex section is faster in the four laps it completed (-0.07 s), inside noise, and it stopped once. Pair 2 is running.
