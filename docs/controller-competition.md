@@ -830,3 +830,9 @@ Two pairs, all four sessions completed with no exception (`paired_lift.jsonl`). 
 - Verdict: rejected. Slowing the throttle lift at 1100 to 1250 m did not reduce the excursion; it added excursion laps and cost time. The lift-off yaw hypothesis is not supported by this screen.
 
 Together with the rejected no-downshift screen, both direct controls on the 1150 m corner have made it worse. The incumbent pursuit's behaviour there is not improved by a smoother downshift or a smoother lift. Next step: characterise what the incumbent does at that point in the logs (heading onset against the steering command), not another control change.
+
+### Heading onset in the incumbent (2026-11-27): ordinary corner turn-in, not a distinct trigger
+
+Across six incumbent pursuit sessions (the A arms of the exit, no-downshift and lift tests), 93 onsets were found where the heading error crosses -10 degrees at speed above 30 m/s with the lateral error under 3 m. The steering at these onsets is -0.34 (median -0.36 mean): a normal corner turn-in, not a spike.
+
+Reading: the heading swing that precedes an excursion is the same heading swing the car makes in ordinary corners. A heading onset does not, on its own, separate the excursion corners from the clean ones. The discriminating feature is probably the heading error growing past about -13 degrees while the steering stays at about -0.4 (no correction), which the traces showed before each excursion. That is the next thing to test, offline first.
