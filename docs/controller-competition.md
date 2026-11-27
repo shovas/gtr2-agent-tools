@@ -567,3 +567,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A: pursuit, the model-based gear choice everywhere (default). Arm B: the same with `--gear-model-duty 0.9`, so the model chooses only at full-throttle-ish duty and the rpm rule decides in coasting and partial throttle; braking is unchanged. Two pairs, logged to `paired_hybrid.jsonl`.
 - Measures: commanded reversal pairs (within 0.6 s), commanded shifts and neutral time per lap, lap time.
 - Decision rule (set before the run): keep the hybrid if reversal pairs fall by at least half, neutral time does not rise, and the lap is no more than 0.1 s slower on average. Reject if the lap is more than 0.1 s slower on average or a stall is added.
+
+### Hybrid gear test, pair 1 (2026-11-27): no reduction
+
+- Model everywhere (A): neutral 5.06 s per lap, 62.1 commanded shifts per lap, reversals 0.38 per lap, lap 121.30 s. Hybrid (`--gear-model-duty 0.9`, B): neutral 5.26 s, 62.1 shifts, reversals 0.62 per lap, lap 121.28 s.
+- Against the rule: reversals did not fall (they rose), so the hybrid misses its first criterion. Shifting and neutral time are unchanged, so the coasting shifts do not come from the model path at duty below 0.9 in the way I assumed. Hypothesis rejected for now; the 89% of reversals in partial throttle and coasting need another explanation. Pair 2 runs to completion as the rule set, and the verdict follows it.
