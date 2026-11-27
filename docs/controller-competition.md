@@ -194,3 +194,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Designed (session 2): **stopped moving at x 667, z 440 on lap 3** (the 640 m stall). Two laps were logged before it stopped (lap 2 at 115.7 s, reached before the stall; the stall itself is a driving failure, not infrastructure, and counts against the designed follower).
 - Reading: with default settings the designed follower stalls at the 640 m point, the failure the earlier plan-based arms were built to avoid. It is not a pace comparison at all in this session. The earlier designed-era laps (130 s) came from the frozen-plan and braking-share settings, which keep the car out of that stall.
 - The stall is now classified as a driving failure by the runner (outcome "stall"), so it is not counted as an infrastructure failure.
+
+### Pursuit against designed, default settings, both pairs (2026-11-26): result
+
+- Pursuit: 2 of 2 sessions completed eight laps, no spin, lap medians about 120.5 s (session 1 120.8, session 3 120.3 s).
+- Designed: 0 of 2 sessions completed the lap. Both stopped moving at the 640 m point (x 663 to 667, z 440 to 444) on lap 3, after two logged laps (lap 1 189 to 201 s, which includes the start, and lap 2 at 116 to 118 s).
+- Reading: with default settings the designed follower's stall at 640 m is repeatable (2 of 2, not a one-off), and pursuit does not have it. The designed era's 130 s laps came from the settings that avoid the stall (frozen plan, braking share). So the designed follower is not a pace comparison at default settings: it cannot finish the lap.
+- The 700 to 1000 m time loss (+2.9 s) was measured on the designed laps that did avoid the stall; the default designed follower does not reach that section at all. Both facts go into the designed follower's next step: fix the 640 m stall first (the earlier heading-preview and brake-share tests reduced it, not removed it).
