@@ -545,3 +545,12 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Command outcomes: 77% of 1,839 commands are followed by an arrival in a new gear within 1.5 s (median lag 0.16 s). The other 23% produce no change within 1.5 s: failed, ignored or overlapped. Not yet separated by cause.
 - Drive lost during a neutral sample: acceleration in the neutral sample is 2.6 m/s² lower than in the three samples before it (median, 429 samples). So each neutral sample costs about 0.29 m/s of speed.
 - Estimated lap cost (model, not measured): a speed loss of about 0.3 m/s carried over a 400 m straight at 40 m/s costs about 0.07 s, since time lost is about d times delta-v over v squared. If the excess shifts (about 60 per lap) fall on straights and the speed loss is not recovered, the lap cost is roughly 2 to 4 s. Events during braking or cornering cost less. The rpm rule's measured 1.1 s is within this range. This is an estimate, and it needs a direct test (see next entry).
+
+### What the non-arriving and repeated shift commands are (2026-11-27)
+
+- The 23% of commands with no arrival within 1.5 s: 21% are part of a reversal (the opposite command within 0.6 s before or after: 197 before and 195 after, overlapping), 0.8% are a repeated same-direction command within 0.6 s, and 0.8% have no command nearby. So most failed commands are cancelled reversals, not failed engagements.
+- Where the reversals happen (216 pairs in five sessions): 89% at partial throttle or coasting, 11% at full throttle, none in the braking-flagged samples. That is the model-based path's territory.
+- The cooldown session (1.5 s): reversals within 0.6 s fell from 6 (control) to 0, and within 1.5 s from 25 to 10. But its shift count barely changed (477 against 511 commands in the same time), so reversals are not most of the shifting.
+- The dominant pattern is same-direction bursts: of 564 commands in the sample session, 212 are pairs of same-direction shifts within 1.5 s (typically two downshifts 0.4 to 1.0 s apart), 90 are single shifts, and 13 are bursts of three or more. The commanded gears are not visible in the command log, so I cannot yet say whether these downshifts are legitimate braking downshifts or spurious ones.
+- Also: commands arrive 0.35 s apart in the cooldown session, below its 1.5 s cooldown, so a second caller of the shift function (the rpm fallback path) is active. Not yet identified.
+- Next: log the gear before and after each command, to separate legitimate downshift cascades from repeats, and identify the second caller.
