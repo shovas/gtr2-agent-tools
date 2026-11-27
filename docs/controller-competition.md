@@ -487,3 +487,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A: pursuit, default (0.35 s cooldown). Arm B: pursuit with `--gear-cooldown 1.5`. Two pairs of eight laps, logged to `paired_gear.jsonl`, option committed as `bc43588`.
 - Measures: commanded shifts per lap (from `shifts_*.csv`), time in neutral above 5 m/s per lap, and lap time.
 - Decision rule (set before the run): keep the longer cooldown if neutral time per lap falls by at least 2 s and the lap is no more than 0.1 s slower; reject if the lap is slower by more than 0.1 s or a stall is added; otherwise inconclusive.
+
+### Shift-logging pair: an empty-output infrastructure failure (2026-11-27)
+
+- Arm B, session 2: 82 s, check output 0 bytes, no signal log. Counted as infrastructure (not a controller result). Arm A, session 1: completed, 1165 s, eight laps, no spin.
+- Cause not established. The check printed nothing, which suggests it exited before its first line. The runner's recovery step (close a game left open, then revert) ran in the same 60 s window before the session. That is the likely link, not a verified one. To check: re-run the failing sequence with the recovery step logged, or check whether the lap check exits when the game is closed by the recovery.
