@@ -605,3 +605,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Same logged sequences: the thrust choice is used only when the current rpm lies outside a band (2,800 to 6,800 rpm), and inside the band the gear is held. Results: 13.5 changes per minute (2,800 to 6,800), 19.4 (3,200 to 6,600), 21.3 (3,500 to 6,300), each with no reversals within 1.5 s.
 - Against the other candidates in the same replay: the model at its settings 26.1 changes per minute with 58 reversals; the rpm rule 17.3 with none. So the band-limited thrust choice asks for the fewest changes with no flips, and it keeps the thrust reasoning inside the band.
 - Caveat: a replay counts recommendations on logged states, not real shifts, and it cannot price lap time. Next: implement the band as `--gear-band LO HI` (default off), then a paired test against the default and the rpm rule.
+
+### Band-limited optimiser, in-car test (2026-11-27): running, rule set before the run
+
+- Arm A: pursuit, the model everywhere (default). Arm B: pursuit with `--gear-band 2800 6800`. Two pairs of eight laps, logged to `paired_band.jsonl`.
+- Measures: lap time (median per session, mean per arm), commanded shifts and reversals per lap, neutral time per lap, stalls.
+- Decision rule (set before the run): keep the band-limited optimiser as a candidate if its mean lap is at least 0.5 s faster than the model's over the two pairs, with no added stall. Reject if its lap is slower by more than 0.1 s or a stall is added. Otherwise inconclusive, and the rpm rule remains the candidate to beat.
