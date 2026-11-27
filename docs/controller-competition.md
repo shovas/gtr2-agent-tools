@@ -369,3 +369,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Rule: inside a turn-in window, before the yaw peak, sideslip above 8 degrees with brake above 0.2.
 - Spin windows: 4 of 6 contain a firing. Clean windows: 166 of 8,343 (2.0%). Of the clean firings, the median time in release is 0.20 s and the median brake time in the window is 0.80 s.
 - Reading: the rule is now specific (98% of clean windows do not fire) and still sensitive (4 of 6 spin windows). But the base rate of spin windows is about 0.07%, so a firing is a spin in about 2% of cases (4 of 170). Its value depends on the time cost of each release in the 166 clean windows, which the replay cannot price. The next step is the paired game test.
+
+### Pursuit with slide release (2026-11-26): test running
+
+- Arm A: pursuit (incumbent). Arm B: pursuit with `--slide-release 8` (brake released to zero while it is above 0.2 and the slide is above 8 degrees, after the ellipse cap). Two pairs of eight laps, logged to `paired_slide.jsonl`, option committed as `8450adf`.
+- Decision rules (set before the run): a lap-time gain of 0.1 s or more in the turn-in windows with no added spins means keep it and test it on the designed follower; no gain or added spins means the sideslip signal is a symptom and the next test is a steering-rate limit at turn-in; a time loss means the release costs more than the slide it prevents.
