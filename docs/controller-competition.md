@@ -313,3 +313,12 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Medians, spin (7) against no spin (11,241): entry speed 31.7 against 34.5 m/s; overlap 0.20 against 0.30 s; peak brake 0.39 against 0.64; minimum front grip 0.00 against 0.33; peak yaw 148 against 30 deg/s.
 - Reading: the seven spin windows combine low braking with a complete front-grip loss, not heavy braking into turn-in. That contradicts the earlier "brake into turn-in" explanation for the bend, which came from a single lap. The sample is seven, the windows are not yet checked by hand, and no tests exist for the window code. Not a result yet.
 - Next: hand-inspect the seven spin windows and a matched sample of clean windows; add synthetic tests for the window rule (a window opening, closing on the 1.5 s cap, and a spin on the boundary).
+
+### Turn-in windows, corrected (2026-11-26): joint precursor, provisional
+
+- Recount on deduplicated files (414 logs; the first pass had counted one session twice): 8,349 windows, 6 spins (yaw of 120 deg/s or more inside the window).
+- Hand check of the spin windows: every one has full steering lock at or after the spin, so the spin label alone describes the aftermath. The precursor has to come from before the yaw peak.
+- Precursor (measured before the yaw peak, not the spin itself): steering at 0.95 or more **and** front grip below 0.3. 115 windows contain it, with 4 spins (3.5%); the other 8,234 windows have 2 spins (0.02%). One-sided Fisher p about 5e-7. The thresholds (0.95, 0.3, the 5-sample cut before the peak) were chosen after looking, so this is a candidate rule, not a confirmed one.
+- Grip below 0.3 alone is not the discriminator (20% of clean windows have it); steering saturation alone is not either (1.6% of clean windows; 4 of 6 spins).
+- Lead time: the precursor appears 0.0 to 0.9 s before the spin peak (median about 0.4 s). Non-spin windows that reach the precursor have a similar median lead (0.35 s), so the lead time does not by itself separate them, and about 0.4 s is too short for most corrective action. A useful early warning needs a precursor that appears earlier.
+- Not yet done: a synthetic test for the window rule, and a hand check of matched clean windows at the same speed and position.
