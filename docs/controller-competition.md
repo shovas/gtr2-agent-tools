@@ -763,3 +763,16 @@ Decision rule:
 - Otherwise inconclusive: more sessions needed before any claim.
 
 Limits: two pairs is a screen, not a confirmation. A sign of an effect is what would justify more sessions. The rule is set here so the run cannot choose its own criterion afterwards.
+
+### Downshifts and excursions at 1100 to 1250 m (2026-11-27): an association, in both directions
+
+Offline, from the 28 sessions with shift and signal logs (shift logs and signal logs matched by stamp; lap distance by integrated speed).
+
+- Downshifts at 1100 to 1250 m: 548. An excursion (lateral error at or beyond -5 m) within 2 s of the shift: 356 (65%).
+- Upshifts at the same distance: 163, with 0 excursions within 2 s.
+- Sampled no-shift points at the same distance: 723, with an excursion within 2 s in 179 (25%).
+- Order of events for the downshifts: in 197 of them the excursion was already under way within 2 s before the shift (so the shift may be the car's response to a slide); in 213 the excursion began after the shift, with a median lag of 0.34 s.
+
+Reading: the association is strong, but it runs both ways. A downshift can cause the excursion (the 213 cases), or the excursion can slow the car and bring about the downshift (the 197 cases). The rate comparison also has a confound: the downshifts happen at corner entry, where the car is slowest and most likely to leave the line. So this table does not establish the cause.
+
+What it does establish: the downshift is not a rare, incidental event at this point, and it is much more often inside an excursion than anything else there. The no-downshift paired test (pre-registered above) is the controlled check: it removes the downshift and keeps everything else.
