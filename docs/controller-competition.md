@@ -641,3 +641,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Model (A, session 1): lap 120.51 s, 2500 to 2800 m 10.55 s, 600 to 700 m 2.11 s. rpm rule (B, session 2): lap 121.80 s, 2500 to 2800 m 9.99 s, 600 to 700 m 2.07 s.
 - B minus A: bend exit -0.57 s (meets the primary criterion of at least 0.2 s, one session), 600 to 700 m -0.03 s (within the check), whole lap +1.29 s (secondary, and a warning: the bend-exit gain in this session is paid back elsewhere in the lap).
 - Pair 2 decides. If the bend-exit gain holds but the whole lap stays slower, the rpm rule trades bend-exit time for time elsewhere, and the rule's verdict must say so rather than adopt it on the bend section alone.
+
+### Bend-exit confirmation, final (2026-11-27): rejected by its rule
+
+- Two pairs, four sessions, no spin or stall. Model (A): lap 120.48 s, 2500 to 2800 m 10.19 s, 600 to 700 m 2.21 s. rpm rule (B): lap 121.30 s, 2500 to 2800 m 10.02 s, 600 to 700 m 2.08 s.
+- B minus A: bend exit -0.18 s (the rule needed at least -0.2 s: not met); 600 to 700 m -0.13 s; whole lap +0.81 s (slower). Session-level bend-exit times: model 10.55 and 9.83 s; rpm rule 9.99 and 10.05 s, so the pair-1 gain was reversed in pair 2.
+- Verdict: the bend-exit advantage found in the pooled data is not confirmed; the rpm rule is slower over the whole lap in this confirmation. Rejected. The earlier whole-lap gain of the rpm rule across four pairs (-1.10 s mean) is now contradicted by this confirmation (+0.81 s), so the rpm rule cannot be adopted on the existing evidence. Keep the model as the default; the rpm rule's lap-time effect is undecided and needs a larger pre-registered test before any default change.
