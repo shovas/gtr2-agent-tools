@@ -407,3 +407,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Two pairs, eight laps each (16 laps per arm, no spin, no stall). Lap mean: A 118.49 s, B 118.52 s (difference +0.03 s). Section 1100 to 1200 m mean: A 2.879 s, B 2.835 s (difference -0.044 s; per-lap sd 0.17 s).
 - Session-level lap differences (B minus A): -0.50 s and +0.56 s; they cancel. Approximate 95% interval for the section difference: about ±0.12 s.
 - Reading: adding 4 m/s of target speed through the section does not make it faster, and the interval excludes a section gain above about 0.1 s. The section is not limited by entry speed. It is limited by how the car leaves the braking zone and reaches the turn-in at 1100 m, or by something else outside the speed plan. This matches the earlier turn-in finding: the time is in the line and the slide, not the target speed.
+
+### The 1100 to 1200 m section: what the fastest laps do differently (2026-11-26 to 27)
+
+- Path curvature from the logged positions, 1050 to 1250 m: the fastest decile arrives at the apex with more speed (32 to 36 m/s at 1150 to 1175 m, against 26 to 28 for the rest) and takes a flatter arc there (0.75 against 1.06 deg/m at 1175 m), with the same braking.
+- At the apex (1140 to 1210 m), the fastest decile reverses steering more often (2.9 against 2.1 reversals per lap) and carries a larger mean heading error (15.8 against 13.8 deg), with the same steering variance and similar peak yaw (42 against 46 deg/s).
+- Reading: the fastest laps do not rotate less or steer more calmly. They carry more speed into a flatter arc and correct more while doing it. The hypothesis that the slower laps over-rotate is not supported. The section's time is in apex speed and arc shape, which the plan test could not reach (adding target speed did nothing).
+- Next: test the arc shape directly. The planner's line through the apex is the lever, since the fast laps' arc is flatter; whether the line can be made flatter at 1150 to 1200 m without losing the exit is the next experiment.
