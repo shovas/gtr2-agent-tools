@@ -363,3 +363,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Of 38 laps with a spin (yaw of 120 deg/s or more at speed), 19 contain at least one firing. This count is "anywhere in the lap", not "before the spin", so it is not a timing result.
 - Reading: the rule fires in about 233 laps that do not spin, against about 19 that do. As written it would brake-release in many clean corners, and each release costs time that the replay cannot price.
 - Next: restrict the rule to the turn-in windows (the same windows as the precursor analysis), require the firing to come before the yaw peak, and count the time that each release would cost in the clean laps where it fires.
+
+### Restricted brake-release rule, replayed inside turn-in windows (2026-11-26)
+
+- Rule: inside a turn-in window, before the yaw peak, sideslip above 8 degrees with brake above 0.2.
+- Spin windows: 4 of 6 contain a firing. Clean windows: 166 of 8,343 (2.0%). Of the clean firings, the median time in release is 0.20 s and the median brake time in the window is 0.80 s.
+- Reading: the rule is now specific (98% of clean windows do not fire) and still sensitive (4 of 6 spin windows). But the base rate of spin windows is about 0.07%, so a firing is a spin in about 2% of cases (4 of 170). Its value depends on the time cost of each release in the 166 clean windows, which the replay cannot price. The next step is the paired game test.
