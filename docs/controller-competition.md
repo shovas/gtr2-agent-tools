@@ -611,3 +611,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A: pursuit, the model everywhere (default). Arm B: pursuit with `--gear-band 2800 6800`. Two pairs of eight laps, logged to `paired_band.jsonl`.
 - Measures: lap time (median per session, mean per arm), commanded shifts and reversals per lap, neutral time per lap, stalls.
 - Decision rule (set before the run): keep the band-limited optimiser as a candidate if its mean lap is at least 0.5 s faster than the model's over the two pairs, with no added stall. Reject if its lap is slower by more than 0.1 s or a stall is added. Otherwise inconclusive, and the rpm rule remains the candidate to beat.
+
+### Band-limited optimiser, pair 1 (2026-11-27): interim, promising
+
+- Model (A, session 1): neutral 5.13 s per lap, 61.6 shifts, reversals 1.12 per lap, lap 120.62 s, no spin. Band 2,800 to 6,800 rpm (B, session 2): neutral 4.22 s, 51.6 shifts, reversals 0.00, lap 120.35 s, no spin.
+- Against the rule: the lap is 0.27 s faster in this one session (the rule asks for 0.5 s over two pairs; session noise is about 0.5 s). Shifts and neutral time fall as the replay predicted, and reversals vanish. Pair 2 decides.
