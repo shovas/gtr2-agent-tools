@@ -329,3 +329,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - The matched clean windows look much the same: full steering, front grip at 0 to 0.3, sideslip 5 to 20 degrees, peak yaw 24 to 66 deg/s. They are near misses on the same path. The spin label is a threshold (120 deg/s) on a continuum, so a binary spin count discards most of the information.
 - Consequence: the precursor (steering at 0.95 or more with grip below 0.3) describes a common unstable state, with spins as its tail. The useful measure is continuous: peak yaw rate, sideslip rate, and heading error growth inside the window, with the 120 deg/s label kept only as a tail marker.
 - Not yet done: correlate those continuous measures with the precursor and with the lap-time loss in the same corners, which is what decides whether they matter for pace.
+
+### Continuous measures against the precursor (2026-11-26)
+
+- Windows with the precursor (292): peak yaw median 44 deg/s, 90th percentile 74, 99th percentile 152; peak sideslip median 8.4 degrees, 90th percentile 30.7. Six of them reach the 120 deg/s spin threshold.
+- Windows without it (8,057): peak yaw median 30, 90th percentile 45, 99th 62; peak sideslip median 4.0, 90th 6.5. None reach 120 deg/s.
+- Peak sideslip separates the two groups far better than peak yaw (90th percentile 31 against 6.5 degrees). It is the stronger candidate for a continuous precursor. Not yet tested as a predictor with lead time, nor against lap-time loss.
