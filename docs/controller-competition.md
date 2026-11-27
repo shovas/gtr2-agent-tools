@@ -820,3 +820,13 @@ Decision rule:
 - Adopt as a lead if arm B has at least 3 fewer excursion laps than arm A across its four sessions and its clean-lap mean is no more than 0.5 s slower.
 - Reject if arm B has the same or more excursion laps.
 - Otherwise inconclusive.
+
+### Throttle-lift rate screen result (2026-11-27): rejected by its own rule
+
+Two pairs, all four sessions completed with no exception (`paired_lift.jsonl`). Scored with the pre-registered primary metric.
+
+- Excursion laps at 1100 to 1250 m: arm A (pursuit) 1 (sessions A1 and A3: 1 and 0); arm B (lift-rate 0.5) 5 (sessions B2 and B4: 2 and 3). The reject condition ("same or more") is met.
+- Clean-lap means (indicative, few laps): arm A 119.77 s and 119.62 s; arm B 121.27 s and 120.99 s. Arm B is about 1.3 s slower per clean lap in both pairs.
+- Verdict: rejected. Slowing the throttle lift at 1100 to 1250 m did not reduce the excursion; it added excursion laps and cost time. The lift-off yaw hypothesis is not supported by this screen.
+
+Together with the rejected no-downshift screen, both direct controls on the 1150 m corner have made it worse. The incumbent pursuit's behaviour there is not improved by a smoother downshift or a smoother lift. Next step: characterise what the incumbent does at that point in the logs (heading onset against the steering command), not another control change.
