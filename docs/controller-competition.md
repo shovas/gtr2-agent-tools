@@ -234,3 +234,11 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Bend entry speed at z -160 (median over laps): pursuit era 50.8 m/s (315 laps), designed era 49.8 m/s (508 laps). The designed follower with the preview enters at 54.5 and 51.1 m/s (two laps).
 - So the pace gap between the followers is not made at the bend entry. Pursuit's advantage lies elsewhere, consistent with the 700 to 1000 m result (about 2.9 s), and the designed follower's bend loss comes from how it leaves the entry (its turn-in), not from a faster or slower entry on average.
 - This also means the entry-speed explanation of the spins is at most a risk factor; the same entry speed is used by both followers, and only the designed follower spins here.
+
+### What pursuit does differently at 700 to 1000 m (2026-11-26)
+
+- Pursuit: 56 m/s on average, steering centred (-0.01), line offset -0.9 m, front grip 0.95, throttle 93 per cent.
+- Designed (all designed-era laps): 37 m/s, steering biased to -0.22, line offset -4.1 m, front grip 0.58, throttle 65 per cent, heading error -2 deg.
+- So over this stretch the designed follower runs about 4 m off the line, with a steering bias, and lifts off the throttle. Pursuit holds the line within 1 m at full throttle.
+- Mechanism candidate: the designed follower's lateral term is `b * lat`, with `b = w^2 L / v^2` falling with speed. At 37 to 56 m/s a 4 m offset gives a command of only 0.10 to 0.13, about the size of a 2 deg heading error. The correction for position is weak at speed, so the car drifts and the drift costs speed.
+- Test to run: a lateral gain scale (`--st-lat-scale`, default 1.0 = no change), at 2 and 4, on the designed follower with the preview; success means the line offset in 700 to 1000 m falls below 1 m without the steering bias.
