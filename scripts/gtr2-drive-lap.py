@@ -220,6 +220,9 @@ def main():
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
     ap.add_argument("--plan-file", default="", help="a saved speed plan (JSON {\"dist\": [...], \"v\": [...]}, lap distance in metres and target speed in m/s, as written from a signal log's target_v column): on the main chain the target speed is this table at the car's lap distance, replacing the planner's live target, so two sessions can share one plan (empty = off)")
     ap.add_argument("--fgrip-steer", type=float, default=0.0, help="--follower designed with the wheel data (--dyn): when the front tyres' measured grip falls below this fraction, the steering command is scaled by grip / this, so the front tyres are not pushed further into saturation at turn-in (0 = off; about 0.9 to test)")
+    ap.add_argument("--apex-shift", type=float, default=0.0, help="metres of lateral aim offset (positive = physical left) between --apex-from and --apex-to lap distance: a wider arc through the apex (0 = off, as before)")
+    ap.add_argument("--apex-from", type=float, default=1150.0, help="lap distance (m) where --apex-shift starts")
+    ap.add_argument("--apex-to", type=float, default=1200.0, help="lap distance (m) where --apex-shift ends")
     ap.add_argument("--slide-release", type=float, default=0.0, help="degrees of slide (direction of travel against heading) above which the brake is released to zero while it is above 0.2 (0 = off, as before): the reactive turn-in test")
     ap.add_argument("--st-yaw-damp", type=float, default=0.0, help="--follower designed: yaw-rate damping of the designed law, degrees per second per unit of steering (0 = off, as before; 90 = the pursuit's damping); a test of whether damping the yaw rate removes the delay-limited oscillation")
     ap.add_argument("--st-lat-scale", type=float, default=1.0, help="--follower designed: multiplies the lateral (position) term of the designed law, which weakens with speed (1.0 = as before; a test of whether the weak position correction at speed causes the drift off the line)")
@@ -1184,6 +1187,8 @@ def main():
                     return 0.5 * (p.left - p.right)
                 return max(lo, min(hi, wall_clamp(shift, p.dist)))
             lat_t, lat_here = aim_offset(target), aim_offset(w)
+            if args.apex_shift != 0.0 and chain is track.main and args.apex_from <= target.dist <= args.apex_to:      # --apex-shift: a wider arc through the apex (metres; positive = physical left, the outside of the right-hand apex at about 1175 m)
+                lat_t = max(-(target.right - 1.0), min(target.left - 1.0, lat_t + args.apex_shift))
             if args.ilc > 0.0 and chain is track.main and not merging and box_target is None:
                 lat_t = max(-(target.right - 1.0), min(target.left - 1.0, wall_clamp(lat_t + ilc["corr"].get(int(target.dist // 10), 0.0), target.dist)))
             if args.warmup > 0.0 and chain is track.main and tel["lap"] == 0 and speed > 25.0 and sig.get("tv", 0.0) > args.warmup_vmin and not merging and box_target is None:
