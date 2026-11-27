@@ -701,3 +701,16 @@ Checked against the signal logs of the four exit-test sessions (A1, B2, A3, B4).
 Reading (hypothesis, to confirm): the excursion is a driver or line-following error at fixed points, consistent with the follower's aim or the line-follow correction taking the car to the edge at a repeatable place. A geometry artefact would scatter across positions and would not give a consistent lateral error of -7 m. The next check is the lap distance of those points (the layout's waypoint file) and the steering and heading just before each event: a heading that points toward the edge before the event would confirm a driver cause.
 
 Consequence: the strict clean rule is failing for a driver reason that repeats. Removing it from the lap-time comparison would hide a real and repeatable excursion, and it costs time at those points too.
+
+### Where the first track-limit event falls on the lap (2026-11-27): a map from the lap check records
+
+From the `dist` field of the first track-limit event in each lap check record (127 records; one event per record, so counts are first events only; lap distance in metres):
+
+- 500 to 549 m: 22 records. 700 to 749 m: 20. 650 to 699 m: 10. 450 to 499 m: 8. Together the 450 to 749 m stretch holds 60 of 127 first events.
+- 2100 to 2149 m: 17. 3900 to 3949 m: 9. 1150 to 1199 m: 8. 1450 to 1549 m: 7 across two bins.
+
+Two links to other work:
+- The 1150 to 1199 m bins are the 1100 to 1200 m section the mission asks about. Track-limit events there mean the car runs wide at that point, which is a candidate cause of the section's loss that is independent of speed planning (the earlier speed and apex tests did not change the excursion).
+- The 650 to 749 m cluster overlaps the designed follower's recurring 640 m failure. Both may be the same repeatable excursion seen from two sides: a wide line at that point, and the follower's loss of control there.
+
+Status: a hypothesis built from the event map. It does not yet show the excursion causes the lap-time loss. Next check: the same map from the signal logs (the exact lap distance of each event, all events, not only first events), and the heading and steering in the two seconds before each event at 1150 to 1199 m and 650 to 749 m.
