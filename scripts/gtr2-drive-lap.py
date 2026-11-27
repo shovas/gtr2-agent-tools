@@ -690,6 +690,10 @@ def main():
             drive_analog(); time.sleep(0.01)
 
     def shift(up):
+        try:      # the commanded shift, on the signal log's clock (for shift-timing analysis, not the game's gear field); a logging problem must never stop a drive
+            sig.setdefault("shifts", []).append((round(time.time() - t0, 2), 1 if up else -1))
+        except Exception:
+            pass
         if analog:
             def pulse():
                 joy.button(1 if up else 2, True); time.sleep(0.12); joy.button(1 if up else 2, False)
@@ -1756,6 +1760,10 @@ def main():
                     for r_ in sig["rows"]:
                         f_.write(",".join(str(v_) for v_ in r_) + "\n")
                 print("signals logged to %s (%d rows)" % (sf_.name, len(sig["rows"])), flush=True)
+                with sf_.with_name(sf_.name.replace("signals_", "shifts_", 1)).open("w", encoding="utf-8") as s_:      # the commanded gear changes on the same clock as the signal rows (t, +1 up / -1 down)
+                    s_.write("t,direction\n")
+                    for e_t, e_d in sig.get("shifts", []):
+                        s_.write("%s,%d\n" % (e_t, e_d))
             except Exception as e_:
                 print("signal log not written (%s)" % e_, flush=True)
         if args.grip_map and not args.no_memory and len(result["lap_changes"]) >= 2 and (args.session_laps > 0 or not [i_ for i_ in impacts if not i_.get("pit")]):      # a completed lap without impacts: remember what the maps learned
