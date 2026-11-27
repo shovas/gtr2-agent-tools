@@ -438,3 +438,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - The earlier entry said the shifted arm stopped "about 60 m before the apex". That was wrong. In lap 5 of the stalled session the car passed through the shifted window (1150 to 1200 m, entering at t 645.25 s) and stopped at 1263 m, about 60 m after the window ends, on the exit of the apex.
 - So the shift was applied when the stall happened, and the stall is on the exit, not the entry. The shift could still have affected the exit (a wider arc leaves the car further out), but one session cannot show it. The control had no stall at this place in its eight laps (pair 1 and pair 2 control: no stall).
 - Consequence for the rule: the stall is a driving failure on the exit, plausibly linked to the shift; this supports rejecting the 1.5 m shift as configured, and the 0.75 m test would need the exit (1200 to 1270 m) watched as well as the apex.
+
+### Exit speed after the apex, 1200 to 1260 m (2026-11-27)
+
+- Control (16 laps): mean 34.54 m/s, sd 1.24. Shifted (12 laps, including the stalled session's laps): mean 33.37 m/s, sd 3.54.
+- The shifted arm exits about 1.2 m/s slower and much more variably. That fits the apex gain (about 0.08 s) being paid back on the exit, consistent with the stall. The two effects go in opposite directions, so a wider arc trades apex speed for exit speed here.
+- Next (cheap, offline): the exit trade-off decides whether any arc shift helps; a shift that keeps the exit (for example one that eases back to zero by 1200 m) is the only version worth a game test.
