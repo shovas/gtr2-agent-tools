@@ -635,3 +635,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A: pursuit, model (default). Arm B: pursuit with `--live-off gear_opt` (rpm rule). Two pairs of eight laps, logged to `paired_exit.jsonl`.
 - Primary measure: time from 2500 to 2800 m per lap (distance-aligned, 100 m sections summed). Secondary: time from 600 to 700 m, and the whole-lap time.
 - Decision rule (set before the run): keep the rpm rule's bend-exit advantage as confirmed if the 2500 to 2800 m time is at least 0.2 s less for B than A (mean over the eight-lap sessions), and the 600 to 700 m time is not more than 0.1 s more for B. Reject if the bend-exit advantage is below 0.1 s. Otherwise inconclusive.
+
+### Bend-exit confirmation, pair 1 (2026-11-27): interim
+
+- Model (A, session 1): lap 120.51 s, 2500 to 2800 m 10.55 s, 600 to 700 m 2.11 s. rpm rule (B, session 2): lap 121.80 s, 2500 to 2800 m 9.99 s, 600 to 700 m 2.07 s.
+- B minus A: bend exit -0.57 s (meets the primary criterion of at least 0.2 s, one session), 600 to 700 m -0.03 s (within the check), whole lap +1.29 s (secondary, and a warning: the bend-exit gain in this session is paid back elsewhere in the lap).
+- Pair 2 decides. If the bend-exit gain holds but the whole lap stays slower, the rpm rule trades bend-exit time for time elsewhere, and the rule's verdict must say so rather than adopt it on the bend section alone.
