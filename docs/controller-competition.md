@@ -714,3 +714,15 @@ Two links to other work:
 - The 650 to 749 m cluster overlaps the designed follower's recurring 640 m failure. Both may be the same repeatable excursion seen from two sides: a wide line at that point, and the follower's loss of control there.
 
 Status: a hypothesis built from the event map. It does not yet show the excursion causes the lap-time loss. Next check: the same map from the signal logs (the exact lap distance of each event, all events, not only first events), and the heading and steering in the two seconds before each event at 1150 to 1199 m and 650 to 749 m.
+
+### Track-limit events by lap distance from the signal logs (2026-11-27): two sharp points and the heading at the second
+
+Method: lap distance is the integral of speed within each lap of the four exit-test signal logs (A1, B2, A3, B4). Every event in each log's header was mapped to its distance. Events counted per log, so one point repeats on each lap of each session. Integration drift over a lap is not measured; the bins are approximate to a few tens of metres.
+
+- 700 to 749 m: 127 events. The largest cluster. Lateral error about -7 m, heading error about -4 to -10 degrees, steering about -0.25 to -0.35 two seconds before.
+- 1150 to 1199 m: 81 events. Lateral error about -6 m, heading error +12 to +21 degrees, steering about -0.15 to -0.35 two seconds before. The 1100 to 1149 m bin adds 14 and 1200 to 1249 m adds 10, so the excursion covers about 1100 to 1250 m.
+- Other bins (650, 800, 3850, 5200 m) hold 1 to 2 events each: not repeatable.
+
+Reading: at 1150 to 1200 m the car leaves the line with a heading 12 to 21 degrees off the line direction, and the steering two seconds earlier is already small. A pure line-following error would show the lateral error without a large heading error. A heading error this size at the start of the excursion is consistent with a yaw or steering-to-heading problem at that point, which is the lead the 1100 to 1200 m section needs. At 700 to 749 m the heading error is smaller and changes sign, so the mechanism there may differ.
+
+Status: observations, not yet causal. The sign convention for `herr` is the one in the signal log (not re-checked against the code here). Next checks: the heading error over the 3 s before each event at 1150 to 1200 m (its onset), and whether the designed follower and the pursuit driver show the same onset.
