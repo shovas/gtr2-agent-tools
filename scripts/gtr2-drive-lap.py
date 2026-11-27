@@ -220,6 +220,7 @@ def main():
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
     ap.add_argument("--plan-file", default="", help="a saved speed plan (JSON {\"dist\": [...], \"v\": [...]}, lap distance in metres and target speed in m/s, as written from a signal log's target_v column): on the main chain the target speed is this table at the car's lap distance, replacing the planner's live target, so two sessions can share one plan (empty = off)")
     ap.add_argument("--fgrip-steer", type=float, default=0.0, help="--follower designed with the wheel data (--dyn): when the front tyres' measured grip falls below this fraction, the steering command is scaled by grip / this, so the front tyres are not pushed further into saturation at turn-in (0 = off; about 0.9 to test)")
+    ap.add_argument("--slide-release", type=float, default=0.0, help="degrees of slide (direction of travel against heading) above which the brake is released to zero while it is above 0.2 (0 = off, as before): the reactive turn-in test")
     ap.add_argument("--st-yaw-damp", type=float, default=0.0, help="--follower designed: yaw-rate damping of the designed law, degrees per second per unit of steering (0 = off, as before; 90 = the pursuit's damping); a test of whether damping the yaw rate removes the delay-limited oscillation")
     ap.add_argument("--st-lat-scale", type=float, default=1.0, help="--follower designed: multiplies the lateral (position) term of the designed law, which weakens with speed (1.0 = as before; a test of whether the weak position correction at speed causes the drift off the line)")
     ap.add_argument("--st-head-ahead", type=float, default=0.0, help="--follower designed: the heading error is measured to the line this many metres ahead (0 = the nearest waypoint, as before); the nearest waypoint lags the heading at the entry of a bend")
@@ -1682,6 +1683,8 @@ def main():
                 lim_c = args.brake_circle * live["a_lat"] * (1.0 + live["kk"] * speed * speed)
                 used_c = min(1.0, abs(math.radians(yawrate) * speed) / max(lim_c, 1.0))
                 shared["brake"] = min(shared["brake"], args.brake_max * math.sqrt(max(0.0, 1.0 - used_c * used_c)))
+            if args.slide_release > 0.0 and chain is track.main and shared["brake"] > 0.2 and mv["slide"] > args.slide_release:      # --slide-release: a slide past the limit releases the brake (the turn-in test, docs/controller-competition.md)
+                shared["brake"] = 0.0
             if args.no_overlap > 0.0 and chain is track.main and rec["phase"] is None and shared["brake"] > args.no_overlap:      # brake and throttle together (the throttle follows the speed error against the current target, the brake the corner ahead): the engine fights the brakes and the front tyres lose grip; with the brake on, the throttle is off
                 shared["duty"] = 0.0
             if args.stuck_launch and rec.get("launch", 0.0) > now and speed < 5.0 and tel["gear"] >= 1:
