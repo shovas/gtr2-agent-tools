@@ -208,3 +208,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - The gain table gives a limit: at 45 m/s the designed command reaches full lock at a heading error of about 26 deg (`a` = 0.13, steering gain 0.059 rad per command). Past that the steering cannot correct the error, and the car slides.
 - The heading error grows because the designed follower measures the line's heading at the nearest waypoint, which lags at the bend entry. `--st-head-ahead 8` measures it 8 m ahead. Every paired test since the 14:00 era used that flag, and none of those sessions stalled at 640 m.
 - Test running: designed with `--st-head-ahead 8` alone (no plan file, no brake share), two sessions, `paired_preview.jsonl`. If it completes the lap without the stall, the preview is the fix for the default designed follower, and the default should change.
+
+### Heading preview test, session 1 (2026-11-26): the 640 m stall is gone
+
+- Designed with `--st-head-ahead 8` (nothing else): it passed the 640 m point and completed six laps (lap times 193.5 s with the start, 123.6, 122.5, 137.8, 187.1, 140.5 s), then ran out of its session time (`--total` 1240 s) partway through lap 7. The record says "lap not completed (timeout)", which is the time budget, not a stall. No spin.
+- So the preview fixes the early stall. What remains is slow laps (lap 5 at 187 s, lap 6 at 141 s), not a stop. The designed follower's pace is still the problem, and the time budget has to be larger for designed runs (its laps are longer than the 130 s that the budget assumes).
+- Next: find where lap 5 (187 s) loses its time, using the same distance-aligned comparison as before, and set the session budget from the expected lap time.
