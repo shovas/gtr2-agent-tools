@@ -280,3 +280,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Control (no damping): stopped at x 668, z 440 (640 m) after one bend lap.
 - Damping 90: passed 640 m, logged five bend laps, then stopped at x -521, z -404 (near the x -510, z -436 stop of an earlier control session). No spin.
 - One pair, so an observation: yaw damping clears the 640 m point in this sample, and the designed follower then stops later on the lap. It is the first setting that got past 640 m in a paired control, and the next failure is elsewhere. The second pair is running in `paired_damp.jsonl`.
+
+### Yaw damping 90, full pair (2026-11-26): the 640 m stall is removed in 2 of 2, the next stop comes after five bend laps
+
+- Control (no damping, preview 8): 2 of 2 stopped at the 640 m point (x 668, z 440 and x 640, z 443), after one and two bend laps.
+- Damping 90 (preview 8): 2 of 2 passed 640 m and logged five bend laps each, then stopped at x -521, z -404 and at x 7, z -43. No spin in any of the four sessions.
+- Exact one-sided p for 2 of 2 passing against 0 of 2 is 0.17. Too few sessions to call it, but the direction is clear and it is the first setting that cleared 640 m reliably in a paired control.
+- Consequence: yaw damping is the first candidate for the designed follower's default with the preview. The next stop is later on the lap (x -521, z -404 and x 7, z -43 are two different places), so the damped follower still has a limit to find after the 640 m point.
