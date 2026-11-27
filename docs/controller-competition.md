@@ -389,3 +389,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Reproducibility: only 1 of 98 bins has a gap above 0.15 s in both independent halves. That bin is 1100 to 1200 m (gap 0.47 overall, 0.47 and 0.35 in the two halves).
 - 1100 to 1200 m: the fastest decile carries 38.5 m/s on average against 31.8 m/s for the rest. It uses less throttle (duty 0.18 against 0.24), more steering (0.31 against 0.23), more heading error (12.7 against 10.6 degrees) and more sideslip (-3.9 against -2.0). So the time is in a faster, more sliding line through this section, not in a braking or throttle difference.
 - Consequence: with this log set the lap-time budget cannot be localised beyond this one section; the other bins are within session noise. A budget that finds the missing 1.86 s needs more clean laps per section, or the tests set up to measure sections directly.
+
+### Section test at 1100 to 1200 m (2026-11-26): running
+
+- Plans built from data, not from the designed follower's plan (that plan slows to about 17 m/s there, against the pursuit's 38 m/s, so it would make the baseline unfair): the fastest decile of pursuit-era clean laps, speed by 10 m bin (`plan_pursuit_fast.json`), and the same plus 4 m/s over 1100 to 1200 m (`plan_pursuit_fast_plus4.json`). Pursuit follows each plan (`--plan-file`, main chain).
+- Arms: A, pursuit on the fastest-decile plan; B, the same plus 4 m/s over 1100 to 1200 m. Two pairs of eight laps, logged to `paired_section.jsonl`.
+- Measure: time through 1100 to 1200 m per lap (sum of sample intervals in the distance window), spin or stall, and the lap time. Decision: a section gain of 0.1 s or more with no added stalls means the section responds to speed and the plus-4 line is worth extending; no gain means the section is limited by something other than entry speed.
