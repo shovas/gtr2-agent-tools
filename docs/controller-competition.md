@@ -341,3 +341,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Sideslip first reaches 15 degrees: median lead before the yaw peak 0.70 s for the four spin windows (10th percentile 0.00 s), and 0.34 s for 88 non-spin windows (10th percentile 0.00 s).
 - The lead is about the same as the steering-and-grip precursor (about 0.4 s). Sideslip separates the groups in size (see previous entry), but not in time. A controller reacting at 0.3 to 0.4 s with a 0.3 s steering delay cannot prevent the peak with this signal alone.
 - Caveat: four spin windows. The lead distribution needs more spins, or the provocative setting, before it is trusted.
+
+### Do the precursors track lost lap time? (2026-11-26): yes, within each follower era, observationally
+
+- Per lap (900 complete laps, 100 to 160 s): the count of precursor windows and the count of windows with sideslip of 15 degrees or more both correlate positively with lap time overall (+0.33 and +0.40). Turn-in window count alone correlates negatively (-0.46), which reflects the lap structure, not the driving: the count rises with the number of corners completed, so it is not a usable measure.
+- Within the pursuit era (313 laps, median 116.2 s): precursor count +0.45, sideslip count +0.43 with lap time.
+- Within the designed era (476 laps, median 130.1 s): precursor count +0.31, sideslip count +0.36.
+- So the precursor and sideslip counts associate with slower laps inside each follower, not only between the two. Mean counts per lap are small (0.04 to 0.25), so each event is worth a fraction of a second at most, but they recur. Caveat: correlation, not cause. A slower lap may produce more of these events rather than the events producing the slowness. The test is a corner-level intervention (see the next entry).
