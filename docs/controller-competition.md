@@ -530,3 +530,5 @@ A to-do is done when its kill test has run and the result, positive or negative,
 ### Rpm gear rule on the designed follower (2026-11-27): running
 
 - Arm A: designed with the heading preview (`--st-head-ahead 8`), model-based gear choice. Arm B: the same with `--live-off gear_opt`. One pair first, logged to `paired_designed_gear.jsonl`. Both arms are subject to the designed follower's 640 m stall, so the test reads neutral time and shift counts first; lap time only where both arms complete laps.
+
+- Designed control (A, session 1): stalled at x 670, z 438 (the 640 m point again) after two partial laps. Its shift count is far higher than pursuit's (about 280 commanded shifts over its two partial laps against about 65 per full lap for pursuit), and its neutral time per lap is about 5.0 s. So the designed follower hunts gears much more, at the same stall point. Arm B (rpm rule) is next; lap time cannot be compared because the control completes no lap.
