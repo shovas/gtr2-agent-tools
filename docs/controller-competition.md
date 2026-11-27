@@ -561,3 +561,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Evidence (cooldown session, 1.5 s model cooldown): of 173 commands made while braking, 31% come within 0.5 s of the previous command (median gap 0.88 s). Of 304 commands made when not braking, 2% do (median gap 2.36 s). So the close-spaced shifts are the fallback's braking shifts, not the model's.
 - Reading: the model's flip-flops (reversals) sit in partial throttle and coasting (89%), where it runs; the braking downshifts come from the fallback. The rpm rule is good at braking, and the model is the problem in coasting. That points to a hybrid: model-free rpm thresholds in coasting and partial throttle, the braking logic as it is, and the thrust model only where it has shown no flips. Nothing is yet tested.
 - Next test: model-path disabled in partial throttle and coasting only (the rpm rule there, braking unchanged), against the current model. Decision rule to be set before the run.
+
+### Hybrid gear test (2026-11-27): running, rule set before the run
+
+- Arm A: pursuit, the model-based gear choice everywhere (default). Arm B: the same with `--gear-model-duty 0.9`, so the model chooses only at full-throttle-ish duty and the rpm rule decides in coasting and partial throttle; braking is unchanged. Two pairs, logged to `paired_hybrid.jsonl`.
+- Measures: commanded reversal pairs (within 0.6 s), commanded shifts and neutral time per lap, lap time.
+- Decision rule (set before the run): keep the hybrid if reversal pairs fall by at least half, neutral time does not rise, and the lap is no more than 0.1 s slower on average. Reject if the lap is more than 0.1 s slower on average or a stall is added.
