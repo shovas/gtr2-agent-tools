@@ -689,3 +689,15 @@ Classification:
 - Confirmed observation: the counts above (script output, reproducible).
 - Open question, to settle before using clean-lap means: whether the track-limit events are a driving defect (the follower runs wide) or a geometry artefact (the boundary line is too tight, or the tyre footprint is too wide). The boundary rule is the user's rule and is not changed here. The check is to compare the event positions with the line offset (`line_off` in the signal log) at the same distance: a consistent offset above the line margin points to the driver, a random scatter points to the geometry.
 - Consequence: the 1.86 s budget and the gear comparison need either a looser lap-time filter that keeps every lap with a cleaner measure, or a per-lap event time summed as a lap-time penalty, not a binary clean flag.
+
+### Where the track-limit events happen (2026-11-27): repeatable driver excursions, not random geometry
+
+Checked against the signal logs of the four exit-test sessions (A1, B2, A3, B4). Each event time was matched to the lateral error (`lat_err`) in a window of 0.3 s.
+
+- Each session's events fall at nearly the same times: about 32 s, 154 s, 276 s and later points, repeated across all four sessions (32.13 to 32.17 s, 153.96 to 154.83 s, 275.22 to 277.12 s). Scatter is about 1 s, so the cause is the same place on every lap, not random noise.
+- At every event the lateral error is about -6 to -7 m (-5.5 to -7.2 m; one event at +9.4 m in A1). Over the whole session the lateral error has a standard deviation of 1.7 to 1.9 m, with 95% of samples within about 3 m. Samples beyond 6 m are only 1.0 to 1.4% of the run, and those are where the events sit.
+- The planned line offset (`line_off`) is about 0 throughout, so the excursion is not the planned line. The car is 6 to 7 m from the line the driver follows, and the event happens where the tyres cross the boundary.
+
+Reading (hypothesis, to confirm): the excursion is a driver or line-following error at fixed points, consistent with the follower's aim or the line-follow correction taking the car to the edge at a repeatable place. A geometry artefact would scatter across positions and would not give a consistent lateral error of -7 m. The next check is the lap distance of those points (the layout's waypoint file) and the steering and heading just before each event: a heading that points toward the edge before the event would confirm a driver cause.
+
+Consequence: the strict clean rule is failing for a driver reason that repeats. Removing it from the lap-time comparison would hide a real and repeatable excursion, and it costs time at those points too.
