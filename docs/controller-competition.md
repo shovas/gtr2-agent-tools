@@ -381,3 +381,11 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Mean difference (slide release minus baseline): -0.26 s. The pairs point in opposite directions (-1.74 s in pair 1, +1.23 s in pair 2).
 - Session-to-session spread is about 1.3 s, so the standard error of the difference is about 1.3 s with two sessions per arm, and the 95 percent interval is roughly ±2.5 s. The test cannot distinguish a 0.1 s gain from no effect or a loss.
 - Decision rule (set before the run): 0.1 s or more with no added spins means keep and test on the designed follower. This run does not meet it or fail it. Options: more pairs (about 80 minutes per two pairs for a standard error near 0.6 s), or measure the turn-in windows directly, the 0.1 s gain the rule targets, which the lap time averages over.
+
+### Lap-time budget, first pass (2026-11-26): one reproducible section, the rest is noise
+
+- Pursuit-era clean laps (282, 100 to 125 s, distance-aligned by integrated position in 50 m bins). A first version compared each bin's median against its single fastest execution and summed the gaps to 16.5 s. That is invalid: the minimum of hundreds of noisy samples picks outliers in every bin. Withdrawn.
+- Corrected: the fastest decile (28 laps) against the rest, per 50 m bin, with a split-half check (fast set defined on one half of the sessions, tested on the other). Summed gaps across all bins: 3.6 s, an upper bound with noise in it.
+- Reproducibility: only 1 of 98 bins has a gap above 0.15 s in both independent halves. That bin is 1100 to 1200 m (gap 0.47 overall, 0.47 and 0.35 in the two halves).
+- 1100 to 1200 m: the fastest decile carries 38.5 m/s on average against 31.8 m/s for the rest. It uses less throttle (duty 0.18 against 0.24), more steering (0.31 against 0.23), more heading error (12.7 against 10.6 degrees) and more sideslip (-3.9 against -2.0). So the time is in a faster, more sliding line through this section, not in a braking or throttle difference.
+- Consequence: with this log set the lap-time budget cannot be localised beyond this one section; the other bins are within session noise. A budget that finds the missing 1.86 s needs more clean laps per section, or the tests set up to measure sections directly.
