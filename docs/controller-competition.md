@@ -749,3 +749,17 @@ Checked in the first lap crossing of the 1150 m point in two sessions (A1 at 157
 So the excursion is a loss of control under a downshift: the throttle lift, the full-lock steer and the neutral gear coincide within about 1 s (20 rows). The speed loss (48 to 35 m/s) is larger than a shift or a lift alone would explain at this corner. Two candidate mechanisms, neither confirmed: (1) the lift and the neutral gap cut drive torque at the moment the car needs it to hold its yaw (a load-transfer or power-off snap), and (2) the full-lock steer is the response to the yaw the car already has, so steering follows the instability. The traces cannot yet separate them, because the steering and the lift start within a sample of each other.
 
 Connection to the mission: this downshift through neutral at 48 m/s is a gear-selection event inside a corner, which the RPM-rule and model comparisons did not measure (they counted shifts on the whole lap, not the shift's position relative to the corner's yaw). A shift at this point is the lead to test first, with the throttle and steering held fixed for one lap if possible.
+
+### No-downshift test at 1100 to 1200 m (2026-11-27): rule set before the run
+
+Question: does the downshift through neutral inside the 1150 m corner cause the excursion there? Arm A: `--follower pursuit` (the incumbent, unchanged). Arm B: the same plus `--no-downshift-zone 1100 1200` (no downshift between 1100 and 1200 m; upshifts unchanged). Two pairs, eight timed laps per session (paired runner, `--log paired_nodown.jsonl`).
+
+Primary metric: laps with a track-limit event between 1100 and 1250 m (signal-log distance, integrated speed), per arm.
+Secondary: the whole-lap time (mean of clean laps only, per the lap-check clean rule; a lap with a track-limit event is not counted in the lap mean).
+
+Decision rule:
+- Adopt as a lead (not a default) if arm B has at least 3 fewer laps with an excursion in 1100 to 1250 m than arm A across the four sessions, and no more than 0.5 s slower on the clean-lap mean.
+- Reject if arm B has the same or more excursions.
+- Otherwise inconclusive: more sessions needed before any claim.
+
+Limits: two pairs is a screen, not a confirmation. A sign of an effect is what would justify more sessions. The rule is set here so the run cannot choose its own criterion afterwards.
