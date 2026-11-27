@@ -248,3 +248,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A (designed, preview 8, default lateral term): stopped moving at x 666, z 441 after one bend lap, which is the 640 m point. Earlier with the preview, 2 of 2 sessions had passed it (session 1 with saved memory and session 2 with no memory). So the preview clears the stall in 2 of 3 sessions, not reliably.
 - Arm B (lateral scale 4): not run. The game was still open 90 s after arm A, so the runner refused to start (counted as an infrastructure failure, not a controller result, as designed). The pair was rerun in a fresh records file (`paired_lat2.jsonl`).
 - Reading: the 640 m stall has an intermittent component the preview does not remove. Two sessions with the same settings went through, one stopped; that is the variation the preview test needs more sessions to measure.
+
+### Lateral-scale test: the control stalls at 640 m again; a stalled session leaves the game open (2026-11-26)
+
+- Preview record, all designed sessions with `--st-head-ahead 8`: passed 640 m in 2 of 4 (the other two stopped at x 663 to 666, z 441 to 444). So the preview does not reliably clear the 640 m stall; the earlier "cleared twice" was too strong.
+- A stalled session left the game open (the lap check reported "could not leave the session"), and the next session was refused by the runner's "game still running" check. Fix: the runner now closes a still-open game with the recovery script before its next session (waits 30 s, recovers, waits 60 s more); the refused session is still counted as infrastructure.

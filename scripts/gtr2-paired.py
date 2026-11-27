@@ -76,7 +76,11 @@ def wait_game_closed(seconds: int = 90) -> bool:
 def run_session(arm: str, options: str, laps: int, timeout_s: int, n: int = 0) -> dict:
     sid = "%s%d_%s" % (arm, n, time.strftime("%Y%m%d%H%M%S"))     # unique id: a result can be traced to its own check output
     rec = {"arm": arm, "options": options, "sid": sid, "n": n, "laps": laps}
-    closed = wait_game_closed()
+    closed = wait_game_closed(30)
+    if not closed:      # a stalled session can leave the game open: close it with the documented recovery, then check again
+        subprocess.run([str(PY), "-I", str(HERE / "gtr2-recover.py"), "--force", "--revert"], cwd=str(ROOT), check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
+        closed = wait_game_closed(60)
     if not closed:
         rec.update(seconds=0, error="infrastructure: GTR2 still running 90 s after the previous session; session not started", infra=True)
         return rec
