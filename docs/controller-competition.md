@@ -616,3 +616,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Model (A, session 1): neutral 5.13 s per lap, 61.6 shifts, reversals 1.12 per lap, lap 120.62 s, no spin. Band 2,800 to 6,800 rpm (B, session 2): neutral 4.22 s, 51.6 shifts, reversals 0.00, lap 120.35 s, no spin.
 - Against the rule: the lap is 0.27 s faster in this one session (the rule asks for 0.5 s over two pairs; session noise is about 0.5 s). Shifts and neutral time fall as the replay predicted, and reversals vanish. Pair 2 decides.
+
+### Band-limited optimiser, final (2026-11-27): shifting falls, lap time does not
+
+- Two pairs, four sessions, no spin or stall. Model (A): neutral 5.31 s per lap, 63.6 shifts, reversals 1.25 per lap, lap 121.02 s. Band 2,800 to 6,800 rpm (B): neutral 4.42 s, 53.1 shifts, reversals 0.00, lap 120.95 s.
+- Per-pair lap difference B minus A: -0.27 and +0.12 s; mean -0.07 s. The rule needed at least 0.5 s faster: not met, rejected as a lap-time candidate.
+- What is established: the band removes the reversals completely, cuts shifting by about 17 per cent and neutral time by 0.9 s per lap, with no stall.
+- What this changes: the 0.9 s of neutral reduction bought essentially no lap time. So the cost of neutral time is much smaller than the estimate of 2 to 4 s per lap in the shift-loss entry (which assumed the speed lost on straights is never recovered). The rpm rule's lap gain (-1.10 s over four pairs, three of four favouring it) is therefore not explained by shifting in any simple way, and it needs its own explanation. Next: check whether the rpm rule's gain is real and where in the lap it appears (distance-aligned), before choosing a gear controller.
