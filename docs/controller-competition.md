@@ -300,3 +300,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - In that second, front grip falls from 0.94 to 0.25 and the yaw rate jumps from 2 to 35 deg/s; sideslip grows from 0 to -6 deg; the steering then goes to full counter-lock, and the car spins at 28 m/s by x -5, z -5.
 - So the start-finish slide is the braking-into-turn-in grip collapse measured at the 2570 m bend, at a different corner. It is a mechanism, not a kerb problem: the kerb impact is a consequence of the spin.
 - Consequence for the designed follower: the braking point before a corner and the turn-in overlap (brake still 0.8 to 0.9 when the steering starts). A fix has to separate them: release the brake before the turn-in, or limit the steering rate while braking.
+
+### Brake and turn-in overlap across all laps: a metric that does not discriminate (2026-11-26)
+
+- Counting laps with any sample of brake above 0.3 and steering above 0.2 at 25 m/s or more flagged all 1354 laps, so the metric says nothing. It also counted any yaw of 120 deg/s or more anywhere on the lap as a spin (54 laps), so the spin label is not tied to the corner either.
+- Next, to be useful: restrict both measures to a window around each turn-in (the lap's first brake-to-steer transition in each corner), measure the overlap time there, and compare spin with no spin in those windows only.
