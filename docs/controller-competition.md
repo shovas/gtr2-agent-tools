@@ -506,3 +506,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Throttle-duty crossings (the speed scale of the gear choice flips at duty 0.5): shifts fall within 0.3 s of a crossing in 11% of cases, against a base rate of 16%. Not the cause; rejected.
 - Remaining: the gear choice itself (the thrust comparison between gears 2, 3 and 4 at 25 to 40 m/s), or the rpm model's mismatch with the real rpm after a shift. Cost per shift is small (5.3 s of neutral over about 65 shifts is about 0.08 s each), so the loss is the number of shifts, not any one of them.
 - Next: ablate the model-based gear choice (`--live-off gear_opt`, the old rpm-threshold rule) against the default. If the rpm rule shifts far less and is not slower, the model is the cause.
+
+### Gear-model ablation, pair 1 (2026-11-27): the rpm rule cuts the neutral time, lap at the limit
+
+- Model-based gear choice (default): neutral 5.59 s per lap, 66.1 shifts per lap, lap 121.09 s. Rpm-threshold rule (`--live-off gear_opt`): neutral 3.52 s, 44.8 shifts, lap 121.19 s.
+- Difference: neutral -2.07 s per lap (meets the 2 s rule), shifts -21 per lap, lap +0.10 s (exactly at the limit of the rule, and one session each, with session noise of about 0.5 s).
+- Not decided. Pair 2 replicates it before any keep decision. The shift count falls substantially in one pair, so the model's hunting is the lead, but whether the rpm rule loses time elsewhere (for example at gear changes near the apex) is the question the lap time has to answer.
