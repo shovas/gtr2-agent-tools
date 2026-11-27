@@ -322,3 +322,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Grip below 0.3 alone is not the discriminator (20% of clean windows have it); steering saturation alone is not either (1.6% of clean windows; 4 of 6 spins).
 - Lead time: the precursor appears 0.0 to 0.9 s before the spin peak (median about 0.4 s). Non-spin windows that reach the precursor have a similar median lead (0.35 s), so the lead time does not by itself separate them, and about 0.4 s is too short for most corrective action. A useful early warning needs a precursor that appears earlier.
 - Not yet done: a synthetic test for the window rule, and a hand check of matched clean windows at the same speed and position.
+
+### Hand check of spin windows against matched clean windows (2026-11-26)
+
+- Five-ish spin windows and matched clean windows (same entry speed within 3 m/s) were read sample by sample before the yaw peak. Several spin windows already show full counter-lock and heading errors of -50 to -130 degrees when the window opens: they are late, not early.
+- The matched clean windows look much the same: full steering, front grip at 0 to 0.3, sideslip 5 to 20 degrees, peak yaw 24 to 66 deg/s. They are near misses on the same path. The spin label is a threshold (120 deg/s) on a continuum, so a binary spin count discards most of the information.
+- Consequence: the precursor (steering at 0.95 or more with grip below 0.3) describes a common unstable state, with spins as its tail. The useful measure is continuous: peak yaw rate, sideslip rate, and heading error growth inside the window, with the 120 deg/s label kept only as a tail marker.
+- Not yet done: correlate those continuous measures with the precursor and with the lap-time loss in the same corners, which is what decides whether they matter for pace.
