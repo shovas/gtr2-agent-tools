@@ -335,3 +335,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Windows with the precursor (292): peak yaw median 44 deg/s, 90th percentile 74, 99th percentile 152; peak sideslip median 8.4 degrees, 90th percentile 30.7. Six of them reach the 120 deg/s spin threshold.
 - Windows without it (8,057): peak yaw median 30, 90th percentile 45, 99th 62; peak sideslip median 4.0, 90th 6.5. None reach 120 deg/s.
 - Peak sideslip separates the two groups far better than peak yaw (90th percentile 31 against 6.5 degrees). It is the stronger candidate for a continuous precursor. Not yet tested as a predictor with lead time, nor against lap-time loss.
+
+### Sideslip lead time (2026-11-26): short, and not much longer before spins
+
+- Sideslip first reaches 15 degrees: median lead before the yaw peak 0.70 s for the four spin windows (10th percentile 0.00 s), and 0.34 s for 88 non-spin windows (10th percentile 0.00 s).
+- The lead is about the same as the steering-and-grip precursor (about 0.4 s). Sideslip separates the groups in size (see previous entry), but not in time. A controller reacting at 0.3 to 0.4 s with a 0.3 s steering delay cannot prevent the peak with this signal alone.
+- Caveat: four spin windows. The lead distribution needs more spins, or the provocative setting, before it is trusted.
