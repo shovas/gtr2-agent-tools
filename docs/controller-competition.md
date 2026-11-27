@@ -836,3 +836,9 @@ Together with the rejected no-downshift screen, both direct controls on the 1150
 Across six incumbent pursuit sessions (the A arms of the exit, no-downshift and lift tests), 93 onsets were found where the heading error crosses -10 degrees at speed above 30 m/s with the lateral error under 3 m. The steering at these onsets is -0.34 (median -0.36 mean): a normal corner turn-in, not a spike.
 
 Reading: the heading swing that precedes an excursion is the same heading swing the car makes in ordinary corners. A heading onset does not, on its own, separate the excursion corners from the clean ones. The discriminating feature is probably the heading error growing past about -13 degrees while the steering stays at about -0.4 (no correction), which the traces showed before each excursion. That is the next thing to test, offline first.
+
+### Heading-error windows as a predictor of an excursion (2026-11-27): weak
+
+Across all signal logs of the session (1213 windows where the heading error is at or below -13 degrees, the steering is within 0.5, and the speed is above 30 m/s): 465 were followed by an excursion (lateral error at or beyond -5 m within the window or the next 2 s), and 748 were not. So 38% of such windows end in an excursion.
+
+Reading: the feature is common and the excursion rate is 38%, which is a weak discriminator. It is not a usable trigger on its own. Any predictor for the excursion needs more than this heading window, probably the rate of change of heading together with the steering command, and it has not been fitted yet. This is an offline screen, not a game test.
