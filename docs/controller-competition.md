@@ -201,3 +201,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Designed: 0 of 2 sessions completed the lap. Both stopped moving at the 640 m point (x 663 to 667, z 440 to 444) on lap 3, after two logged laps (lap 1 189 to 201 s, which includes the start, and lap 2 at 116 to 118 s).
 - Reading: with default settings the designed follower's stall at 640 m is repeatable (2 of 2, not a one-off), and pursuit does not have it. The designed era's 130 s laps came from the settings that avoid the stall (frozen plan, braking share). So the designed follower is not a pace comparison at default settings: it cannot finish the lap.
 - The 700 to 1000 m time loss (+2.9 s) was measured on the designed laps that did avoid the stall; the default designed follower does not reach that section at all. Both facts go into the designed follower's next step: fix the 640 m stall first (the earlier heading-preview and brake-share tests reduced it, not removed it).
+
+### The 640 m stall: mechanism and the first test (2026-11-26)
+
+- Both default designed stalls (sessions 193437 and 201250) show the same sequence: steering at full lock (-1.0) from about 521.8 s, the heading error growing from -30 to -118 deg, the car 46 m off the line, speed falling from 46 to 9 m/s, front grip 0 to 0.3, sideslip swinging. The stall point is x 663, z 444.
+- The gain table gives a limit: at 45 m/s the designed command reaches full lock at a heading error of about 26 deg (`a` = 0.13, steering gain 0.059 rad per command). Past that the steering cannot correct the error, and the car slides.
+- The heading error grows because the designed follower measures the line's heading at the nearest waypoint, which lags at the bend entry. `--st-head-ahead 8` measures it 8 m ahead. Every paired test since the 14:00 era used that flag, and none of those sessions stalled at 640 m.
+- Test running: designed with `--st-head-ahead 8` alone (no plan file, no brake share), two sessions, `paired_preview.jsonl`. If it completes the lap without the stall, the preview is the fix for the default designed follower, and the default should change.
