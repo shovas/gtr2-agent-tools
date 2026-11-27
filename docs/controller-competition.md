@@ -675,3 +675,17 @@ Classification:
 - Unresolved: (a) whether push factor explains the 120 s to 112.66 s gap (test: one session of the same two arms with `--session-laps` and the push ramp); (b) whether the rpm arm's track-limit rate is caused by the arm (a count of events per arm over the existing records would settle this cheaply); (c) whether a clean-lap comparison at push 1.15 favours either arm.
 
 Next offline steps: count track-limit and impact events per arm across all existing paired records (`gtr2-leaderboard.py` does not yet report these per arm), and check the drive log of one paired session for the push value used.
+
+### Track-limit events in the paired records (2026-11-27): the strict clean rule rarely holds for the baseline
+
+Measured with `scripts/gtr2-paired-events.py` (reads each record's signal log header and maps every event to its lap). Track-limit events are the short edge events (0.1 to 2.9 s) the lap check counts.
+
+- Across all paired records with a signal log, almost every session has at least one track-limit event, and most laps have one.
+- Pursuit control arm (A, `--follower pursuit` alone) pooled over the 15 pair files that have it: 151 of 216 laps (70%) carry at least one track-limit event. Session-level: 15 of 15 files show events in every session.
+- The strict clean-lap rule (`gtr2-leaderboard.py`, no track-limit event and no impact) therefore leaves roughly 30% of baseline laps usable. A paired whole-lap comparison built on clean laps rests on few laps and is biased toward the laps that happened to stay inside the line.
+- Impacts (Kerbs21 kerb strikes, 60 to 80 m/s^2 peak) occur in some sessions (the share is not counted here). The kerb rule in the project allows kerb contact, so impacts are a secondary filter.
+
+Classification:
+- Confirmed observation: the counts above (script output, reproducible).
+- Open question, to settle before using clean-lap means: whether the track-limit events are a driving defect (the follower runs wide) or a geometry artefact (the boundary line is too tight, or the tyre footprint is too wide). The boundary rule is the user's rule and is not changed here. The check is to compare the event positions with the line offset (`line_off` in the signal log) at the same distance: a consistent offset above the line margin points to the driver, a random scatter points to the geometry.
+- Consequence: the 1.86 s budget and the gear comparison need either a looser lap-time filter that keeps every lap with a cleaner measure, or a per-lap event time summed as a lap-time penalty, not a binary clean flag.
