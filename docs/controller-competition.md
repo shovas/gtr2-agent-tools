@@ -221,3 +221,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Session 2 (`--no-memory`): passed 640 m, lap 2 completed (83.8 s, which is short: the lap ends at the bend), then **stopped moving at x -485, z 16 on lap 3**, the exit of the 2570 m bend. That is the bend's known failure area, not the 640 m point.
 - Reading: with the preview, the designed follower clears the 640 m point in 2 of 2 sessions. Its failure then lands at the 2570 m bend exit in one of them. The preview is necessary for the 640 m point but not enough: the bend exit is the next limit.
 - Next: the bend exit (x -485, z 16) is the place to check the designed follower's heading and steering at exit, using the same logs as the earlier bend work.
+
+### The bend-exit stop (designed with preview, session 2, lap 3): the same spin as before (2026-11-26)
+
+- Entry: 51 m/s at z -162 (the earlier spin laps were at 52 to 54 m/s at z -145). Braking starts at 351.65 s (brake 0.83), then yaw grows from 2.7 to 25 deg/s while front grip falls from 0.99 to 0.46 (352.6 s), with the heading error at 13 to 14 deg.
+- Sideslip goes from 0 to -8 deg (353.5 to 354.2 s); steering swings from +0.5 to full counter-lock (-1.0) at 354.5 s; yaw reaches 90 deg/s; the car spins through about 180 deg and stops at x -484, z 16, facing back (heading error 158 deg), with the front and rear grip at 1.0 (no tyre load) and speed 0.
+- Reading: the designed follower's failure at this bend is the failure already measured for the spin laps (fast entry, front grip collapse at turn-in, a late large counter-steer). The 640 m stall was a different failure (steering authority at the heading error), which the preview removes. So the preview moves the designed follower past one limit and into the bend's known one.
+- Next test: the bend's entry speed for the designed follower with the preview against pursuit's entry speed at z -162, from the logs (no game run needed), to see whether pursuit's line enters the bend slower.
