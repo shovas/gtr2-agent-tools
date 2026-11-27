@@ -473,3 +473,11 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Pursuit-era clean laps: the logged `gear` changes about 87 times per lap; with a 0.5 s debounce it still changes about 36 times, and about 22 of those are upshifts per lap. A car with six gears makes about five upshifts per lap. So the logged gear field is not the gear the car is in, and the shift-timing comparison built on it (rpm and speed at upshift: 5942 against 5926 rpm, 50.2 against 50.1 m/s) is invalid, not a null result.
 - What is needed: the driver's own shift events (its `shift(True)` and `shift(False)` calls, with time, speed, rpm and lap distance) written to the signal log, so shift timing comes from commands, not from the game's gear reading. That is a small driver change, to be made before any shift-timing claim.
 - Status: gear and shift timing is blocked on the measurement, not on the car. Recorded as a blocker.
+
+### Correction and a lead: the driver shifts gear about 65 times per lap (2026-11-27)
+
+- My earlier entry (fd0369e) called the logged gear field noise. That was wrong. The field is the real gearbox: each shift passes through neutral (gear 0), so every commanded shift appears as two changes.
+- Commanded shifts (the new `shifts_*.csv`, one pursuit session, eight laps): 523, about 65 per lap, 264 up and 259 down. The game field shows 931 changes, consistent with two per shift.
+- The driver hunts. Example, 25 to 31 s into the session at 25 to 40 m/s: 4 to neutral to 3, then 3 to neutral to 2, then 2 to neutral to 3, within about 6 s.
+- Time in neutral above 5 m/s: 4.5 to 6.6 s per lap (mean 5.3 s), about 4% of a 120 s lap. A normal lap needs about five shifts, perhaps 0.7 s of neutral. So the excess is a few seconds per lap, which is the same order as the 1.86 s target. This is the largest lever found so far, and it is measured, not inferred.
+- Caveat, to be tested: some neutral time is unavoidable at each real shift, and the drive loss during neutral is assumed, not measured. The next step is to find the cause in the gear-selection code and test a fix in a paired run.
