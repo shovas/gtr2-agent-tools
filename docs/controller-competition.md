@@ -414,3 +414,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - At the apex (1140 to 1210 m), the fastest decile reverses steering more often (2.9 against 2.1 reversals per lap) and carries a larger mean heading error (15.8 against 13.8 deg), with the same steering variance and similar peak yaw (42 against 46 deg/s).
 - Reading: the fastest laps do not rotate less or steer more calmly. They carry more speed into a flatter arc and correct more while doing it. The hypothesis that the slower laps over-rotate is not supported. The section's time is in apex speed and arc shape, which the plan test could not reach (adding target speed did nothing).
 - Next: test the arc shape directly. The planner's line through the apex is the lever, since the fast laps' arc is flatter; whether the line can be made flatter at 1150 to 1200 m without losing the exit is the next experiment.
+
+### Apex-shift test (2026-11-27): running
+
+- Apex at about (-1000, -275), yaw +24.6 deg/s there, so a right-hand corner: the outside is physical left, and the shift is positive. Arm A: pursuit on the fastest-decile plan. Arm B: the same plus `--apex-shift 1.5` over 1150 to 1200 m (a guessed magnitude, inside the track width; the wall clamp applies). Two pairs of eight laps, logged to `paired_apex.jsonl`, option committed as `85f2aaf`.
+- Decision rule (set before the run): the apex section (1150 to 1200 m) at least 0.1 s faster and the lap not slower, with no added stall: keep, and try 2.5 m. Section no faster: the arc shape is not the limit. Section slower or a stall: reject, the wider arc costs the exit.
