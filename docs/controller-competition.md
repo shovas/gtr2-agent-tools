@@ -526,3 +526,7 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Per-pair lap difference B minus A: +0.10, -1.32, -1.12, -2.07 s (mean -1.10 s). Three of four pairs favour the rpm rule. No stall, no spin in any session.
 - Against the rule (set before the first pair): the neutral criterion (at least 2 s less) is missed by 0.25 s (-1.75 s). The lap criterion (not slower by more than 0.1 s) is met with margin. Verdict: a strong lap-time candidate with a marginal neutral criterion, not a formal keep.
 - The baseline stays on the model-based gear choice until a pre-registered confirmation, because the baseline is the fixed comparison for the rest of the work. Next: test the rpm rule on the designed follower (the other competitor), and, if it holds, add a `--gear-rule rpm` default option for pursuit only after a pre-registered pair.
+
+### Rpm gear rule on the designed follower (2026-11-27): running
+
+- Arm A: designed with the heading preview (`--st-head-ahead 8`), model-based gear choice. Arm B: the same with `--live-off gear_opt`. One pair first, logged to `paired_designed_gear.jsonl`. Both arms are subject to the designed follower's 640 m stall, so the test reads neutral time and shift counts first; lap time only where both arms complete laps.
