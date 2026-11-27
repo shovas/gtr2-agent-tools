@@ -432,3 +432,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Lap mean: control 118.42 s (16 laps), shifted 118.54 s (12 laps, the stalled session contributes only its four laps before the stop). The lap is slower by 0.12 s, but the stopped session's laps are a biased subset, so this difference is not reliable on its own.
 - Stall: one in arm B (x -1058, z -314, about 60 m before the apex, lap 5 of session 2). None in arm A.
 - Decision rule (set before the run): keep only if the apex is at least 0.1 s faster with the lap not slower and no added stall. Here the apex is 0.08 s faster (under the threshold), the lap is not clearly slower, and one stall was added. Rejected as configured: 1.5 m outward is not kept. The consistent sign suggests a smaller shift, 0.75 m, could be tested later if the stall is shown to be unrelated to the shift.
+
+### Correction to the apex-shift stall (2026-11-27)
+
+- The earlier entry said the shifted arm stopped "about 60 m before the apex". That was wrong. In lap 5 of the stalled session the car passed through the shifted window (1150 to 1200 m, entering at t 645.25 s) and stopped at 1263 m, about 60 m after the window ends, on the exit of the apex.
+- So the shift was applied when the stall happened, and the stall is on the exit, not the entry. The shift could still have affected the exit (a wider arc leaves the car further out), but one session cannot show it. The control had no stall at this place in its eight laps (pair 1 and pair 2 control: no stall).
+- Consequence for the rule: the stall is a driving failure on the exit, plausibly linked to the shift; this supports rejecting the 1.5 m shift as configured, and the 0.75 m test would need the exit (1200 to 1270 m) watched as well as the apex.
