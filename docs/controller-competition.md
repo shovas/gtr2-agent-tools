@@ -242,3 +242,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - So over this stretch the designed follower runs about 4 m off the line, with a steering bias, and lifts off the throttle. Pursuit holds the line within 1 m at full throttle.
 - Mechanism candidate: the designed follower's lateral term is `b * lat`, with `b = w^2 L / v^2` falling with speed. At 37 to 56 m/s a 4 m offset gives a command of only 0.10 to 0.13, about the size of a 2 deg heading error. The correction for position is weak at speed, so the car drifts and the drift costs speed.
 - Test to run: a lateral gain scale (`--st-lat-scale`, default 1.0 = no change), at 2 and 4, on the designed follower with the preview; success means the line offset in 700 to 1000 m falls below 1 m without the steering bias.
+
+### Lateral-scale test, first attempt (2026-11-26): the preview did not clear 640 m this time
+
+- Arm A (designed, preview 8, default lateral term): stopped moving at x 666, z 441 after one bend lap, which is the 640 m point. Earlier with the preview, 2 of 2 sessions had passed it (session 1 with saved memory and session 2 with no memory). So the preview clears the stall in 2 of 3 sessions, not reliably.
+- Arm B (lateral scale 4): not run. The game was still open 90 s after arm A, so the runner refused to start (counted as an infrastructure failure, not a controller result, as designed). The pair was rerun in a fresh records file (`paired_lat2.jsonl`).
+- Reading: the 640 m stall has an intermittent component the preview does not remove. Two sessions with the same settings went through, one stopped; that is the variation the preview test needs more sessions to measure.
