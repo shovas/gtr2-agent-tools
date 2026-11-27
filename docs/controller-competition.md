@@ -664,9 +664,9 @@ Not supported as stated:
 - Clean-lap-only means (A1 n=4, B2 n=2): A1 120.33 s, B2 121.34 s, B minus A +1.01 s. Pair 2 has no clean B lap, so it gives no clean comparison. The clean-only result rests on one pair and two B laps.
 
 Why the paired laps are about 120 s and the best clean lap was 1:52.66 (inferred, not yet verified in the drive log):
-- The paired runner (`gtr2-paired.py` line 93) passes each arm's options to `gtr2-lap-check.py` as `--drive-args` on top of the Imola entry in `track_params.json`. It does not pass `--session-laps`.
-- Without `--session-laps` the push factor stays at the entry's starting value (`--meta-start 1.00`) for all eight laps. The 1:52.66 lap came from a 12-lap session whose push climbed to 1.10 to 1.15 (analog-driving.md, the line-opt zone record). In those sessions the push-1.0 laps were 1:56 to 1:59.
-- So the paired sessions measure the gear arms at push 1.00, where laps are about 120 s. The push factor alone may account for most of the 7 to 8 s gap. The gear result applies to that regime and says little about the 1.86 s budget at push 1.15.
+- The paired runner (`gtr2-paired.py` line 93) passes each arm's options to `gtr2-lap-check.py` as `--drive-args` on top of the Imola entry in `track_params.json`. It also adds `--session-laps 8` for each session. CORRECTION (2026-11-27): an earlier note here said it did not; the dry-run plan shows it does.
+- CORRECTION: the push ramp does run in the paired sessions, so it does not explain the gap to 1:52.66 by itself. The cause of the 120 s laps is open. The 1:52.66 lap came from a 12-lap session; whether the paired sessions differ in some other setting (entry options, the number of laps, or lap-to-lap tyre wear) is not yet checked.
+- Consequence: the gear arms are measured inside a session with the push ramp, at about 120 s laps. The gear result is a result at that pace, not at the 1:52.66 pace, until the gap is explained.
 
 Classification:
 - Confirmed observation: the arithmetic above; zero spins in the four sessions.
