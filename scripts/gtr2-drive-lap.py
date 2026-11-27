@@ -284,6 +284,7 @@ def main():
     ap.add_argument("--slow-zone", type=float, nargs=3, action="append", metavar=("FROM", "TO", "FACTOR"), default=[], help="scale the cornering limit by FACTOR between these lap distances (metres); may be given several times (the Imola chicane at about 3120 m); with --live or the plain planner")
     ap.add_argument("--car-key", default="", help="the car's key (gt/maserati_mc12), set by gtr2-lap-check.py; used by --gear-opt to read the engine and gear files")
     ap.add_argument("--gear-cap", type=float, default=0.95, help="with --gear-opt: a gear is ruled out when the rpm the car would have in it (with the 1.04 look-ahead while accelerating) is above this share of the rev limit; 0.95 upshifts at about 6850 rpm on the MC12 (limit 7400), the torque curve says the next gear never gives more wheel force, so later is better until the limiter")
+    ap.add_argument("--gear-band", type=float, nargs=2, default=None, metavar=("LO","HI"), help="with --gear-opt: the thrust choice acts only outside this rpm band, and the gear is held inside it (off by default)")
     ap.add_argument("--gear-model-duty", type=float, default=0.0, help="with --gear-opt: the thrust model chooses gears only at throttle duty at or above this (0 = always, as before); below it the rpm rule decides (the hybrid test: 0.9)")
     ap.add_argument("--gear-up-hyst", type=float, default=1.04, help="with --gear-opt: an upshift must give this much more wheel thrust than the current gear (1.04 = as before); a weak upshift margin lets the car climb straight back after a downshift (the hunting)")
     ap.add_argument("--gear-down-hyst", type=float, default=1.15, help="with --gear-opt: a downshift must give this much more wheel thrust than the current gear (1.04 = the old rule)")
@@ -1606,6 +1607,8 @@ def main():
                 if gear >= 1:
                     scale = 1.04 if shared["duty"] > 0.5 else 1.0      # accelerating: the revs are about to rise. No gear change under braking or in a hard corner: a downshift without a rev-matching blip locks the rear wheels (tried: a spin at (-512, -401))
                     want = cargears.best_gear(gearcar, rpm, gear, scale, args.gear_cap, hysteresis=args.gear_up_hyst, down_hysteresis=args.gear_down_hyst, speed=speed, first_max=args.gear_first_max)
+                    if args.gear_band and args.gear_band[0] <= rpm <= args.gear_band[1]:      # --gear-band: inside the band the gear is held (the band is the hysteresis; the thrust choice acts only outside it)
+                        want = gear
                     g = gearcar["gears"]
                     if want < gear and rpm * g[want - 1] / g[gear - 1] > 0.95 * gearcar["limit"]:
                         want = gear                                                          # the lower gear would over-rev at the speed we have now

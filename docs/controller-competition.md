@@ -599,3 +599,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - The rpm rule (upshift at 6,800 rpm, downshift at 2,800 rpm) in the same replay: 17.3 changes per minute, with no reversals within 1.5 s. Its band is wide (a 2.4 times rpm spread), so small speed changes do not move the gear.
 - Reading: the model's thrust-ratio hysteresis (1.04 to 1.30) is a narrow band in thrust, and on this car's flat torque curve the thrust of neighbouring gears is nearly equal, so the best gear keeps flipping with small speed changes and widening the ratio barely helps. The rpm band does the job the thrust margin cannot. The root cause is the objective: it has no shift cost and no band, so it rewards every small change. Caveat: the replay counts recommendations on logged states, not real shifts; the in-game rpm rule result (about 1.1 s) is the performance evidence.
 - Next: a band-limited thrust optimiser (change gear only when the best gear's rpm lies outside a wide band, with the thrust choice inside it), replayed, then a paired test.
+
+### Band-limited thrust optimiser, replay (2026-11-27)
+
+- Same logged sequences: the thrust choice is used only when the current rpm lies outside a band (2,800 to 6,800 rpm), and inside the band the gear is held. Results: 13.5 changes per minute (2,800 to 6,800), 19.4 (3,200 to 6,600), 21.3 (3,500 to 6,300), each with no reversals within 1.5 s.
+- Against the other candidates in the same replay: the model at its settings 26.1 changes per minute with 58 reversals; the rpm rule 17.3 with none. So the band-limited thrust choice asks for the fewest changes with no flips, and it keeps the thrust reasoning inside the band.
+- Caveat: a replay counts recommendations on logged states, not real shifts, and it cannot price lap time. Next: implement the band as `--gear-band LO HI` (default off), then a paired test against the default and the rpm rule.
