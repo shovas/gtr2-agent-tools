@@ -293,3 +293,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - **Lap 1, x -577 to -521, z -466 to -404, 25 to 35 m/s:** the heading error holds at about -25 deg with the steering at full lock (-1.0) for over 1.5 s, and the lateral error grows from +0.2 to -14 m. The steering cannot close a 25 deg error at this speed: the same authority limit as the 640 m stall, now reached without a stall at 640 m.
 - **Lap 5, x 0, z -1 (start-finish), 29 m/s:** the car is already sliding (sideslip -12 deg) when it reaches the line, the yaw swings to 50 to 70 deg/s, and the steering stays at -1.0 through the spin. The logs record kerb impacts at x -4, z -1.5 (the `Kerbs21` object) in other sessions too, so this spot is a recurring kerb and slide location, not a random one.
 - Two failure modes, so the damped follower has at least two limits after the 640 m point: steering authority at high heading error, and a slide at the start-finish line. A fix for one will not remove the other, and each needs its own test.
+
+### The start-finish slide is the bend mechanism again (2026-11-26)
+
+- Approach (lap 5, damped session): full throttle on the straight to 57 m/s, hard braking at x -105 (brake 1.0), and the turn-in begins at x -52 while the car is still braking at 43 m/s (brake 0.8 to 0.9, steering 0.03 rising to 0.78 in about 0.9 s).
+- In that second, front grip falls from 0.94 to 0.25 and the yaw rate jumps from 2 to 35 deg/s; sideslip grows from 0 to -6 deg; the steering then goes to full counter-lock, and the car spins at 28 m/s by x -5, z -5.
+- So the start-finish slide is the braking-into-turn-in grip collapse measured at the 2570 m bend, at a different corner. It is a mechanism, not a kerb problem: the kerb impact is a consequence of the spin.
+- Consequence for the designed follower: the braking point before a corner and the turn-in overlap (brake still 0.8 to 0.9 when the steering starts). A fix has to separate them: release the brake before the turn-in, or limit the steering rate while braking.
