@@ -454,3 +454,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Control: apex 1.572 s, lap 119.08 s, exit 34.06 m/s. Tapered 0.75 m shift: apex 1.494 s (-0.078 s), lap 118.54 s (-0.54 s), exit 33.68 m/s (-0.38 m/s). No spin in either session.
 - Against the rule: the apex condition is met in pair 1; the exit is 0.08 m/s outside the 0.3 m/s limit; no stall. The lap difference is one session and the session spread is about 0.5 s, so it is not a verdict. Pair 2 decides.
+
+### Tapered apex shift, final (2026-11-27): not kept
+
+- Apex (1150 to 1200 m), B minus A: -0.036 s overall, with pair 1 at -0.079 s and pair 2 at +0.007 s. The rule needs at least 0.05 s in both pairs: not met.
+- Exit (1200 to 1260 m), B minus A: +0.02 m/s overall, but -0.38 and +0.43 m/s between the pairs. Not stable.
+- Lap, B minus A: -0.41 s overall (sessions 118.54 and 118.44 s against 119.08 and 118.72 s). The session-to-session spread is about 0.5 s, so this is not a verdict. It is the only signal, and it would need about 8 sessions per arm to test.
+- Result: the apex gain did not hold in pair 2, so the taper is not kept on the apex criterion. The lap difference is an open question, not a finding. No spins or stalls in either arm.
