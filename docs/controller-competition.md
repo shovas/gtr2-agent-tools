@@ -794,3 +794,15 @@ Caveat: this uses the lap-level mean from only two pairs. Re-estimate the noise 
 - The paired runner had classified that exception as a driving stall. It now classifies a Python exception in the driver as an infrastructure failure, which is excluded from driving results.
 - The first attempt's records are kept, not counted: `scripts/gtr2_ui/runs/bugged_nodown_attempt1.jsonl`. Arm A in that attempt (two clean sessions, 0 spins) is valid and is repeated in the rerun.
 - Rule unchanged (set above). The rerun uses a fresh log, `paired_nodown.jsonl`.
+
+### No-downshift screen result (2026-11-27): rejected by its own rule
+
+Rerun after the bug fix (`paired_nodown.jsonl`, two pairs, eight timed laps per session, all four sessions completed with no exception). Rule as pre-registered above.
+
+- Primary metric (laps with a track-limit event at 1100 to 1250 m, signal-log distance): arm A (pursuit) 2 laps across its two sessions; arm B (`--no-downshift-zone 1100 1200`) 7 laps. Arm B has more, not fewer. The rule's reject condition ("same or more excursions") is met.
+- Secondary (mean of clean laps, lap-check clean rule; few clean laps per session, so only indicative): arm A about 119.6 s from 9 clean laps; arm B about 121.8 s from 3 clean laps. No clean-lap comparison is possible with this few laps.
+- Verdict: rejected. Blocking the downshift through 1100 to 1200 m did not remove the excursion there, and it added excursions in the 1100 to 1250 m range.
+
+What this says about the hypothesis: the downshift is not the cause of the excursion. The association found offline (65% of downshifts followed by an excursion) was mostly the car's response to a slide, not the other way round, or the corner entry confound. The more likely reading now: the excursion is a power or yaw event at the corner (heading error and yaw swing with steering near zero at 1150 m), and a higher gear under the same throttle may make it worse, not better. That is a new hypothesis, not a result, and it has not been tested.
+
+Next: not a second run of the same comparison. The rule is set and the lead is rejected. The next test would target the yaw event directly, for example throttle at the 1150 m corner held at the lift point, with the rule set before the run.
