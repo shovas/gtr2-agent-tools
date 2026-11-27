@@ -228,3 +228,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Sideslip goes from 0 to -8 deg (353.5 to 354.2 s); steering swings from +0.5 to full counter-lock (-1.0) at 354.5 s; yaw reaches 90 deg/s; the car spins through about 180 deg and stops at x -484, z 16, facing back (heading error 158 deg), with the front and rear grip at 1.0 (no tyre load) and speed 0.
 - Reading: the designed follower's failure at this bend is the failure already measured for the spin laps (fast entry, front grip collapse at turn-in, a late large counter-steer). The 640 m stall was a different failure (steering authority at the heading error), which the preview removes. So the preview moves the designed follower past one limit and into the bend's known one.
 - Next test: the bend's entry speed for the designed follower with the preview against pursuit's entry speed at z -162, from the logs (no game run needed), to see whether pursuit's line enters the bend slower.
+
+### Entry speed does not separate pursuit from designed (2026-11-26)
+
+- Bend entry speed at z -160 (median over laps): pursuit era 50.8 m/s (315 laps), designed era 49.8 m/s (508 laps). The designed follower with the preview enters at 54.5 and 51.1 m/s (two laps).
+- So the pace gap between the followers is not made at the bend entry. Pursuit's advantage lies elsewhere, consistent with the 700 to 1000 m result (about 2.9 s), and the designed follower's bend loss comes from how it leaves the entry (its turn-in), not from a faster or slower entry on average.
+- This also means the entry-speed explanation of the spins is at most a risk factor; the same entry speed is used by both followers, and only the designed follower spins here.
