@@ -787,3 +787,10 @@ The four exit-test sessions give two pair differences of +1.29 s and +0.33 s (wh
 Reading: a confirmation of the rpm rule or any gear change at the 0.5 s level needs about 16 pairs, not the 2 to 4 used so far. Two-pair screens can detect a large effect (over 1 s) but cannot confirm a small one. This is why the no-downshift test is framed as a screen, with its own pre-registered decision rule.
 
 Caveat: this uses the lap-level mean from only two pairs. Re-estimate the noise after more pairs before committing to a sample size.
+
+### No-downshift screen: first attempt failed by a bug in the new option (2026-11-27)
+
+- The first attempt (both B sessions) ended at 49 s with `AttributeError: 'float' object has no attribute 'dist'`. The check referenced `target.dist` in the gear block, where `target` is a float (a target speed), not the track point. The fix uses the car's track position `w.dist` (set on every loop iteration).
+- The paired runner had classified that exception as a driving stall. It now classifies a Python exception in the driver as an infrastructure failure, which is excluded from driving results.
+- The first attempt's records are kept, not counted: `scripts/gtr2_ui/runs/bugged_nodown_attempt1.jsonl`. Arm A in that attempt (two clean sessions, 0 spins) is valid and is repeated in the rerun.
+- Rule unchanged (set above). The rerun uses a fresh log, `paired_nodown.jsonl`.

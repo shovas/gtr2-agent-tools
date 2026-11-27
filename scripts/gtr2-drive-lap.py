@@ -1608,7 +1608,7 @@ def main():
                 if gear >= 1:
                     scale = 1.04 if shared["duty"] > 0.5 else 1.0      # accelerating: the revs are about to rise. No gear change under braking or in a hard corner: a downshift without a rev-matching blip locks the rear wheels (tried: a spin at (-512, -401))
                     want = cargears.best_gear(gearcar, rpm, gear, scale, args.gear_cap, hysteresis=args.gear_up_hyst, down_hysteresis=args.gear_down_hyst, speed=speed, first_max=args.gear_first_max)
-                    if args.no_downshift_zone and args.no_downshift_zone[0] <= target.dist <= args.no_downshift_zone[1] and want < gear:      # --no-downshift-zone: test only, no downshift inside the distance range
+                    if args.no_downshift_zone and args.no_downshift_zone[0] <= w.dist <= args.no_downshift_zone[1] and want < gear:      # --no-downshift-zone: test only, no downshift inside the distance range
                         want = gear
                     if args.gear_band and args.gear_band[0] <= rpm <= args.gear_band[1]:      # --gear-band: inside the band the gear is held (the band is the hysteresis; the thrust choice acts only outside it)
                         want = gear

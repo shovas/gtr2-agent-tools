@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import subprocess
 import sys
 import time
@@ -98,6 +99,10 @@ def run_session(arm: str, options: str, laps: int, timeout_s: int, n: int = 0) -
     refusal = next((ln for ln in text.splitlines() if any(r in ln for r in REFUSALS)), None)
     new = sorted(set(RUNS.glob("signals_*.csv")) - before, key=lambda p: p.stat().st_mtime)
     stall = next((ln.strip() for ln in text.splitlines() if "stopped moving" in ln or "lap not completed" in ln), None)
+    driver_exc = next((ln.strip() for ln in text.splitlines() if re.search(r"(Traceback|AttributeError|NameError|TypeError|KeyError|ValueError|IndexError|ZeroDivisionError)", ln)), None)
+    if driver_exc:      # a Python exception in the driver is our bug, not the controller: infrastructure, not a driving stall
+        rec.update(error="infrastructure: driver exception: " + driver_exc[:200], infra=True)
+        stall = None
     if stall:
         rec["outcome"] = "stall"      # a driving failure (the car stopped), not an infrastructure failure: it counts against the controller
         rec["stall"] = stall
