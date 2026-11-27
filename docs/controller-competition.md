@@ -776,3 +776,14 @@ Offline, from the 28 sessions with shift and signal logs (shift logs and signal 
 Reading: the association is strong, but it runs both ways. A downshift can cause the excursion (the 213 cases), or the excursion can slow the car and bring about the downshift (the 197 cases). The rate comparison also has a confound: the downshifts happen at corner entry, where the car is slowest and most likely to leave the line. So this table does not establish the cause.
 
 What it does establish: the downshift is not a rare, incidental event at this point, and it is much more often inside an excursion than anything else there. The no-downshift paired test (pre-registered above) is the controlled check: it removes the downshift and keeps everything else.
+
+### Sample size for a 0.5 s whole-lap effect (2026-11-27): a planning estimate from two pairs
+
+The four exit-test sessions give two pair differences of +1.29 s and +0.33 s (whole-lap mean, unfiltered). Their spread is a rough estimate of the pair-level noise (SD about 0.68 s from only two values, so the estimate itself is uncertain).
+
+- Pairs needed to detect a 0.5 s difference (two-sided alpha 0.05, power 0.80, pair-difference SD 0.68 s): about 15, so 16 pairs (32 sessions, about 11 hours at 20 minutes a session).
+- For a 0.3 s difference: about 40 pairs. Not practical in the current session budget.
+
+Reading: a confirmation of the rpm rule or any gear change at the 0.5 s level needs about 16 pairs, not the 2 to 4 used so far. Two-pair screens can detect a large effect (over 1 s) but cannot confirm a small one. This is why the no-downshift test is framed as a screen, with its own pre-registered decision rule.
+
+Caveat: this uses the lap-level mean from only two pairs. Re-estimate the noise after more pairs before committing to a sample size.
