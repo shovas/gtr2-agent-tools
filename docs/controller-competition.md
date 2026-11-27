@@ -498,3 +498,11 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Cooldown 1.5 s against the default 0.35 s, one pair: neutral 4.89 against 5.16 s per lap (-0.27 s), shifts 59.6 against 63.9 per lap, lap 119.87 against 120.80 s (noise). The rule needed at least 2 s of neutral: not met. A longer cooldown does not remove the hunting.
 - Reading: the shifts continue at about one every two seconds with either cooldown, so the gear choice itself flips. The down-shift margin is already 1.15 (`--gear-down-hyst`), but the up-shift margin is only 1.04 (`--gear-up-hyst`, now an option, default unchanged). After a downshift the upshift test passes at once, so the car climbs back: 4 to 3 to 2 to 3.
 - Test next: `--gear-up-hyst 1.2` against the default, same rule (at least 2 s of neutral per lap, lap not slower by more than 0.1 s).
+
+### Gear hunting: three hypotheses, two rejected (2026-11-27)
+
+- Upshift margin 1.2 (one pair, one session per arm): neutral -0.25 s per lap, shifts -2 per lap, lap -0.88 s (session noise is about 0.5 s). Rule needed -2 s of neutral: not met; rejected.
+- Cooldown 1.5 s: rejected (-0.27 s neutral).
+- Throttle-duty crossings (the speed scale of the gear choice flips at duty 0.5): shifts fall within 0.3 s of a crossing in 11% of cases, against a base rate of 16%. Not the cause; rejected.
+- Remaining: the gear choice itself (the thrust comparison between gears 2, 3 and 4 at 25 to 40 m/s), or the rpm model's mismatch with the real rpm after a shift. Cost per shift is small (5.3 s of neutral over about 65 shifts is about 0.08 s each), so the loss is the number of shifts, not any one of them.
+- Next: ablate the model-based gear choice (`--live-off gear_opt`, the old rpm-threshold rule) against the default. If the rpm rule shifts far less and is not slower, the model is the cause.
