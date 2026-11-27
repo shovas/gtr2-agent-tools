@@ -519,3 +519,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Rpm-threshold rule (`--live-off gear_opt`, B, two sessions): neutral 3.66 s, 44.9 shifts, lap 120.78 s.
 - Difference B minus A: neutral -1.79 s per lap (the rule asked for 2 s: short by 0.2 s; the two pairs were -2.07 and -1.51 s), shifts -20 per lap, lap -0.61 s (pair 1 +0.10, pair 2 -1.32; session noise about 0.5 s).
 - Reading: the rpm rule removes most of the shifting and does not cost lap time in two pairs. The neutral criterion is marginal and the lap difference is inside noise for one pair, so this is a provisional candidate, not a verdict. Next: four more sessions (two pairs) on the same arms, with the rule as it stands, to confirm the lap time before the rpm rule becomes a default.
+
+### Gear-model ablation, final (2026-11-27): candidate, default unchanged
+
+- Four pairs, eight laps each (about 4 sessions per arm). Model-based gear choice (A): neutral 5.38 s per lap, 64.4 shifts, lap 121.19 s. Rpm-threshold rule (`--live-off gear_opt`, B): neutral 3.63 s, 44.4 shifts, lap 120.09 s.
+- Per-pair lap difference B minus A: +0.10, -1.32, -1.12, -2.07 s (mean -1.10 s). Three of four pairs favour the rpm rule. No stall, no spin in any session.
+- Against the rule (set before the first pair): the neutral criterion (at least 2 s less) is missed by 0.25 s (-1.75 s). The lap criterion (not slower by more than 0.1 s) is met with margin. Verdict: a strong lap-time candidate with a marginal neutral criterion, not a formal keep.
+- The baseline stays on the model-based gear choice until a pre-registered confirmation, because the baseline is the fixed comparison for the rest of the work. Next: test the rpm rule on the designed follower (the other competitor), and, if it holds, add a `--gear-rule rpm` default option for pursuit only after a pre-registered pair.
