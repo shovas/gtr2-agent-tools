@@ -262,3 +262,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Second pair, session 1 and 3 (arm A, control): stalls at x 634, z 444 (640 m) in session 1, and at x -510, z -436 in session 3 (after three logged bend laps, so the lap reached the 2570 m bend region before stopping at a different place). Session 2 (arm B, lateral scale 4): no spin, stalled at x -786, z 335 in the first pair; this pair's arm B result is pending (session 4).
 - So the designed follower with the preview stalls at several places around the lap, not only at 640 m: the failure location is spread, not fixed. This moves the designed follower's problem from "one stall point" to "unstable everywhere it is not steering conservatively", which is a stronger reason for the controller-level change than a single-point patch.
+
+### Lateral scale 4: an oscillation, not a correction (2026-11-26)
+
+- Both arm B sessions (lateral scale 4) stopped near x -773 to -786, z 335 to 344, with no bend lap; the session log for the second one shows why. Between x -500 and -650 at 47 to 52 m/s the steering swings -0.39, +0.46, -0.61 and then holds full lock (-1.0), with the heading error swinging about ±15 deg over about 1.5 s. The lateral error goes from +0.4 m to +5 m and then to -46 m as the car runs on with the steering held.
+- Reading: a scale of 4 on the lateral term is over-gain. It produces a self-sustaining oscillation at speed and then the same saturation as the 640 m stall. So the lateral term at speed is not "too weak" in the simple sense: raising it destabilises the loop. The right fix is a gain schedule (lateral gain with speed and delay), not a larger constant.
+- Summary of the second pair: arm A (control, preview 8) stopped at x 634 z 444 (640 m) and x -510 z -436 (after three bend laps); arm B (scale 4) stopped at x -786 z 335 and x -773 z 344 (oscillation then saturation). Neither arm completes a lap, so the 700–1000 m comparison cannot be made.
