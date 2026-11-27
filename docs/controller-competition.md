@@ -726,3 +726,13 @@ Method: lap distance is the integral of speed within each lap of the four exit-t
 Reading: at 1150 to 1200 m the car leaves the line with a heading 12 to 21 degrees off the line direction, and the steering two seconds earlier is already small. A pure line-following error would show the lateral error without a large heading error. A heading error this size at the start of the excursion is consistent with a yaw or steering-to-heading problem at that point, which is the lead the 1100 to 1200 m section needs. At 700 to 749 m the heading error is smaller and changes sign, so the mechanism there may differ.
 
 Status: observations, not yet causal. The sign convention for `herr` is the one in the signal log (not re-checked against the code here). Next checks: the heading error over the 3 s before each event at 1150 to 1200 m (its onset), and whether the designed follower and the pursuit driver show the same onset.
+
+### The two excursion patterns, traced in time (2026-11-27): a steering spike at 700 m, and a yaw without steering at 1150 m
+
+Each session's first crossing of the 5 m edge threshold on each lap was traced: heading error (`herr`) and steering (`steer`) from 3 s before to the crossing. Sessions A1, B2, A3, B4 (laps 1 to 8).
+
+- At 700 to 749 m (the largest cluster) the pattern repeats on every lap: heading error goes from about +3 degrees (3 s before) to about -8 (2 s before) and about -14 (1 s before), while steering goes to full lock (-1.0) at the crossing. The car turns in hard, the heading swings about 14 degrees, and the tyres reach the edge about 1 s later. Steering is at -0.25 to -0.3 two seconds before the crossing, so the spike is an input decision, not a delayed correction.
+- At 1150 to 1200 m the pattern is different: steering stays small (about -0.2 to +0.3) while heading goes from about -3 to +7 to +15 to +21 degrees over the same 3 s. The car rotates with little steering input, which fits an oversteer or yaw event rather than a steering error. This is the mechanism to test in the 1100 to 1200 m section.
+- The first pattern points at the driver's turn-in (a full-lock steering command at a fixed point); the second at the car's rotation (yaw with no steering). They may still share a cause (for example brake release or throttle at that point), which the logs do not yet show: the brake and throttle columns in the same window are the next check.
+
+Status: traces from four sessions, all eight laps each; consistent within sessions. These are observations of inputs and states, not yet of cause. The sign convention for `herr` and `steer` is that of the signal log.
