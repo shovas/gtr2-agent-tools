@@ -220,6 +220,7 @@ def main():
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
     ap.add_argument("--plan-file", default="", help="a saved speed plan (JSON {\"dist\": [...], \"v\": [...]}, lap distance in metres and target speed in m/s, as written from a signal log's target_v column): on the main chain the target speed is this table at the car's lap distance, replacing the planner's live target, so two sessions can share one plan (empty = off)")
     ap.add_argument("--fgrip-steer", type=float, default=0.0, help="--follower designed with the wheel data (--dyn): when the front tyres' measured grip falls below this fraction, the steering command is scaled by grip / this, so the front tyres are not pushed further into saturation at turn-in (0 = off; about 0.9 to test)")
+    ap.add_argument("--gear-cooldown", type=float, default=0.35, help="seconds after a shift before the gear-choice logic may shift again (default 0.35, as before); the shift hunting (about 65 shifts per lap) is tested with a longer cooldown")
     ap.add_argument("--apex-shift", type=float, default=0.0, help="metres of lateral aim offset (positive = physical left) between --apex-from and --apex-to lap distance: a wider arc through the apex (0 = off, as before)")
     ap.add_argument("--apex-from", type=float, default=1150.0, help="lap distance (m) where --apex-shift starts")
     ap.add_argument("--apex-to", type=float, default=1200.0, help="lap distance (m) where --apex-shift ends")
@@ -1598,7 +1599,7 @@ def main():
                 print("W %5.2f rpm=%5.0f rot=%s grip=%s load=%s lat=%s defl=%s" % (now - t0, tel["rpm"], ",".join("%.1f" % w["rot"] for w in wl), ",".join("%.2f" % w["grip"] for w in wl), ",".join("%.0f" % w["load"] for w in wl), ",".join("%.0f" % w["lat"] for w in wl), ",".join("%.3f" % w["defl"] for w in wl)), flush=True)
             if rec["phase"] is not None or (args.kerb_mode and now < kerb_until):
                 pass
-            elif gearcar is not None and now - last_shift > 0.35 and not in_lane and chain is track.main and shared["brake"] < 0.05 and abs(tel["accel"][0]) < 8.0:
+            elif gearcar is not None and now - last_shift > args.gear_cooldown and not in_lane and chain is track.main and shared["brake"] < 0.05 and abs(tel["accel"][0]) < 8.0:
                 gear, rpm = tel["gear"], tel["rpm"]
                 if gear >= 1:
                     scale = 1.04 if shared["duty"] > 0.5 else 1.0      # accelerating: the revs are about to rise. No gear change under braking or in a hard corner: a downshift without a rev-matching blip locks the rear wheels (tried: a spin at (-512, -401))
