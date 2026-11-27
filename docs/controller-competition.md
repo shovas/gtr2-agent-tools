@@ -449,3 +449,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Shift 0.75 m (smaller, to limit the exit cost) over 1150 to 1200 m, easing back to zero over 40 m (to 1240 m), so the exit is not shifted. Control: the same fastest-decile plan with no shift. Two pairs, logged to `paired_taper.jsonl`.
 - Decision rule (set before the run): keep only if the apex (1150 to 1200 m) is at least 0.05 s faster in both pairs, the exit speed (1200 to 1260 m) is within 0.3 m/s of the control, and there is no added stall.
+
+### Tapered apex shift, pair 1 (2026-11-27): interim
+
+- Control: apex 1.572 s, lap 119.08 s, exit 34.06 m/s. Tapered 0.75 m shift: apex 1.494 s (-0.078 s), lap 118.54 s (-0.54 s), exit 33.68 m/s (-0.38 m/s). No spin in either session.
+- Against the rule: the apex condition is met in pair 1; the exit is 0.08 m/s outside the 0.3 m/s limit; no stall. The lap difference is one session and the session spread is about 0.5 s, so it is not a verdict. Pair 2 decides.
