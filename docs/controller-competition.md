@@ -374,3 +374,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Arm A: pursuit (incumbent). Arm B: pursuit with `--slide-release 8` (brake released to zero while it is above 0.2 and the slide is above 8 degrees, after the ellipse cap). Two pairs of eight laps, logged to `paired_slide.jsonl`, option committed as `8450adf`.
 - Decision rules (set before the run): a lap-time gain of 0.1 s or more in the turn-in windows with no added spins means keep it and test it on the designed follower; no gain or added spins means the sideslip signal is a symptom and the next test is a steering-rate limit at turn-in; a time loss means the release costs more than the slide it prevents.
+
+### Pursuit slide release at 8 degrees: first full test (2026-11-26 to 27): inconclusive
+
+- Session medians (eight laps each): baseline 120.04 and 120.20 s; slide release 118.30 and 121.43 s. No spin in any session (16 bend laps per arm).
+- Mean difference (slide release minus baseline): -0.26 s. The pairs point in opposite directions (-1.74 s in pair 1, +1.23 s in pair 2).
+- Session-to-session spread is about 1.3 s, so the standard error of the difference is about 1.3 s with two sessions per arm, and the 95 percent interval is roughly ±2.5 s. The test cannot distinguish a 0.1 s gain from no effect or a loss.
+- Decision rule (set before the run): 0.1 s or more with no added spins means keep and test on the designed follower. This run does not meet it or fail it. Options: more pairs (about 80 minutes per two pairs for a standard error near 0.6 s), or measure the turn-in windows directly, the 0.1 s gain the rule targets, which the lap time averages over.
