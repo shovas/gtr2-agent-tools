@@ -214,3 +214,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Designed with `--st-head-ahead 8` (nothing else): it passed the 640 m point and completed six laps (lap times 193.5 s with the start, 123.6, 122.5, 137.8, 187.1, 140.5 s), then ran out of its session time (`--total` 1240 s) partway through lap 7. The record says "lap not completed (timeout)", which is the time budget, not a stall. No spin.
 - So the preview fixes the early stall. What remains is slow laps (lap 5 at 187 s, lap 6 at 141 s), not a stop. The designed follower's pace is still the problem, and the time budget has to be larger for designed runs (its laps are longer than the 130 s that the budget assumes).
 - Next: find where lap 5 (187 s) loses its time, using the same distance-aligned comparison as before, and set the session budget from the expected lap time.
+
+### Heading preview, both sessions (2026-11-26): 640 m cleared twice, the failure moves to the bend
+
+- Session 1 (saved memory): passed 640 m, six full laps, then the session time ran out on lap 7 (not a stall).
+- Session 2 (`--no-memory`): passed 640 m, lap 2 completed (83.8 s, which is short: the lap ends at the bend), then **stopped moving at x -485, z 16 on lap 3**, the exit of the 2570 m bend. That is the bend's known failure area, not the 640 m point.
+- Reading: with the preview, the designed follower clears the 640 m point in 2 of 2 sessions. Its failure then lands at the 2570 m bend exit in one of them. The preview is necessary for the 640 m point but not enough: the bend exit is the next limit.
+- Next: the bend exit (x -485, z 16) is the place to check the designed follower's heading and steering at exit, using the same logs as the earlier bend work.
