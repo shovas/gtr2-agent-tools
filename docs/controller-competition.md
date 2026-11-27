@@ -647,3 +647,31 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Two pairs, four sessions, no spin or stall. Model (A): lap 120.48 s, 2500 to 2800 m 10.19 s, 600 to 700 m 2.21 s. rpm rule (B): lap 121.30 s, 2500 to 2800 m 10.02 s, 600 to 700 m 2.08 s.
 - B minus A: bend exit -0.18 s (the rule needed at least -0.2 s: not met); 600 to 700 m -0.13 s; whole lap +0.81 s (slower). Session-level bend-exit times: model 10.55 and 9.83 s; rpm rule 9.99 and 10.05 s, so the pair-1 gain was reversed in pair 2.
 - Verdict: the bend-exit advantage found in the pooled data is not confirmed; the rpm rule is slower over the whole lap in this confirmation. Rejected. The earlier whole-lap gain of the rpm rule across four pairs (-1.10 s mean) is now contradicted by this confirmation (+0.81 s), so the rpm rule cannot be adopted on the existing evidence. Keep the model as the default; the rpm rule's lap-time effect is undecided and needs a larger pre-registered test before any default change.
+
+### Reconciliation of the bend-exit records (2026-11-27): what the source records support
+
+Source: `scripts/gtr2_ui/runs/paired_exit.jsonl` (four records: A1, B2, A3, B4; eight timed laps each; no spin in any). Signal logs were re-read directly. Monitor `bc6cvixf6` reported `PAIRED_EXIT_DONE` with two sessions per arm, which matches: there are two A-then-B pairs, (A1, B2) and (A3, B4), not four pairs. "Four paired comparisons" in the brief means these four sessions.
+
+Confirmed (re-computed from the signal logs):
+- Whole lap, mean of laps 1 to 8 per session: pair 1 B minus A = +1.29 s, pair 2 = +0.33 s, mean +0.81 s. This reproduces the `cd3d879` figure.
+- Bend exit: pair differences -0.57 s and +0.22 s, mean -0.18 s (the doc says -0.18). The rule needed -0.2 s: not met. The rejection stands.
+- No spin in any of the four sessions.
+
+Not supported as stated:
+- The whole-lap means include laps with impacts or track-limit events. The lap-check clean rule (no track-limit event, no impact) was not applied to these means.
+- Impacts (Kerbs21, peak 68 to 80 m/s^2) occur in A1, A3 and B4 at about 94 s, 215 to 217 s and 819 s. The kerb rule allows kerb strikes; the lap-check still marks the session unclean. Which lap each falls in is not confirmed here.
+- B4 has a track-limit event on 8 of its 9 logged laps (0.1 to 0.5 s each). Under the strict clean rule B4 has no clean lap. The rpm arm therefore ran unclean on nearly every lap in pair 2. This is an observation about the arm, and it was not reported before.
+- Clean-lap-only means (A1 n=4, B2 n=2): A1 120.33 s, B2 121.34 s, B minus A +1.01 s. Pair 2 has no clean B lap, so it gives no clean comparison. The clean-only result rests on one pair and two B laps.
+
+Why the paired laps are about 120 s and the best clean lap was 1:52.66 (inferred, not yet verified in the drive log):
+- The paired runner (`gtr2-paired.py` line 93) passes each arm's options to `gtr2-lap-check.py` as `--drive-args` on top of the Imola entry in `track_params.json`. It does not pass `--session-laps`.
+- Without `--session-laps` the push factor stays at the entry's starting value (`--meta-start 1.00`) for all eight laps. The 1:52.66 lap came from a 12-lap session whose push climbed to 1.10 to 1.15 (analog-driving.md, the line-opt zone record). In those sessions the push-1.0 laps were 1:56 to 1:59.
+- So the paired sessions measure the gear arms at push 1.00, where laps are about 120 s. The push factor alone may account for most of the 7 to 8 s gap. The gear result applies to that regime and says little about the 1.86 s budget at push 1.15.
+
+Classification:
+- Confirmed observation: the arithmetic above; zero spins in the four sessions.
+- Preliminary: whole lap +0.81 s (unfiltered); clean-only +1.01 s (one pair, two B laps).
+- Rejected: the rpm rule's bend-exit confirmation (rule set before the run, not met).
+- Unresolved: (a) whether push factor explains the 120 s to 112.66 s gap (test: one session of the same two arms with `--session-laps` and the push ramp); (b) whether the rpm arm's track-limit rate is caused by the arm (a count of events per arm over the existing records would settle this cheaply); (c) whether a clean-lap comparison at push 1.15 favours either arm.
+
+Next offline steps: count track-limit and impact events per arm across all existing paired records (`gtr2-leaderboard.py` does not yet report these per arm), and check the drive log of one paired session for the push value used.
