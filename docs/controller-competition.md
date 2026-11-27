@@ -444,3 +444,8 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Control (16 laps): mean 34.54 m/s, sd 1.24. Shifted (12 laps, including the stalled session's laps): mean 33.37 m/s, sd 3.54.
 - The shifted arm exits about 1.2 m/s slower and much more variably. That fits the apex gain (about 0.08 s) being paid back on the exit, consistent with the stall. The two effects go in opposite directions, so a wider arc trades apex speed for exit speed here.
 - Next (cheap, offline): the exit trade-off decides whether any arc shift helps; a shift that keeps the exit (for example one that eases back to zero by 1200 m) is the only version worth a game test.
+
+### Tapered apex shift (2026-11-27): test planned
+
+- Shift 0.75 m (smaller, to limit the exit cost) over 1150 to 1200 m, easing back to zero over 40 m (to 1240 m), so the exit is not shifted. Control: the same fastest-decile plan with no shift. Two pairs, logged to `paired_taper.jsonl`.
+- Decision rule (set before the run): keep only if the apex (1150 to 1200 m) is at least 0.05 s faster in both pairs, the exit speed (1200 to 1260 m) is within 0.3 m/s of the control, and there is no added stall.
