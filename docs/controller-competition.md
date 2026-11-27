@@ -187,3 +187,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Designed minus pursuit: +0.27 s (700 to 750 m), +0.61 (750 to 800), +0.71 (800 to 850), +0.54 (850 to 900), +0.43 (900 to 950), +0.29 (950 to 1000). Total about +2.9 s over the 300 m.
 - The whole gap between the eras is about 15 s (about 115 against 130 s). This stretch accounts for about a fifth of it, and the 1.86 s needed for the 1:50.8 target is smaller than the loss here.
 - Caveat: the eras differ in more than the follower (the designed era also has the paired-test settings), so this is where the two configurations differ most, not a measured effect of the follower alone. The clean test is a paired run of pursuit and designed with the same settings, timing these segments.
+
+### Pursuit against designed, default settings, first pair (2026-11-26)
+
+- Pursuit (session 1): full eight laps, median 120.9 s, no spin; 700 to 1000 m takes a median 6.45 s.
+- Designed (session 2): **stopped moving at x 667, z 440 on lap 3** (the 640 m stall). Two laps were logged before it stopped (lap 2 at 115.7 s, reached before the stall; the stall itself is a driving failure, not infrastructure, and counts against the designed follower).
+- Reading: with default settings the designed follower stalls at the 640 m point, the failure the earlier plan-based arms were built to avoid. It is not a pace comparison at all in this session. The earlier designed-era laps (130 s) came from the frozen-plan and braking-share settings, which keep the car out of that stall.
+- The stall is now classified as a driving failure by the runner (outcome "stall"), so it is not counted as an infrastructure failure.
