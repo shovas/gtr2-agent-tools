@@ -305,3 +305,11 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Counting laps with any sample of brake above 0.3 and steering above 0.2 at 25 m/s or more flagged all 1354 laps, so the metric says nothing. It also counted any yaw of 120 deg/s or more anywhere on the lap as a spin (54 laps), so the spin label is not tied to the corner either.
 - Next, to be useful: restrict both measures to a window around each turn-in (the lap's first brake-to-steer transition in each corner), measure the overlap time there, and compare spin with no spin in those windows only.
+
+### Turn-in windows, first pass (2026-11-26): provisional, not validated
+
+- Window: from the first sample at 25 m/s or more with brake above 0.3 and |steer| above 0.2, to 1.5 s later or until |steer| falls below 0.1. 11,248 windows over the logged laps (about 8 per lap).
+- Spin label, now tied to the window: yaw rate of 120 deg/s or more inside it. Seven windows qualify, against 54 laps under the old whole-lap label. So most old "spins" were yaw events outside any corner, and the earlier counts overstated the bend problem as a per-corner event.
+- Medians, spin (7) against no spin (11,241): entry speed 31.7 against 34.5 m/s; overlap 0.20 against 0.30 s; peak brake 0.39 against 0.64; minimum front grip 0.00 against 0.33; peak yaw 148 against 30 deg/s.
+- Reading: the seven spin windows combine low braking with a complete front-grip loss, not heavy braking into turn-in. That contradicts the earlier "brake into turn-in" explanation for the bend, which came from a single lap. The sample is seven, the windows are not yet checked by hand, and no tests exist for the window code. Not a result yet.
+- Next: hand-inspect the seven spin windows and a matched sample of clean windows; add synthetic tests for the window rule (a window opening, closing on the 1.5 s cap, and a spin on the boundary).
