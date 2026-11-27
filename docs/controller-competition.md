@@ -401,3 +401,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A (fastest-decile plan): lap median 118.75 s, section (1100 to 1200 m) median 2.81 s, no spin. Arm B (+4 m/s over the section): lap median 118.33 s, section median 2.97 s, no spin.
 - Section difference B minus A: +0.11 s (B slower through the section), but the lap is 0.4 s faster in B, so B recovers time elsewhere. Lap-to-lap spread in the section is 2.66 to 2.93 s, so this is within noise.
 - Reading, provisional: raising the speed through the section did not make it faster; the lap gain in B lies outside the section, which argues the section is limited by something other than entry speed. Pair 2 is running.
+
+### Section test, final (2026-11-26 to 27): no measurable effect
+
+- Two pairs, eight laps each (16 laps per arm, no spin, no stall). Lap mean: A 118.49 s, B 118.52 s (difference +0.03 s). Section 1100 to 1200 m mean: A 2.879 s, B 2.835 s (difference -0.044 s; per-lap sd 0.17 s).
+- Session-level lap differences (B minus A): -0.50 s and +0.56 s; they cancel. Approximate 95% interval for the section difference: about ±0.12 s.
+- Reading: adding 4 m/s of target speed through the section does not make it faster, and the interval excludes a section gain above about 0.1 s. The section is not limited by entry speed. It is limited by how the car leaves the braking zone and reaches the turn-in at 1100 m, or by something else outside the speed plan. This matches the earlier turn-in finding: the time is in the line and the slide, not the target speed.
