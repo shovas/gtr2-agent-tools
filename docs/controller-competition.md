@@ -356,3 +356,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - **Test.** Pursuit against pursuit with `--slide-release 8`, two pairs of eight laps, paired and logged to `paired_slide.jsonl`. Outcomes: lap time per corner window (time through each corner, from distance-aligned signal logs), spins and stalls, and the slide duration per window.
 - **What would change the plan.** A lap-time gain of 0.1 s or more in the turn-in windows with no added spins: keep it and test it on the designed follower. No gain, or more spins: the sideslip signal is a symptom, and the next test is the steering-rate limit at turn-in. A loss of time in the windows: the brake release costs more than the slide it prevents.
 - **Cost.** A few lines in the driver's brake logic (not yet read) and about 80 minutes of game time. Offline check first: replay the logged sideslip traces through the rule to count how often it would fire.
+
+### Replay of the proposed brake-release rule over the logged laps (2026-11-26): too unspecific as written
+
+- Rule replayed: sideslip above 8 degrees with brake above 0.2 at 20 m/s or more. It fires in 252 of 972 laps (26%) and in 1,174 of 1,021,100 samples (0.11%).
+- Of 38 laps with a spin (yaw of 120 deg/s or more at speed), 19 contain at least one firing. This count is "anywhere in the lap", not "before the spin", so it is not a timing result.
+- Reading: the rule fires in about 233 laps that do not spin, against about 19 that do. As written it would brake-release in many clean corners, and each release costs time that the replay cannot price.
+- Next: restrict the rule to the turn-in windows (the same windows as the precursor analysis), require the firing to come before the yaw peak, and count the time that each release would cost in the clean laps where it fires.
