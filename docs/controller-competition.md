@@ -537,3 +537,11 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Model-based gear choice (A): stalled at x 670, z 438; 564 commanded shifts and 10 s of neutral over 225 s of driving (about 2.5 shifts per second, 4.4 per cent of driving time in neutral). Rpm rule (B): stalled at x 665, z 444; 54 commanded shifts over its run (no full lap logged).
 - So on the designed follower the model's hunting is much larger than on pursuit (about ten times the shift rate), and the rpm rule removes nearly all of it. Lap time cannot be compared: neither arm completes a lap, because the 640 m stall comes first. The gear rule is therefore a separate, confirmed effect on shifting; its lap-time effect on the designed follower is untested until the stall is fixed.
+
+### Shift-loss measurement, corrected (2026-11-27)
+
+- Bug found and fixed in analysis: a neutral episode of one sample has zero duration when measured as last minus first timestamp, so per-shift neutral read as 0.00 s. A single neutral sample is about 0.11 s (the log rate), so the per-command neutral time is about 0.1 s, consistent with 5.3 s per lap over about 65 shifts.
+- Command to neutral: about 0.04 s. Neutral sample to the new gear: about 0.1 s. A raw-row check (session 092954, command at 139.37 s) shows gear 4, then 0 at 139.41 s for one sample, then gear 5 at 139.53 s, with rpm falling from 7109 to 6428 across the shift.
+- Command outcomes: 77% of 1,839 commands are followed by an arrival in a new gear within 1.5 s (median lag 0.16 s). The other 23% produce no change within 1.5 s: failed, ignored or overlapped. Not yet separated by cause.
+- Drive lost during a neutral sample: acceleration in the neutral sample is 2.6 m/s² lower than in the three samples before it (median, 429 samples). So each neutral sample costs about 0.29 m/s of speed.
+- Estimated lap cost (model, not measured): a speed loss of about 0.3 m/s carried over a 400 m straight at 40 m/s costs about 0.07 s, since time lost is about d times delta-v over v squared. If the excess shifts (about 60 per lap) fall on straights and the speed loss is not recovered, the lap cost is roughly 2 to 4 s. Events during braking or cornering cost less. The rpm rule's measured 1.1 s is within this range. This is an estimate, and it needs a direct test (see next entry).
