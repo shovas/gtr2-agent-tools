@@ -806,3 +806,17 @@ Rerun after the bug fix (`paired_nodown.jsonl`, two pairs, eight timed laps per 
 What this says about the hypothesis: the downshift is not the cause of the excursion. The association found offline (65% of downshifts followed by an excursion) was mostly the car's response to a slide, not the other way round, or the corner entry confound. The more likely reading now: the excursion is a power or yaw event at the corner (heading error and yaw swing with steering near zero at 1150 m), and a higher gear under the same throttle may make it worse, not better. That is a new hypothesis, not a result, and it has not been tested.
 
 Next: not a second run of the same comparison. The rule is set and the lead is rejected. The next test would target the yaw event directly, for example throttle at the 1150 m corner held at the lift point, with the rule set before the run.
+
+### Throttle-lift rate test at 1100 to 1250 m (2026-11-27): rule set before the run
+
+Hypothesis: the excursion at 1150 m is a lift-off yaw event (the throttle falls from about 1.0 to 0.3 in the corner while the steering is already at full lock). A slower lift should reduce it.
+
+Arm A: `--follower pursuit` (incumbent). Arm B: the same plus `--lift-zone 1100 1250 --lift-rate 0.5` (the throttle may fall at most 0.5 duty units per second inside 1100 to 1250 m; a lift from 1.0 to 0.3 then takes about 1.4 s, not about 0.2 s). Two pairs, eight timed laps, `--log paired_lift.jsonl`.
+
+Primary metric: laps with a track-limit event at 1100 to 1250 m (signal-log distance), per arm, same as the no-downshift screen.
+Secondary: mean of clean laps (lap-check clean rule), indicative only.
+
+Decision rule:
+- Adopt as a lead if arm B has at least 3 fewer excursion laps than arm A across its four sessions and its clean-lap mean is no more than 0.5 s slower.
+- Reject if arm B has the same or more excursion laps.
+- Otherwise inconclusive.
