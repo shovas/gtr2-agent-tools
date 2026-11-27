@@ -395,3 +395,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Plans built from data, not from the designed follower's plan (that plan slows to about 17 m/s there, against the pursuit's 38 m/s, so it would make the baseline unfair): the fastest decile of pursuit-era clean laps, speed by 10 m bin (`plan_pursuit_fast.json`), and the same plus 4 m/s over 1100 to 1200 m (`plan_pursuit_fast_plus4.json`). Pursuit follows each plan (`--plan-file`, main chain).
 - Arms: A, pursuit on the fastest-decile plan; B, the same plus 4 m/s over 1100 to 1200 m. Two pairs of eight laps, logged to `paired_section.jsonl`.
 - Measure: time through 1100 to 1200 m per lap (sum of sample intervals in the distance window), spin or stall, and the lap time. Decision: a section gain of 0.1 s or more with no added stalls means the section responds to speed and the plus-4 line is worth extending; no gain means the section is limited by something other than entry speed.
+
+### Section test, pair 1 (2026-11-26 to 27): provisional
+
+- Arm A (fastest-decile plan): lap median 118.75 s, section (1100 to 1200 m) median 2.81 s, no spin. Arm B (+4 m/s over the section): lap median 118.33 s, section median 2.97 s, no spin.
+- Section difference B minus A: +0.11 s (B slower through the section), but the lap is 0.4 s faster in B, so B recovers time elsewhere. Lap-to-lap spread in the section is 2.66 to 2.93 s, so this is within noise.
+- Reading, provisional: raising the speed through the section did not make it faster; the lap gain in B lies outside the section, which argues the section is limited by something other than entry speed. Pair 2 is running.
