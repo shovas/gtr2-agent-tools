@@ -287,3 +287,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Damping 90 (preview 8): 2 of 2 passed 640 m and logged five bend laps each, then stopped at x -521, z -404 and at x 7, z -43. No spin in any of the four sessions.
 - Exact one-sided p for 2 of 2 passing against 0 of 2 is 0.17. Too few sessions to call it, but the direction is clear and it is the first setting that cleared 640 m reliably in a paired control.
 - Consequence: yaw damping is the first candidate for the designed follower's default with the preview. The next stop is later on the lap (x -521, z -404 and x 7, z -43 are two different places), so the damped follower still has a limit to find after the 640 m point.
+
+### The two damped-session stops (2026-11-26): two different failures
+
+- **Lap 1, x -577 to -521, z -466 to -404, 25 to 35 m/s:** the heading error holds at about -25 deg with the steering at full lock (-1.0) for over 1.5 s, and the lateral error grows from +0.2 to -14 m. The steering cannot close a 25 deg error at this speed: the same authority limit as the 640 m stall, now reached without a stall at 640 m.
+- **Lap 5, x 0, z -1 (start-finish), 29 m/s:** the car is already sliding (sideslip -12 deg) when it reaches the line, the yaw swings to 50 to 70 deg/s, and the steering stays at -1.0 through the spin. The logs record kerb impacts at x -4, z -1.5 (the `Kerbs21` object) in other sessions too, so this spot is a recurring kerb and slide location, not a random one.
+- Two failure modes, so the damped follower has at least two limits after the 640 m point: steering authority at high heading error, and a slide at the start-finish line. A fix for one will not remove the other, and each needs its own test.
