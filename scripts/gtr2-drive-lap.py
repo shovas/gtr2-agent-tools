@@ -220,6 +220,7 @@ def main():
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
     ap.add_argument("--plan-file", default="", help="a saved speed plan (JSON {\"dist\": [...], \"v\": [...]}, lap distance in metres and target speed in m/s, as written from a signal log's target_v column): on the main chain the target speed is this table at the car's lap distance, replacing the planner's live target, so two sessions can share one plan (empty = off)")
     ap.add_argument("--fgrip-steer", type=float, default=0.0, help="--follower designed with the wheel data (--dyn): when the front tyres' measured grip falls below this fraction, the steering command is scaled by grip / this, so the front tyres are not pushed further into saturation at turn-in (0 = off; about 0.9 to test)")
+    ap.add_argument("--st-lat-scale", type=float, default=1.0, help="--follower designed: multiplies the lateral (position) term of the designed law, which weakens with speed (1.0 = as before; a test of whether the weak position correction at speed causes the drift off the line)")
     ap.add_argument("--st-head-ahead", type=float, default=0.0, help="--follower designed: the heading error is measured to the line this many metres ahead (0 = the nearest waypoint, as before); the nearest waypoint lags the heading at the entry of a bend")
     ap.add_argument("--st-zeta",type=float, default=0.8, help="--follower designed: damping ratio")
     ap.add_argument("--st-k", type=float, default=1.0, help="--follower stanley: cross-track gain (1/s)")
@@ -1259,7 +1260,7 @@ def main():
                             stn["g"][b] = gl + 0.02 * (meas - gl)
                             gl = stn["g"][b]
                 if args.follower == "designed":
-                    shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl, head_ahead=args.st_head_ahead)
+                    shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl, head_ahead=args.st_head_ahead, lat_scale=args.st_lat_scale)
                     shared["steer"] = designed_limits_(shared["steer"], speed, yawrate, shared.get("fgrip"))      # the designed follower's post-call limits (one place, see designed_limits_)
                 else:
                     shared["steer"] = follower.stanley(track, chain, k, x, z, yaw, speed, yawrate, lat, k_cross=args.st_k, ks=args.st_ks, ff=args.st_ff, preview=args.st_preview, damp=args.st_damp, wheelbase=args.wheelbase, gain=gl)
