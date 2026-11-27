@@ -572,3 +572,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Model everywhere (A): neutral 5.06 s per lap, 62.1 commanded shifts per lap, reversals 0.38 per lap, lap 121.30 s. Hybrid (`--gear-model-duty 0.9`, B): neutral 5.26 s, 62.1 shifts, reversals 0.62 per lap, lap 121.28 s.
 - Against the rule: reversals did not fall (they rose), so the hybrid misses its first criterion. Shifting and neutral time are unchanged, so the coasting shifts do not come from the model path at duty below 0.9 in the way I assumed. Hypothesis rejected for now; the 89% of reversals in partial throttle and coasting need another explanation. Pair 2 runs to completion as the rule set, and the verdict follows it.
+
+### Hybrid gear test, final (2026-11-27): rejected by its rule
+
+- Two pairs, four sessions, no spin or stall. Model everywhere (A): neutral 5.20 s per lap, 62.8 shifts, reversals 0.62 per lap, lap 121.36 s. Hybrid (B, `--gear-model-duty 0.9`): neutral 5.13 s, 61.6 shifts, reversals 1.00 per lap, lap 121.40 s.
+- Against the rule: reversals rose, so the rule's criterion (a fall of at least half) is not met; rejected. Shifting and neutral time barely moved, and the lap is unchanged.
+- Reading: restricting the model to high throttle does not remove the shifting. So the coasting-reversal hypothesis from the earlier composition analysis is not supported by this test; the reversals are not caused by the model's choice at low duty alone. The rpm rule's advantage (pursuit candidate) therefore does not come from this mechanism, and the model's shifting needs a different explanation (for example its rpm prediction after a shift, which the mission lists).
