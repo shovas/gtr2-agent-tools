@@ -736,3 +736,16 @@ Each session's first crossing of the 5 m edge threshold on each lap was traced: 
 - The first pattern points at the driver's turn-in (a full-lock steering command at a fixed point); the second at the car's rotation (yaw with no steering). They may still share a cause (for example brake release or throttle at that point), which the logs do not yet show: the brake and throttle columns in the same window are the next check.
 
 Status: traces from four sessions, all eight laps each; consistent within sessions. These are observations of inputs and states, not yet of cause. The sign convention for `herr` and `steer` is that of the signal log.
+
+### The 1150 m excursion, traced in controls (2026-11-27): a downshift through neutral with a throttle lift and full steering
+
+Checked in the first lap crossing of the 1150 m point in two sessions (A1 at 157.1 s, A3 at 156.9 s, lap 1, where the car is about 48 m/s at the start of the window).
+
+- 30 rows before the crossing (about 1.1 s at the logged rate): full throttle (1.0), gear 3, speed 48 m/s, steering -0.44 to -0.52, heading error -14 degrees.
+- 20 rows before: throttle lifts to 0.3, steering goes to -0.9 to -1.0 (full lock), and the gear reads 0 (neutral) during a downshift from 3 to 2 (A1) or to 4 (A3).
+- 10 rows before: lateral error -11 to -11.5 m (the car is 11 m off the line, past the edge), speed 38 m/s, yaw swings between about +16 and -19 degrees per second. Brakes are 0 throughout.
+- At the crossing: heading error +11 to +12 degrees, speed 35 m/s, and within about 1 s the yaw reverses (+20 to +35 degrees per second) and the car recovers to within 1 m of the line.
+
+So the excursion is a loss of control under a downshift: the throttle lift, the full-lock steer and the neutral gear coincide within about 0.5 s. The speed loss (48 to 35 m/s) is larger than a shift or a lift alone would explain at this corner. Two candidate mechanisms, neither confirmed: (1) the lift and the neutral gap cut drive torque at the moment the car needs it to hold its yaw (a load-transfer or power-off snap), and (2) the full-lock steer is the response to the yaw the car already has, so steering follows the instability. The traces cannot yet separate them, because the steering and the lift start within a sample of each other.
+
+Connection to the mission: this downshift through neutral at 48 m/s is a gear-selection event inside a corner, which the RPM-rule and model comparisons did not measure (they counted shifts on the whole lap, not the shift's position relative to the corner's yaw). A shift at this point is the lead to test first, with the throttle and steering held fixed for one lap if possible.
