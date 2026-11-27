@@ -274,3 +274,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Cross-correlation of the steering command with the measured yaw rate (speed 30 to 60 m/s, 60 logs): the correlation peaks at a lag of 200 to 400 ms (0.667), against 0.62 at no lag and 0.57 at 800 ms. So the steering-to-yaw response carries a delay of about 0.3 s.
 - Consequence: the designed law is tuned for a natural frequency of 1.2 rad/s, but with 0.3 s of delay its phase lag is about 0.36 rad (21 deg), and it rises steeply as the gain goes up. A lateral gain of 4 raises the effective frequency and pushes the loop into the oscillation seen in the logs. This is delay-limited stability, not a sign error.
 - Candidate fixes: yaw-rate damping (the designed law has a `damp` term, off by default), and a predictor that acts on the state about 0.3 s ahead. The first is the cheaper test.
+
+### Yaw damping 90 on the designed follower with the preview (2026-11-26): first pair
+
+- Control (no damping): stopped at x 668, z 440 (640 m) after one bend lap.
+- Damping 90: passed 640 m, logged five bend laps, then stopped at x -521, z -404 (near the x -510, z -436 stop of an earlier control session). No spin.
+- One pair, so an observation: yaw damping clears the 640 m point in this sample, and the designed follower then stops later on the lap. It is the first setting that got past 640 m in a paired control, and the next failure is elsewhere. The second pair is running in `paired_damp.jsonl`.
