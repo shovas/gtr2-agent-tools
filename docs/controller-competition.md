@@ -425,3 +425,10 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Arm A (control, fastest-decile plan): eight laps, lap mean 119.05 s, apex (1150 to 1200 m) mean 1.574 s, no spin.
 - Arm B (1.5 m outward shift): stopped moving at x -1058, z -314 in lap 5, about 60 m before the apex and near the pit-exit area of the earlier stalls. Four laps before the stall: apex mean 1.502 s, lap mean 120.56 s. This is a driving stop, not an infrastructure failure, and it is counted as one. Whether the shift caused it is not known from one session.
 - Reading so far: the shifted arm's apex section is faster in the four laps it completed (-0.07 s), inside noise, and it stopped once. Pair 2 is running.
+
+### Apex-shift test, final (2026-11-27): rejected by its rule
+
+- Apex section (1150 to 1200 m), session means: control 1.574 and 1.514 s; shifted 1.502 and 1.448 s. The shift is faster in both pairs (difference -0.078 s overall, per-lap sd about 0.10 s).
+- Lap mean: control 118.42 s (16 laps), shifted 118.54 s (12 laps, the stalled session contributes only its four laps before the stop). The lap is slower by 0.12 s, but the stopped session's laps are a biased subset, so this difference is not reliable on its own.
+- Stall: one in arm B (x -1058, z -314, about 60 m before the apex, lap 5 of session 2). None in arm A.
+- Decision rule (set before the run): keep only if the apex is at least 0.1 s faster with the lap not slower and no added stall. Here the apex is 0.08 s faster (under the threshold), the lap is not clearly slower, and one stall was added. Rejected as configured: 1.5 m outward is not kept. The consistent sign suggests a smaller shift, 0.75 m, could be tested later if the stall is shown to be unrelated to the shift.
