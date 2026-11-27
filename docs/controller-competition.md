@@ -461,3 +461,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Exit (1200 to 1260 m), B minus A: +0.02 m/s overall, but -0.38 and +0.43 m/s between the pairs. Not stable.
 - Lap, B minus A: -0.41 s overall (sessions 118.54 and 118.44 s against 119.08 and 118.72 s). The session-to-session spread is about 0.5 s, so this is not a verdict. It is the only signal, and it would need about 8 sessions per arm to test.
 - Result: the apex gain did not hold in pair 2, so the taper is not kept on the apex criterion. The lap difference is an open question, not a finding. No spins or stalls in either arm.
+
+### Throttle application, lap-wide (2026-11-27): not a broad source
+
+- Pursuit-era clean laps, fastest decile against the rest, throttle duty per 50 m bin, split-half reproducibility as in the lap-time budget: 98 bins tested. Fast laps use more throttle by more than 0.1 in both halves at one bin only (1050 m, +0.19 overall, +0.26 and +0.11 in the halves). No bin shows the fast laps off throttle more in both halves.
+- So coasting and delayed throttle are not a broad source of the fastest laps' advantage. The one reproducible throttle difference is at 1050 m, just before the apex section (1100 to 1200 m) already found: the fastest laps carry more speed and throttle into that section. Consistent with the apex finding, not a separate lever.
+- Candidate list after this step, all from the mission's list: gear and shift timing (not yet checked), braking onset in the 1000 to 1100 m approach (the apex's entry, partly checked), and the line through the apex (the arc test failed). Gear and shift timing is next (cheap, from the logs).
