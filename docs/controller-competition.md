@@ -481,3 +481,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - The driver hunts. Example, 25 to 31 s into the session at 25 to 40 m/s: 4 to neutral to 3, then 3 to neutral to 2, then 2 to neutral to 3, within about 6 s.
 - Time in neutral above 5 m/s: 4.5 to 6.6 s per lap (mean 5.3 s), about 4% of a 120 s lap. A normal lap needs about five shifts, perhaps 0.7 s of neutral. So the excess is a few seconds per lap, which is the same order as the 1.86 s target. This is the largest lever found so far, and it is measured, not inferred.
 - Caveat, to be tested: some neutral time is unavoidable at each real shift, and the drive loss during neutral is assumed, not measured. The next step is to find the cause in the gear-selection code and test a fix in a paired run.
+
+### Gear-cooldown test (2026-11-27): running
+
+- Arm A: pursuit, default (0.35 s cooldown). Arm B: pursuit with `--gear-cooldown 1.5`. Two pairs of eight laps, logged to `paired_gear.jsonl`, option committed as `bc43588`.
+- Measures: commanded shifts per lap (from `shifts_*.csv`), time in neutral above 5 m/s per lap, and lap time.
+- Decision rule (set before the run): keep the longer cooldown if neutral time per lap falls by at least 2 s and the lap is no more than 0.1 s slower; reject if the lap is slower by more than 0.1 s or a stall is added; otherwise inconclusive.
