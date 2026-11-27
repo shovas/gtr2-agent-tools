@@ -348,3 +348,11 @@ A to-do is done when its kill test has run and the result, positive or negative,
 - Within the pursuit era (313 laps, median 116.2 s): precursor count +0.45, sideslip count +0.43 with lap time.
 - Within the designed era (476 laps, median 130.1 s): precursor count +0.31, sideslip count +0.36.
 - So the precursor and sideslip counts associate with slower laps inside each follower, not only between the two. Mean counts per lap are small (0.04 to 0.25), so each event is worth a fraction of a second at most, but they recur. Caveat: correlation, not cause. A slower lap may produce more of these events rather than the events producing the slowness. The test is a corner-level intervention (see the next entry).
+
+### Corner-level intervention: design (2026-11-26)
+
+- **Why this one.** A plan-file change at the 2570 m bend (entry plus or minus 5 m/s, mid-bend minus 4 m/s) has been run and has no measurable lap-time effect (0.19 s over four sessions). The precursor is a reaction to the slide, not a planned speed, so the intervention has to act on the slide itself.
+- **Intervention (reactive, pursuit as the host, since it is the incumbent).** When peak-to-now sideslip exceeds 8 degrees and the brake is above 0.2, release the brake to zero for as long as the sideslip stays above 8 degrees, and keep the steering law unchanged. Off by default; a new option, `--slide-release DEG`.
+- **Test.** Pursuit against pursuit with `--slide-release 8`, two pairs of eight laps, paired and logged to `paired_slide.jsonl`. Outcomes: lap time per corner window (time through each corner, from distance-aligned signal logs), spins and stalls, and the slide duration per window.
+- **What would change the plan.** A lap-time gain of 0.1 s or more in the turn-in windows with no added spins: keep it and test it on the designed follower. No gain, or more spins: the sideslip signal is a symptom, and the next test is the steering-rate limit at turn-in. A loss of time in the windows: the brake release costs more than the slide it prevents.
+- **Cost.** A few lines in the driver's brake logic (not yet read) and about 80 minutes of game time. Offline check first: replay the logged sideslip traces through the rule to count how often it would fire.
