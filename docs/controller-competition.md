@@ -253,3 +253,9 @@ A to-do is done when its kill test has run and the result, positive or negative,
 
 - Preview record, all designed sessions with `--st-head-ahead 8`: passed 640 m in 2 of 4 (the other two stopped at x 663 to 666, z 441 to 444). So the preview does not reliably clear the 640 m stall; the earlier "cleared twice" was too strong.
 - A stalled session left the game open (the lap check reported "could not leave the session"), and the next session was refused by the runner's "game still running" check. Fix: the runner now closes a still-open game with the recovery script before its next session (waits 30 s, recovers, waits 60 s more); the refused session is still counted as infrastructure.
+
+### Lateral-scale test, first pair (2026-11-26): the scale moved the stall
+
+- Arm A (preview 8, lateral term as before): stopped moving at x 634, z 444, before the bend (the 640 m stall again).
+- Arm B (preview 8, lateral scale 4): passed that point and stopped at x -786, z 335, a different part of the lap, with no bend laps. Its line offset over 700 to 1000 m could not be measured (no complete lap).
+- One session per arm, so this is an observation, not a result. It does show that changing the lateral term changes where the designed follower fails: the 640 m stall is not the only failure it has once the position correction is stronger. The second pair (sessions 3 and 4) is running in `paired_lat4.jsonl`.
