@@ -994,3 +994,12 @@ Not checked: which corner this is. The track position is not identified from the
 So the 4500 m cluster coincides with a sustained lateral tracking error where the planned offset is large, plus the line change into the corner. The events sit where the car is about +4.4 m off centre; the right road half-width near 4500 m is about 4.3 m (waypoint widths), so the cluster is a boundary crossing of a car that is not on the planned line. The exact rule test (section 4 of the mission) is still open.
 
 **Open.** Whether tracking error scales with the size of the planned offset across the whole lap (a whole-lap regression of geometric offset on planned offset). This run is in progress.
+
+**Whole-lap tracking (3,185,799 samples, all logs, 0 to 4900 m; scratchpad `lap_tracking.py`).** Regression of geometric offset on planned dry-line offset:
+
+- Overall slope 0.42. The car realises about 42% of the planned lateral offset across the lap. Slope 1 would mean it follows the line; 0 would mean it ignores it.
+- Tracking error SD grows with the size of the planned offset: 1.72 m when |planned| is under 1 m, 2.88 m at 1 to 3 m, 3.33 m at 3 m or more. Mean error is −0.49, −0.57 and +0.33 m. The mean is near zero, so the error is spread, not one-sided.
+
+Reading: lateral tracking of the planned line is systematically weak, and worst where the planner asks for the largest offsets. This is a general controller finding, not only the 4500 m corner. Caveats: the 3.2 million samples come from unequal numbers of laps and sessions, so they are not independent; the nearest-waypoint offset is an approximation; and the sample is weighted toward the runs in the log folder.
+
+Next test (not run): whether the shortfall is the controller (pure pursuit target choice, lookahead) or the planner (the line itself leaves the road: check whether the planned offset points outside the boundary near the largest errors).
