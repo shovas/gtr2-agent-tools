@@ -1037,3 +1037,11 @@ Consequences:
 - The gap that is still informative is mid-corner, where the plan is close to a lateral limit and the car is well below it: 525 to 575 m (plan 48 to 58, achieved 34 to 41 m/s) and 1175 m (plan 32, achieved 21 m/s). That is the candidate for "underused grip", to be checked against the car's actual lateral acceleration before any claim.
 
 No driver change or in-game test has been made from this. The learned profile still has to be built from achieved, feasible speeds, not from `plan_speed`.
+
+**Is the mid-corner gap at 525 to 575 m under-used grip? (2026-11-27, scratchpad `alat.py`; clean laps, every 4th sample, 2119 laps.)** Achieved lateral acceleration is speed times yaw rate (rad/s).
+
+- 525 m: median 11.7 m/s², 90th percentile 17.0 m/s². The Imola entry sets `--live-lat 16`, so the car reaches the planner's own limit at the 90th percentile. There is little grip left unused here.
+- 575 m: median 1.6 m/s², 90th percentile 3.5 m/s². The car is almost straight there, so that stretch of the gap is a braking or transition phase, not a corner the car is taking slowly.
+- Across the lap the highest median lateral accelerations are about 13 to 14 m/s² (for example 3675 m: 14.1; 650 m: 12.8; 2100 m: 12.5), so the 525 m corner is not unusually under-driven.
+
+Conclusion: the 525 to 575 m mid-corner gap is not supported as under-used grip. It is withdrawn as a candidate for lost time. What remains open is braking and transition timing in that stretch, which the speed table cannot separate.
