@@ -5,7 +5,7 @@ Examination depth: `full` = read the whole file; `section` = read the parts name
 | Path | Subject | Authority | Depth | Indexed |
 |---|---|---|---|---|
 | `CLAUDE.md` | agent rules, game safety, commands | authoritative | full | yes |
-| `AGENTS.md` | merged agent rules (this merge) | secondary to CLAUDE.md | full | yes |
+| `AGENTS.md` | redirect to `CLAUDE.md` (rules merged there, 2026-11-28) | redirect | full | n/a |
 | `docs/controller-competition.md` | controller record, all dated investigations | project record | section (this stretch) | yes |
 | `docs/analog-driving.md` | driving history, aim, steering, guard options | project record | section | partly |
 | `scripts/gtr2-drive-lap.py` | lap driver; steering, guard, live mode, chain, logging | code | section (steering, guard, fast preset) | partly |
