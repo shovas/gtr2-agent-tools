@@ -1139,3 +1139,18 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - 51 samples (about 1.7%) are near −0.95 (the histogram shows a second group at 0.95). These are the samples the clamp did not limit, and they are in the excursions.
 - So the clamp is not broken, and my earlier wording ("the clamp did not bind in the excursions") overstated it: it binds in most samples, but not on the ones that matter most. Something writes about −0.95 into the steering command on those 51 samples, after the clamp line. I have not identified the writer. The writers I checked (lines 1284 to 1799 of `scripts/gtr2-drive-lap.py`) are either inactive in this configuration or cannot produce −0.95 at speed.
 - Consequence for the verdict: the rejection under the pre-registered rules stands, but the test was not clean, because the clamp limited the command in most of the samples yet the unlimited samples coincide with the excursions. A fair retest needs the 51-sample writer found first.
+
+**Found: the 51 escaping samples are the track-limit guard, which is active by default (2026-11-28). This corrects two earlier statements.**
+
+- The escape is a discrete step from −0.350 to −0.950 in one sample (31.30 to 31.41 s in `signals_20261127_235023.csv`), then −1.00. A pursuit ramp cannot do that.
+- The track-limit guard (`scripts/gtr2-drive-lap.py`, line 1528) adds `limit_guard_steer × 4 = 0.15 × 4 = 0.60` to the command, in the direction of the lateral error, when all four tyres are off the road. −0.35 − 0.60 = −0.95, then clipped to −1.00. The arithmetic matches the escaping samples exactly.
+- **Correction:** I had written that the guard is opt-in and not enabled. It is opt-in as an option, but the `--fast` preset (the default, live mode) sets `limit_guard` to true (line 421). So it was active in every session in this stretch. The clamp test was therefore confounded by an active system, not by an unknown writer. The earlier "not enabled" correction in `1ba6d40`/`e2d2aeb` is also wrong and is superseded by this entry.
+- The guard fires after the car has left the road (four tyres off), so it is a response to the excursion, not its first cause: the heading divergence starts about 1 s before. It can still make a departure worse by adding full-lock steering at speed.
+
+**Pre-registered ablation (to be run, not yet run).** Question: does the track-limit guard change the 700 m excursion?
+
+- Baseline: the committed live configuration, five laps (`signals_20261128_001934.csv`, and earlier sessions).
+- Change: `--live-off limit_guard` (the existing ablation switch, no code change), five laps, everything else identical.
+- Success measure: the number of track-limit events at 650 to 760 m per lap, and the peak |steer| during those events. The guard is judged to matter if the excursion count changes by at least two events over five laps, or if the peak steering on the excursion falls below 0.9.
+- Stop rule: any spin or impact above 30 m/s² ends the session and is recorded as the guard being needed to avoid crashes.
+- Interpretation rule: a change in excursion count with no crash change is recorded as a guard effect on the excursion, not as a lap-time result.
