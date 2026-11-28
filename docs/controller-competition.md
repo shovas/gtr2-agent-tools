@@ -1019,3 +1019,11 @@ Caveats: the road half-widths (`wp_width`) are used as the edge, not the game's 
 - The planned line alone explains the most variance, so the logged aim does not account for the shortfall. The 42% tracking slope (9544863) stands as a measurement, not an artefact of the aim.
 - Caveat: R² is about 0.24, so most of the variance in the car's offset is not explained by the planned line either. The aim column may not hold every intended offset (for example the learned ILC corrections, which are not all logged). The shortfall is real, and its cause is still open.
 - Process note: the first two runs of this regression were killed by the time limit. The second had a quadratic mean calculation, now fixed; the reported numbers come from the fixed run.
+
+## 2026-11-27: learned speed reference from clean laps, against the planner's speed (scratchpad `learned_speed.py`)
+
+- Data: 2082 clean laps (no track-limit event inside, lap time 60 to 400 s), every 4th sample, lap position from the nearest waypoint (`wp_score`), 25 m bins. Achieved speed = median of `speed`; planned = median of `plan_speed`.
+- `plan_speed` is exactly 150 on straights and some other stretches (the "no limit" value). Those bins are excluded: their gap is meaningless.
+- With a real plan (under 100 m/s) the largest achieved-below-plan gaps are at: 2125 to 2300 m (25 to 43 m/s; achieved 33 to 55 m/s), 4225 to 4300 m (23 to 44 m/s), 2625 to 2675 m (26 to 51 m/s; the 2570 m stall region), 875 to 925 m (14 to 31 m/s), 525 to 575 m (12 to 20 m/s), 1850 to 1900 m (10 to 24 m/s), 1300 m (19.5 m/s).
+- Caveat that blocks any conclusion yet: the gap in braking zones may be the planner's look-ahead value rather than the speed at that point. This must be checked against the planner's code (how `plan_speed` is written to the log) before any of these gaps is treated as lost time. Until then they are candidates, not measured losses.
+- No feedforward has been built or tested. This table is the reference the learned profile would be compared with.
