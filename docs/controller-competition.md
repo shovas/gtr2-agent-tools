@@ -903,3 +903,12 @@ Decision rule:
 - Mean at or below 116.0 s: the regression is in the code or the entry since `c9982e5`. Next step: bisect the commits between `c9982e5` and HEAD, one session per step.
 - Mean at or above 119.0 s: the code is not the cause. The 1:52.66 lap is a best-of-many or environment result, and the investigation moves to selection and session conditions.
 - Between 116.0 and 119.0 s: inconclusive; one more old-build session before any conclusion.
+
+### What changed between the 1:52.66 commit and HEAD (2026-11-27): one entry argument, and 27 driver commits
+
+- Imola entry (`track_params.json`): the only argument that differs is the removal of the 2400 to 2750 m zone (commit `8698c04`). Every other argument is identical.
+- Driver and followers: 27 commits from `c9982e5` to HEAD touch `gtr2-drive-lap.py` or `gtr2_driving/`. Most add options that are off by default (`--gear-band`, `--gear-model-duty`, `--fgrip-steer`, `--plan-file`, `--apex-shift`, `--slide-release`, `--lift-zone`, `--no-downshift-zone`, `--st-*`, and others). The commit messages say the defaults keep the old behaviour, and a logging change (`3899e3b`) was made to be harmless.
+- One change is not checked in the game: `e009c12` (the designed follower's post-call limits, "no behaviour change; game check still owed"). It affects the designed follower, not the pursuit arm used here, but it is an unverified claim.
+- The pursuit steering refactor (`1b43c21`) was checked for identical arithmetic (200,000 random cases, maximum difference 0).
+
+Reading: the code diff does not, by itself, show a change to the pursuit arm's behaviour. The zone removal was tested directly (restoring it gave a slower lap at 2750 m in the current build). So the candidates are: a silent behaviour change from the defaults, a difference in the game environment, or selection (one best lap against typical laps). The old-build session (fc7d66a's rule above) separates the first from the other two.
