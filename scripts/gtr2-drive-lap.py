@@ -215,6 +215,7 @@ def main():
     ap.add_argument("--steer-live", action="store_true", help="scale the pursuit steering by reference / measured yaw response per command at the current speed (needs --steer-id), so the heading loop keeps one time constant at every speed")
     ap.add_argument("--steer-live-ref", type=float, default=0.8, help="--steer-live: reference yaw response, rad/s per unit of steering command")
     ap.add_argument("--steer-live-min", type=float, default=0.7)
+    ap.add_argument("--steer-clamp", type=float, nargs=2, default=None, metavar=("V", "LIMIT"), help="test (off by default): limit the pursuit steering to +-LIMIT of the lock on the main track at V m/s and above; the pre-registered test in docs/controller-competition.md")
     ap.add_argument("--steer-live-max", type=float, default=1.4)
     ap.add_argument("--st-learn", action="store_true", help="--follower stanley: adapt the steering gain per speed bin from the yaw response (off: use the measured table)")
     ap.add_argument("--st-wn", type=float, default=1.2, help="--follower designed: closed loop natural frequency, rad/s (gains are designed from speed: a = 2 zeta wn L / v, b = wn^2 L / v^2)")
@@ -1295,6 +1296,8 @@ def main():
                         y_ = sorted(ks_[-200:])[len(ks_[-200:]) // 2] * (b_ * 10 + 5.0)
                         sl_ = max(args.steer_live_min, min(args.steer_live_max, args.steer_live_ref / max(y_, 0.1)))
                 shared["steer"] = follower.pursuit_steer(herr, yawrate, args.steer_gain, args.damping, sl_)      # the steering law (follower.py); the target is chosen here
+                if args.steer_clamp and chain is track.main and speed >= args.steer_clamp[0]:      # --steer-clamp V LIMIT: test only
+                    shared["steer"] = max(-args.steer_clamp[1], min(args.steer_clamp[1], shared["steer"]))
             if args.steer_id and chain is track.main:
                 # online identification of the steering: yaw rate per unit of command per metre/second (k = yaw rate / (steer x speed)), from steady stretches only
                 cmd_ = shared["steer"]
