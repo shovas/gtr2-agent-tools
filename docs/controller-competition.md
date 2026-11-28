@@ -1205,3 +1205,9 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - **Pass rule:** a difference must appear in at least three of the logs, with the same sign, and be larger than the lap-to-lap spread within a log.
 - **Stop rule:** if fewer than two laps with and two without the event exist across the logs, the analysis is recorded as underpowered and no conclusion is drawn.
 - **Game time:** none for this analysis.
+
+**Result of the pre-registered 1150 m braking analysis (2026-11-28, window 1100 to 1200 m, five logs, 30 laps; output in scratchpad `brake1150.out`).**
+
+- Event laps: 4; laps without: 26. Pooled medians, event against no event: onset speed 47.3 against 46.5 m/s; heading error at onset −6.7 against −4.4°; peak brake 1.00 both; minimum speed 20.2 against 20.7 m/s.
+- **Pass rule: not met.** The heading error at onset is more negative on event laps, but within each of the three logs that have event laps the event laps are not consistently different (for example in `signals_20261128_001934.csv` the event laps are −3.6 and −7.2° against −3.8, −4.4, −3.9 and −6.4° without). The differences are smaller than the lap-to-lap spread. The braking event is not explained by any of these measures.
+- **Observation, not a result:** at the minimum-speed sample the heading error is about +22° on every lap of the three logs with the track-limit guard on (`001934`, `000526`, `233533`), and about +8° in the two with it off (`003352`, `004734`). This split is by log configuration, with few logs, and the guard's added steering acts only when the car is off the road. Whether the guard causes the larger heading error at 1150 m needs its own pre-registered test; it is recorded here and not used as a conclusion.
