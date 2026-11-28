@@ -882,3 +882,13 @@ Decision rule:
 - Continue to a larger paired comparison if arm B is at least 0.5 s faster at 2750 m (mean of the two sessions).
 - Reject the zone if arm B is slower at 2750 m, or if it adds track-limit laps at 2400 to 2750 m.
 - Otherwise: inconclusive, and not carried forward.
+
+### Zone qualification result (2026-11-27): rejected by its rule
+
+One pair (`paired_zone.jsonl`, sessions A1 and B2, eight laps each, both completed).
+
+- Time at 2750 m, mean of the eight laps: arm A (committed entry) 67.38 s; arm B (zone 2400 to 2750 m restored) 68.61 s. Arm B is 1.23 s slower at the end of the zone, which meets the reject condition ("slower at 2750 m").
+- Track-limit laps at 2400 to 2750 m: 0 in both arms in this pair.
+- Verdict: rejected. Restoring the zone that produced 1:52.66 does not reproduce that lap's advantage in the current build.
+
+What this means for the discrepancy: the reverted zone is not the explanation for the gap by itself. The 1:52.66 lap came from a build that differed from the current one in more than that zone, or it was a single lucky lap (selection). Either way, the 1:52.66 configuration cannot currently be reproduced by restoring one option. The next step is to identify what else changed between `c9982e5` and HEAD in the Imola entry and in the driver, before any further zone test.
