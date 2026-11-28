@@ -1045,3 +1045,14 @@ No driver change or in-game test has been made from this. The learned profile st
 - Across the lap the highest median lateral accelerations are about 13 to 14 m/s² (for example 3675 m: 14.1; 650 m: 12.8; 2100 m: 12.5), so the 525 m corner is not unusually under-driven.
 
 Conclusion: the 525 to 575 m mid-corner gap is not supported as under-used grip. It is withdrawn as a candidate for lost time. What remains open is braking and transition timing in that stretch, which the speed table cannot separate.
+
+**Fresh in-game session, committed configuration, five laps (2026-11-27, `gtr2-lap-check.py Imola4Imol --car gt/maserati_mc12 --input analog --drive-args "--session-laps 5 --sig-log"`; log `signals_20261127_233533.csv`).** The lap check reported FAIL on one impact at 92.7 s (61.2 m/s², Kerbs21, 16 m/s, a slow-speed kerb strike at the start; the impact is logged as such). Laps were about 122 s apart, so no clean lap was produced in this session.
+
+Track-limit events (five) and the state at each:
+
+- 31.7, 153.5, 276.2 and 398.6 s (one per lap, about 728 m on the lap): speed 49.6 to 50.4 m/s, steer −0.82 to −0.99, heading error −7.9 to −10.6°, yaw rate −11 to −16°/s, lateral error −6.9 to −7.4 m, throttle duty 0.3, gear 4. **This reproduces the 700 m excursion in fresh game data**: fast, near-full steering, a sustained heading error, under throttle, with no braking.
+- 528.4 s (about 525 m): speed 25.9 m/s, braking 0.3, heading error +12.8°, steering 0.08, lateral error −5.9 m. This is a different state from the 700 m events: a braking phase with the heading error changing sign.
+
+So the 700 m excursion is a fast-corner, heading-error problem that recurs on every lap; the 525 m event is a braking-phase event, not a corner the car is taking too slowly. Neither is a lost-time finding yet. The 92.7 s kerb strike is a separate, slow-speed event at the start of the lap.
+
+Limit of this session: five laps, one configuration. These are observations, not a test of a change.
