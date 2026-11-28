@@ -1190,3 +1190,18 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - **Pass rule for a hypothesis:** the difference must appear in at least three of four logs, with the same sign. Otherwise the 525 m event is recorded as unexplained.
 - **Stop rule:** if the logs do not contain at least one lap with and one lap without the event in each of two logs, the analysis is recorded as underpowered and no conclusion is drawn.
 - **Game time:** none for this analysis. A game test is only considered after it, under its own pre-registered protocol.
+
+**Correction: the "525 m braking event" is at about 1150 m (2026-11-28).** The entries from 2026-11-27 and the pre-registered protocol above (c42354e) label the braking track-limit event at 528 s as "about 525 m". That mapping was wrong. Checked against the nearest waypoint in `signals_20261128_001934.csv`: the event at 528.6 s is on lap 4 at 1156 to 1187 m, where the brake is 0.25 to 0.96 and the speed falls from 52 to 25 m/s. This is the 1150 m event, the same location as the known 1100 to 1250 m downshift.
+
+- Consequence: the 500 to 575 m analysis run on the four logs (window 500 to 575 m) examined the wrong stretch. Its result (no braking and no events in that window on any lap) is void for this question. It is recorded here and not used.
+- Rule kept: the 525 m protocol is withdrawn. The 1150 m event gets its own protocol, below, written before its analysis.
+
+**Pre-registered offline analysis: the 1150 m braking event (written 2026-11-28, before the analysis; no game time).**
+
+- **Question:** what happens in the braking phase at 1100 to 1200 m that ends in a track-limit event, and does it differ from the same stretch on laps without one?
+- **Data:** the four logs above, plus `signals_20261127_233533.csv`.
+- **Window:** 1100 to 1200 m, by nearest waypoint (not the speed integral).
+- **Measures per lap:** braking onset (first brake above 0.1), peak brake, speed at onset, the gear at onset, heading error at onset, minimum speed, lateral error at minimum speed, and whether a track-limit event falls in the window.
+- **Pass rule:** a difference must appear in at least three of the logs, with the same sign, and be larger than the lap-to-lap spread within a log.
+- **Stop rule:** if fewer than two laps with and two without the event exist across the logs, the analysis is recorded as underpowered and no conclusion is drawn.
+- **Game time:** none for this analysis.
