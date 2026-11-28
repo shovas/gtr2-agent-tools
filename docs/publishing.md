@@ -21,7 +21,7 @@ action.
 
 1. **Game files or anything derived from them wholesale:** executables, DLLs, `.gtr`/`.mas` archives, `.gmt`/`.dds` meshes and
    textures, `.bik` movies, `.tyr/.hdc/.car/.aiw` copies, audio, `Config.ini`, `.PLR` profiles, replays, crash dumps. The tools read
-   the user's own install; they never copy it. The README says "this repository contains no game files": keep that true.
+   the user's own install; they never copy it.
 2. **Personal details:** real names (other than the public GitHub handle the user chose), e-mail addresses other than a GitHub
    `noreply` address, absolute paths that contain a user name (`C:\Users\<name>\...`), machine names, adapter or hardware serial
    ids, IP addresses, player names from the game (profile names in screenshots, lists, logs).
