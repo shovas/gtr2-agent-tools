@@ -892,3 +892,14 @@ One pair (`paired_zone.jsonl`, sessions A1 and B2, eight laps each, both complet
 - Verdict: rejected. Restoring the zone that produced 1:52.66 does not reproduce that lap's advantage in the current build.
 
 What this means for the discrepancy: the reverted zone is not the explanation for the gap by itself. The 1:52.66 lap came from a build that differed from the current one in more than that zone, or it was a single lucky lap (selection). Either way, the 1:52.66 configuration cannot currently be reproduced by restoring one option. The next step is to identify what else changed between `c9982e5` and HEAD in the Imola entry and in the driver, before any further zone test.
+
+### Old-build reproduction (2026-11-27): rule set before the run
+
+Question: does the build that produced 1:52.66 (commit `c9982e5`, with its own committed Imola entry) run the paired-style arm A at about 112 to 116 s laps, or at the same 119 to 122 s as HEAD? Run: one session of the old build, from a worktree beside the repository (`gtr2-agent-tools-c9982`), with arm A's options (`--session-laps 8 --follower pursuit --sig-log`) through the old `gtr2-lap-check.py`. The paired runner did not exist at that commit, so the lap-check is called directly.
+
+Metric: mean lap time of laps 1 to 8 in the signal log (same method as the HEAD sessions, which were 119.6 to 121.8 s per session).
+
+Decision rule:
+- Mean at or below 116.0 s: the regression is in the code or the entry since `c9982e5`. Next step: bisect the commits between `c9982e5` and HEAD, one session per step.
+- Mean at or above 119.0 s: the code is not the cause. The 1:52.66 lap is a best-of-many or environment result, and the investigation moves to selection and session conditions.
+- Between 116.0 and 119.0 s: inconclusive; one more old-build session before any conclusion.
