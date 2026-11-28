@@ -1090,3 +1090,15 @@ Limits: five laps, four events, one configuration; the grip values are the model
 **Why the test did not isolate the hypothesis.** The clamp is applied to the pursuit command, but the track-limit guard (`--limit-guard`, around line 1526 of `scripts/gtr2-drive-lap.py`) adds steering after it whenever three or more tyres are off the road, clamped only to ±1. In the excursions the car is already off the road, so the guard pushes the logged steering back to −0.95 at exactly the moments the clamp was meant to act. Above 40 m/s only 52 of 3070 samples exceed 0.36, and every one of the four events logs −0.95.
 
 So the result rejects this clamp as implemented. It does not reject the front-axle-saturation hypothesis, because the clamp never bound during the excursion. A valid test needs the guard's steering to respect the same limit, or the guard switched off for the test, and then a new pre-registered protocol.
+
+**Correction to the steering-clamp verdict (ed01d88).** The explanation given there, that the track-limit guard adds steering after the clamp, is wrong. `--limit-guard` is opt-in (`store_true`, `scripts/gtr2-drive-lap.py` line 336), the Imola entry does not enable it, and the clamp test did not pass it. The verdict itself stands: under the pre-registered rules the clamp is rejected (success rule failed, stop rule triggered).
+
+What the logs do show (`signals_20261127_233533.csv` baseline against `signals_20261127_235023.csv` clamp, speeds 40 m/s and above):
+
+- Samples with |steer| above 0.36 fell from 150 of 3128 (4.8%) to 52 of 3070 (1.7%). The clamp binds in most of the samples.
+- The exceptions cluster in the excursions: 31.4 to 32.2 s and from 154.8 s, with steering of −0.95 at 50 m/s. The clamp does not bind in the samples it was meant to limit.
+- The logged `steer` is `shared["steer"]` read at the top of each loop iteration, before that iteration's steering is set. So it shows the previous step's output.
+- The only writers of `shared["steer"]` are listed in the driver (lines 1284 to 1316, 1526, 1531, 1683, 1689, 1799). Of these, only the pursuit assignment and the clamp are active in this configuration, and line 1531 is a factor of 1.0. The remaining writers do not explain −0.95 at speed.
+- Open: which branch the excursion samples take. The pursuit assignment and the clamp sit in the `else` branch around line 1297. If the excursion samples skip that branch, the clamp cannot apply to them. This is not yet traced.
+
+Status: the clamp verdict is rejected; the mechanism of the excursion steering is unresolved. The next step is instrumentation, not a new controller test: log which branch sets the steering on each sample, then repeat the clamp test with that branch covered.
