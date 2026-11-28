@@ -928,7 +928,7 @@ def main():
                         mvx, mvz = x - sig["prev"][0], z - sig["prev"][1]
                         if mvx * mvx + mvz * mvz > 0.25 or stuck_:
                             wl_ = tel["wheels"]
-                            sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z), round(sig.get("tv", 0.0), 1), tel["gear"], int(tel["rpm"]), round(shared["duty"], 2), round(shared["brake"], 2), round(sig.get("lat", 0.0), 2), round(sig.get("line", 0.0), 2), round(sig.get("tvg", 0.0), 1), round(herr, 1), round(shared["steer"], 2), round(sig.get("aim", 0.0), 2)))
+                            sig["rows"].append((round(now - t0, 2), round(speed, 1), round(wrap(track.yaw_of(mvx, mvz) - yaw), 1), round(yawrate, 1), round(min(w_["grip"] for w_ in wl_[:2]), 2), round(min(w_["grip"] for w_ in wl_[2:]), 2), tel["lap"], int(x), int(z), round(sig.get("tv", 0.0), 1), tel["gear"], int(tel["rpm"]), round(shared["duty"], 2), round(shared["brake"], 2), round(sig.get("lat", 0.0), 2), round(sig.get("line", 0.0), 2), round(sig.get("tvg", 0.0), 1), round(herr, 1), round(shared["steer"], 2), round(sig.get("aim", 0.0), 2), sig.get("br", "")))
                     sig["prev"] = (x, z, now)
             if args.focus_test:
                 if ft["phase"] == 0 and now - t0 > args.focus_test[0] and speed > 25:
@@ -1281,6 +1281,7 @@ def main():
                             stn["g"][b] = gl + 0.02 * (meas - gl)
                             gl = stn["g"][b]
                 if args.follower == "designed":
+                    sig["br"] = "designed"  # --sig-log
                     shared["steer"] = follower.designed(track, chain, k, x, z, yaw, speed, yawrate, lat, wn=args.st_wn, zeta=args.st_zeta, ff=args.st_ff, preview=args.st_preview, wheelbase=args.wheelbase, gain=gl, head_ahead=args.st_head_ahead, lat_scale=args.st_lat_scale, damp=args.st_yaw_damp)
                     shared["steer"] = designed_limits_(shared["steer"], speed, yawrate, shared.get("fgrip"))      # the designed follower's post-call limits (one place, see designed_limits_)
                 else:
@@ -1295,6 +1296,7 @@ def main():
                     if len(ks_) >= 20:
                         y_ = sorted(ks_[-200:])[len(ks_[-200:]) // 2] * (b_ * 10 + 5.0)
                         sl_ = max(args.steer_live_min, min(args.steer_live_max, args.steer_live_ref / max(y_, 0.1)))
+                sig["br"] = "pursuit"  # --sig-log: which branch set the steering this sample
                 shared["steer"] = follower.pursuit_steer(herr, yawrate, args.steer_gain, args.damping, sl_)      # the steering law (follower.py); the target is chosen here
                 if args.steer_clamp and chain is track.main and speed >= args.steer_clamp[0]:      # --steer-clamp V LIMIT: test only
                     shared["steer"] = max(-args.steer_clamp[1], min(args.steer_clamp[1], shared["steer"]))
@@ -1774,7 +1776,7 @@ def main():
                 sf_ = Path(__file__).resolve().parent / "gtr2_ui" / "runs" / ("signals_%s.csv" % time.strftime("%Y%m%d_%H%M%S"))
                 with sf_.open("w", encoding="utf-8") as f_:
                     f_.write("# layout %s car %s; sideslip and yawrate in degrees and degrees/s; events: track limits %s impacts %s\n" % (args.aiw, args.car_key, [(e_.get("t"), e_.get("seconds")) for e_ in limit_events if e_["seconds"] >= 0.06], [(i_["t"], i_["a"]) for i_ in impacts if not i_.get("pit")]))
-                    f_.write("t,speed,sideslip,yawrate,front_grip,rear_grip,lap,x,z,plan_speed,gear,rpm,duty,brake,lat_err,line_off,target_v,herr,steer,aim\n")
+                    f_.write("t,speed,sideslip,yawrate,front_grip,rear_grip,lap,x,z,plan_speed,gear,rpm,duty,brake,lat_err,line_off,target_v,herr,steer,aim,br\n")
                     for r_ in sig["rows"]:
                         f_.write(",".join(str(v_) for v_ in r_) + "\n")
                 print("signals logged to %s (%d rows)" % (sf_.name, len(sig["rows"])), flush=True)
