@@ -52,8 +52,9 @@ licence exposure of this repository, so:
   `.gitignore` exception names (and duplicates of the shipped set should be removed).
 - Header and list names are painted out and masked (`pagerec.NAME_BOX`, `scrub_name`). **Look at every new picture before it is
   committed:** no player name, no profile name, no path in a title bar, no desktop, no notifications, no other window.
-- Whether publishing screenshots of the game's UI is acceptable is the owner's decision (the pictures are the publishers' artwork).
-  The owner decides once; agents do not add pictures beyond the existing set without asking.
+- Decision (owner, 2026-11-28): the shipped reference screenshots of the game's own screens are allowed to be published. The
+  scanner therefore no longer raises a REVIEW item for them. Agents still look at each new picture before it is committed (no
+  player name, no profile name, no path, no other window), and do not add pictures beyond the existing set without asking.
 
 ## Procedure before a push (an agent does all of this, then waits for the yes)
 

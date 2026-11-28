@@ -66,9 +66,6 @@ def main():
                 line = text.count("\n", 0, m.start()) + 1
                 block.append("%s in %s:%d: %s" % (what, f, line, m.group(0)[:60]))
                 break
-    pics = [f for f in files if f.lower().endswith((".png", ".jpg", ".bmp"))]
-    if pics:
-        review.append("%d picture(s) tracked (reference screenshots of the game's own screens): confirm they are allowed and carry no player name, e.g. %s" % (len(pics), pics[0]))
 
     rng = []
     if not a.all_history:
