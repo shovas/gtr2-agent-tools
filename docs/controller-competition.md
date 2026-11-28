@@ -1170,3 +1170,13 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - **Stop rule:** any spin or any impact above 30 m/s² ends the session and rejects the clamp.
 - **Verification before the verdict:** the command must actually sit at ±0.35 at 40 m/s and above (at least 80 such samples, and no sample between 0.35 and 0.40 in magnitude), or the arm is void, not judged.
 - **Scope:** this tests only the 700 m excursion under the guard-off condition. It does not test the 525 m or 1150 m events.
+
+**Verdict of the pre-registered front-axle test (2026-11-28, log `signals_20261128_004734.csv`, arm: `--live-off limit_guard --steer-clamp 40 0.35`).**
+
+- **Verification passed:** 187 samples at 40 m/s and above sit at ±0.35 (within 0.005), none above 0.36 in magnitude. The clamp bound in this run, so the arm is valid.
+- **Success rule: failed.** One track-limit event per lap at about 700 m: 154.1, 276.4, 398.1, 520.7 and 643.3 s on the five timed laps (plus one on the out lap at 31.5 s). The rule allowed at most two. The guard-off baseline had four.
+- **Duration: worse.** Each event lasted 3.5 to 4.0 s, against about 3.0 s in the guard-off baseline.
+- **Stop rule:** not triggered (no impacts, no spin).
+- **Lap time rule:** not assessable (no clean lap).
+- **Verdict:** the clamp is rejected. Limiting the pursuit command at 0.35 above 40 m/s does not stop the 700 m excursion, and it leaves the car off the road longer. Together with the guard result, this argues against the simple front-axle version of the hypothesis: the excursion is not fixed by reducing the steering demand at that speed.
+- Not tested: the 525 m braking event, the 1150 m and 4500 m clusters.
