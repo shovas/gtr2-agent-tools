@@ -1124,3 +1124,11 @@ Status: the clamp verdict is rejected; the mechanism of the excursion steering i
 - What is established: the clamp's condition is `chain is track.main`, and the exceptions still occur with the car on the main line. The cause is either the `chain` flag or something else in the pursuit path; the logs cannot separate the two.
 
 Next instrument: add the driver's `chain` state (main or pit) to the branch tag, so each sample records whether the clamp's condition held. Only then can the clamp test be judged fairly.
+
+**Chain state at the excursions (2026-11-28, baseline with the `pursuit-main`/`pursuit-pit` tag, `signals_20261128_001934.csv`, five laps, no clamp).**
+
+- Pursuit samples at 40 m/s and above: 3131 `pursuit-main`, 9 `pursuit-pit`. Samples above 0.36 steering at that speed: 147, all `pursuit-main`.
+- So the driver's chain reads main at the excursions. The chain flag does not explain why the clamp failed to bind in its run.
+- The clamp run (`signals_20261127_235023.csv`) was made before the tag existed, so its chain state is not recorded. The baseline makes it unlikely the chain differed, but that is an inference, not a measurement.
+- Open: the clamp run's exceptions (steering of −0.95 at about 50 m/s, on the racing line, in the samples the clamp should limit) remain unexplained. The next check is to count in the driver how often the clamp line executes with a value that changes the command, in a clamp run with the tag on.
+- Also this session: one kerb strike at 92.6 s (69 m/s², Kerbs21, start), and track-limit events at 31.8, 153.7, 275.3, 397.0, 519.2, 528.6 and 648.7 s.
