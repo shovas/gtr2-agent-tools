@@ -1027,3 +1027,13 @@ Caveats: the road half-widths (`wp_width`) are used as the edge, not the game's 
 - With a real plan (under 100 m/s) the largest achieved-below-plan gaps are at: 2125 to 2300 m (25 to 43 m/s; achieved 33 to 55 m/s), 4225 to 4300 m (23 to 44 m/s), 2625 to 2675 m (26 to 51 m/s; the 2570 m stall region), 875 to 925 m (14 to 31 m/s), 525 to 575 m (12 to 20 m/s), 1850 to 1900 m (10 to 24 m/s), 1300 m (19.5 m/s).
 - Caveat that blocks any conclusion yet: the gap in braking zones may be the planner's look-ahead value rather than the speed at that point. This must be checked against the planner's code (how `plan_speed` is written to the log) before any of these gaps is treated as lost time. Until then they are candidates, not measured losses.
 - No feedforward has been built or tested. This table is the reference the learned profile would be compared with.
+
+**Correction to the learned-speed reference (33f84da): what `plan_speed` is.** Checked in `scripts/gtr2-drive-lap.py` (about line 1333 to 1347): `plan_speed` (logged as `sig["tv"]`) is `target_v = max(3, min(vmax, corner_v))`, where `corner_v` comes from `track.speed_limit` (or `speed_limit_live`) over a window with a braking plan. It is a lateral speed limit with a deceleration envelope. It does not limit acceleration.
+
+Consequences:
+
+- A plan step upward (for example 18.7 to 46.9 m/s in 25 m at 2600 to 2625 m; 2100 to 2125 m, +32 m/s; 3875 to 3900 m, +32 m/s) is a lateral limit ending at a corner exit. The car cannot accelerate that fast (about 4 to 5 m/s² is observed there), so the gap at exits is power-limited, not a lost-braking or planner error. My earlier list of gaps at exits is therefore withdrawn as lost time.
+- Downward steps (for example 128.9 to 100.9 m/s in 25 m, at 4175 to 4200 m) would need about 129 m/s² if they were a single profile. These are bin medians over different laps and waypoints, so they cannot be read as one profile. They are not verified.
+- The gap that is still informative is mid-corner, where the plan is close to a lateral limit and the car is well below it: 525 to 575 m (plan 48 to 58, achieved 34 to 41 m/s) and 1175 m (plan 32, achieved 21 m/s). That is the candidate for "underused grip", to be checked against the car's actual lateral acceleration before any claim.
+
+No driver change or in-game test has been made from this. The learned profile still has to be built from achieved, feasible speeds, not from `plan_speed`.
