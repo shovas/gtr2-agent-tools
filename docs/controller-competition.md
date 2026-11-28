@@ -1011,3 +1011,11 @@ Next test (not run): whether the shortfall is the controller (pure pursuit targe
 - Consequence: under convention B the planner never asks for a line outside the road, so the 650 to 700 m and 1150 m excursions are not caused by the planned line leaving the road. The car leaves the road while following a line that stays inside it. The cause is in the controller or the vehicle response.
 
 Caveats: the road half-widths (`wp_width`) are used as the edge, not the game's own track-limit boundary, which may use other widths (`wp_dwidth`, cut-track widths). The 91% depends on the same geometry, so it is strong but not a proof. The check should be repeated against the game's boundary before the conclusion is used for a fix.
+
+**Does the logged aim shift explain the shortfall? (2026-11-27, scratchpad `aim_target.py`, every 4th sample, 421,625 samples.)**
+
+- The logged `aim` column is small: mean −0.02 m, SD 0.68 m, above 0.5 m in 15% of samples. The deliberate aim offsets (`--aim-comp` and the rest) are therefore not large enough to explain the spread.
+- Regression of the geometric offset on the target offset: planned line alone, slope 0.451, R² 0.242; planned minus aim, slope 0.413, R² 0.231; planned plus aim, slope 0.453, R² 0.232.
+- The planned line alone explains the most variance, so the logged aim does not account for the shortfall. The 42% tracking slope (9544863) stands as a measurement, not an artefact of the aim.
+- Caveat: R² is about 0.24, so most of the variance in the car's offset is not explained by the planned line either. The aim column may not hold every intended offset (for example the learned ILC corrections, which are not all logged). The shortfall is real, and its cause is still open.
+- Process note: the first two runs of this regression were killed by the time limit. The second had a quadratic mean calculation, now fixed; the reported numbers come from the fixed run.
