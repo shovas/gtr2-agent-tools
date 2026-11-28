@@ -4,7 +4,7 @@ What the tools offer, most interesting first. Technical detail is in [CAPABILITI
 
 ## Drive the game hands-free
 
-- **Automatic laps with a virtual wheel** (needs vJoy): the car drives a full lap from the pits on the track's racing line, with human-like steering and pedal inputs, and reports lap time, track-limit and contact checks. Imola with the Maserati MC12 is tuned (best clean no-aids lap about 121 s, against a real-life target of about 111 s: the goal is **not yet met**); every other layout is driven with defaults (all 34 layouts tested clean with the Maserati; other cars untested).
+- **Automatic laps with a virtual wheel** (needs vJoy): the car drives a full lap from the pits on the track's racing line, with human-like steering and pedal inputs, and reports lap time, track-limit and contact checks. Imola with the Maserati MC12 is tuned (best confirmed clean lap 1:52.66 from an earlier build; the committed setup's best clean lap in a 10-lap session is 1:59.9, and typical clean laps are about 2:00; the real-life target of about 1:50.8 is **not yet met**); every other layout is driven with defaults (all 34 layouts tested clean with the Maserati; other cars untested).
 - **Honest driving conditions:** the driver runs in Simulation mode with every driving aid off, corner and pit-spot markers hidden, and never reads on-screen hints.
 - **Self-improving driver** (experimental): it learns grip and corner speeds as it drives, recovers from spins and a stuck car, and tools measure the car's real braking, cornering and acceleration limits.
 
