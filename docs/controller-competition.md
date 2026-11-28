@@ -1180,3 +1180,13 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - **Lap time rule:** not assessable (no clean lap).
 - **Verdict:** the clamp is rejected. Limiting the pursuit command at 0.35 above 40 m/s does not stop the 700 m excursion, and it leaves the car off the road longer. Together with the guard result, this argues against the simple front-axle version of the hypothesis: the excursion is not fixed by reducing the steering demand at that speed.
 - Not tested: the 525 m braking event, the 1150 m and 4500 m clusters.
+
+**Pre-registered offline analysis: the 525 m braking event (written 2026-11-28, before any run; no game time).**
+
+- **Question:** what happens in the braking phase at about 500 to 575 m that ends in a track-limit event, and does it differ from the braking on laps without one?
+- **Data:** existing logs only: `signals_20261128_001934.csv`, `signals_20261128_003352.csv`, `signals_20261128_004734.csv` and `signals_20261128_000526.csv`, all committed configuration or its single-change arms.
+- **Measures, per lap, at 500 to 575 m (nearest waypoint, not the speed integral):** braking onset (first sample with brake above 0.1), peak brake, speed at onset, speed at 550 m, heading error at onset and at the minimum speed, lateral error at the minimum speed, and whether a track-limit event falls in the window.
+- **Comparison:** laps with a 525 m event against laps without, using the same measures. A difference counts only if it is consistent across the logs; one lap is not evidence.
+- **Pass rule for a hypothesis:** the difference must appear in at least three of four logs, with the same sign. Otherwise the 525 m event is recorded as unexplained.
+- **Stop rule:** if the logs do not contain at least one lap with and one lap without the event in each of two logs, the analysis is recorded as underpowered and no conclusion is drawn.
+- **Game time:** none for this analysis. A game test is only considered after it, under its own pre-registered protocol.
