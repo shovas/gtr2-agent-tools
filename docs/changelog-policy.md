@@ -1,0 +1,5 @@
+# Changelog and commit policy
+
+Read this before committing or changing `CHANGES.md`. Moved verbatim from `CLAUDE.md`.
+
+- **Start every commit subject with a changelog tag:** `highlight:` (something users of the tools will value: a new ability, faster, easier), `improve:` (mostly agents and tests), `fix:`, `docs:`, or `chore:` (left out of the notes). `CHANGES.md` is generated and is kept up to date with each commit that records important progress: after such a commit, run `scripts\.venv\Scripts\python.exe -I scripts\changelog.py --write` and commit the regenerated file in the same commit or in a `changelog:` commit right after it (not only before a release or a push; a stale `CHANGES.md` is a defect) (it groups by day, ordered highlights, improvements, fixes, documentation) and `--check` lists untagged commits; `CHANGES.md` is written for end users, so give each user-visible commit a short plain-language line in `scripts/changelog_overrides.json` (and `skip` the agent-only ones); the detailed, agent-level history is `git log`, not `CHANGES.md`. Commit the regenerated file with a `changelog:` subject.

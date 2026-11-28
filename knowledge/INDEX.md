@@ -11,4 +11,6 @@ Start here. Then read `SUMMARY.md`, the matching `topics/` file, and the sources
 | Signal logs and their definitions | signals CSV, lat_err, plan_speed, sign convention, distance axis | `topics/signal-logs.md` |
 | Controller competition (full record) | leaderboard, follower, stanley, designed, pursuit | `docs/controller-competition.md` |
 
+Also: `SUMMARY.md` (findings and limits), `SOURCES.md` (paths, authority, examination depth), `CHANGELOG.md` (corrections).
+
 Use case: a question about why a lap is slow → `topics/imola-lap-gap.md`, then `docs/controller-competition.md`.
