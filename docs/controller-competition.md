@@ -842,3 +842,29 @@ Reading: the heading swing that precedes an excursion is the same heading swing 
 Across all signal logs of the session (1213 windows where the heading error is at or below -13 degrees, the steering is within 0.5, and the speed is above 30 m/s): 465 were followed by an excursion (lateral error at or beyond -5 m within the window or the next 2 s), and 748 were not. So 38% of such windows end in an excursion.
 
 Reading: the feature is common and the excursion rate is 38%, which is a weak discriminator. It is not a usable trigger on its own. Any predictor for the excursion needs more than this heading window, probably the rate of change of heading together with the steering command, and it has not been fitted yet. This is an offline screen, not a game test.
+
+### Baseline discrepancy located (2026-11-27): where the 1:52.66 lap and the paired laps part company
+
+Sources: git history of `scripts/gtr2_driving/track_params.json` (commit `c9982e5` added the optimised-line zone 2400 to 2750 m and recorded 1:52.66; commit `8698c04` reverted it after a confirmation session had 0 of 12 clean laps). The committed Imola entry at HEAD does not contain the 2400 to 2750 m zone. The 1:52.66 lap is lap 11 of session 2026-11-25 00:17:54, signal log `signals_20261125_001740.csv` (present). The paired comparison lap is lap 4 of `signals_20261127_134353.csv` (paired A1).
+
+Distance-aligned cumulative time (lap distance by integrated speed, same method for both logs):
+
+| distance (m) | 1:52.66 lap | paired A1 lap 4 | paired minus best |
+|---|---|---|---|
+| 500 | 10.06 s | 10.57 s | +0.51 |
+| 1000 | 20.01 s | 20.57 s | +0.56 |
+| 1500 | 33.16 s | 35.21 s | +2.05 |
+| 2000 | 43.45 s | 45.56 s | +2.11 |
+| 2500 | 54.42 s | 57.67 s | +3.25 |
+| 3000 | 67.48 s | 71.16 s | +3.68 |
+| 3500 | 80.18 s | 84.79 s | +4.61 |
+| 4000 | 91.62 s | 97.13 s | +5.51 |
+| 4500 | 102.95 s | 108.78 s | +5.83 |
+
+Reading:
+- The loss builds in steps. About 0.5 s is lost in the first 1000 m. Between 1000 and 1500 m (the 1150 m excursion) it grows by 1.5 s. Between 2000 and 2500 m (the 2440 to 2520 m bend, the same section where the line-optimisation zone was added) it grows by 1.1 s. Between 3000 and 4500 m it grows by about 2.2 s over 1500 m.
+- The steps line up with the places where the 2400 to 2750 m zone and the excursions act. That fits the revert being part of the cause, but it does not establish it: this is one lap against one lap.
+- Selection: the comparison is the best clean lap against one typical lap. The paired A-arm clean laps average about 119.6 s, so the typical lap is about 7 s slower than the best. The 1:52.66 lap is a best-of-many lap, so some of the gap is selection, not configuration. This must be separated with the distribution of clean laps from the same configuration.
+- Not yet checked: whether the paired runs apply the committed zones at runtime (they should), and the clean-lap distribution of the 1:52.66 configuration over more sessions.
+
+Next: a targeted test of the reverted configuration against the zone, in the staged order of the mission (a short qualification run first, a paired run only if it passes).
