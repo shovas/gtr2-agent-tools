@@ -1003,3 +1003,11 @@ So the 4500 m cluster coincides with a sustained lateral tracking error where th
 Reading: lateral tracking of the planned line is systematically weak, and worst where the planner asks for the largest offsets. This is a general controller finding, not only the 4500 m corner. Caveats: the 3.2 million samples come from unequal numbers of laps and sessions, so they are not independent; the nearest-waypoint offset is an approximation; and the sample is weighted toward the runs in the log folder.
 
 Next test (not run): whether the shortfall is the controller (pure pursuit target choice, lookahead) or the planner (the line itself leaves the road: check whether the planned offset points outside the boundary near the largest errors).
+
+**Does the planner put the line outside the road? (2026-11-27, scratchpad `side_check.py` and an inline check.)**
+
+- The sign convention of `wp_path` was not known. Under convention B (positive offset = right) the planned dry line lies inside the road half-widths at all 947 main-path waypoints. Under convention A (positive = left) it lies outside at 36 waypoints, at 528 to 533 m, 646 to 661 m, 1100 m and 1227 to 1248 m. Those distances match the excursion clusters, which is why the convention matters.
+- The track-limit events decide it. At each of 3162 matched events the car's geometric offset is outside the road under convention B in 91% of cases, against 46% under convention A. The events are crossings, so they should be outside the road on the side the events come from. Convention B is the consistent one.
+- Consequence: under convention B the planner never asks for a line outside the road, so the 650 to 700 m and 1150 m excursions are not caused by the planned line leaving the road. The car leaves the road while following a line that stays inside it. The cause is in the controller or the vehicle response.
+
+Caveats: the road half-widths (`wp_width`) are used as the edge, not the game's own track-limit boundary, which may use other widths (`wp_dwidth`, cut-track widths). The 91% depends on the same geometry, so it is strong but not a proof. The check should be repeated against the game's boundary before the conclusion is used for a fix.
