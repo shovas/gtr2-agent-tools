@@ -912,3 +912,13 @@ Decision rule:
 - The pursuit steering refactor (`1b43c21`) was checked for identical arithmetic (200,000 random cases, maximum difference 0).
 
 Reading: the code diff does not, by itself, show a change to the pursuit arm's behaviour. The zone removal was tested directly (restoring it gave a slower lap at 2750 m in the current build). So the candidates are: a silent behaviour change from the defaults, a difference in the game environment, or selection (one best lap against typical laps). The old-build session (fc7d66a's rule above) separates the first from the other two.
+
+### Old-build reproduction, session 1 (2026-11-27): inconclusive by its rule
+
+One session of the 1:52.66 build (commit `c9982e5`, its own Imola entry), arm A options, through the old lap-check. Signal log `signals_20261127_205101.csv` in the worktree's runs folder.
+
+- Laps: 117.11, 158.75, 120.04, 117.30, 116.38, 116.92 s; lap 7 was not completed. The session ended by timeout (the lap check's default timeout was too short for eight laps, a run-setup error on my side; the paired runner sets it longer).
+- Mean of the five normal laps (lap 2 excluded: 158.75 s, a slow lap): 117.55 s. Fastest lap in the session: 116.38 s.
+- Against the rule (at or below 116.0: code regression; at or above 119.0: not the code; between: inconclusive). Result: inconclusive. HEAD's paired sessions averaged 119.6 to 121.8 s, so the old build is about 2 s faster on average, but not the 112 to 113 s of the 1:52.66 lap.
+
+Reading: the old build is faster than HEAD by about 2 s per lap on average, which is a difference between builds, not only selection. It is still about 4 to 5 s slower than 1:52.66, so the best lap is also part of the gap. One more old-build session is needed before any conclusion (the rule's requirement).
