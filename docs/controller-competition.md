@@ -1056,3 +1056,18 @@ Track-limit events (five) and the state at each:
 So the 700 m excursion is a fast-corner, heading-error problem that recurs on every lap; the 525 m event is a braking-phase event, not a corner the car is taking too slowly. Neither is a lost-time finding yet. The 92.7 s kerb strike is a separate, slow-speed event at the start of the lap.
 
 Limit of this session: five laps, one configuration. These are observations, not a test of a change.
+
+**Earliest divergence before the 700 m excursion (2026-11-27, log `signals_20261127_233533.csv`, four lap-spaced events at 31.7, 153.5, 276.2, 398.6 s; checked 3 s before each).**
+
+- At −3 s: on the line, heading error about 0 to 2°, yaw rate about 0, steering 0, full throttle, third gear.
+- From −2.5 s: steering rises to −0.45 to −0.52 by −1.5 s (the controller's correction), the heading error grows to −13 to −14°, the yaw rate reaches −15 to −21°/s and sideslip rises from about 0 to +4.7°. Lateral error goes from +2.4 m to about −7 m over the next 2 s.
+- The upshift to fourth gear comes at −0.5 s in three events (at −1 s in one, shown as neutral in the log). It is after the divergence has begun, so it does not start the excursion.
+- Grip (the model's own tyre-grip value, below 1 when sliding): the front grip falls first, to 0.5 to 0.7 at −1.5 s (0.00 in one sample), while the rear stays at 0.5 to 0.9. In the fourth event the rear is the lower of the two only at −2 s, by 0.08.
+
+Competing explanations and what the evidence says:
+
+1. **Front-axle saturation at the controller's steering demand (about −0.45 at 48 to 50 m/s).** Supported: the front grip collapses before the yaw grows, and the steering demand is the trigger. This is the leading candidate.
+2. **Power oversteer from the rear in third gear.** Not supported as the first event: the rear grip does not drop before the front in these four events. Not excluded for a different corner.
+3. **Upshift starts the yaw.** Rejected: the divergence starts about 2 s before the shift.
+
+Limits: five laps, four events, one configuration; the grip values are the model's internal estimate, not a measured quantity; the sideslip sign convention is not confirmed against the game. The next test would reduce the steering demand at this speed and check whether the front grip and the excursion both stop, but that is a change to the controller and needs a pre-registered baseline before it is run.
