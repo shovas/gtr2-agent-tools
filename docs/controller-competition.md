@@ -1080,3 +1080,13 @@ Limits: five laps, four events, one configuration; the grip values are the model
 - **Stop rule:** any spin or impact of more than 30 m/s² ends the session and rejects the change.
 - **What it does not test:** the other events (525 m braking, 1150 m, 4500 m). Those stay open.
 - **Status:** not implemented. The change is a single option in the pursuit steering step of `scripts/gtr2-drive-lap.py`, off by default, enabled only by the test's command line.
+
+**Result of the pre-registered steering-clamp test (2026-11-27, `--steer-clamp 40 0.35`, log `signals_20261127_235023.csv`, five laps).**
+
+- **Success rule: failed.** Track-limit events at 31.5, 154.9, 278.9 and 401.0 s, the same lap positions as the baseline (31.7, 153.5, 276.2, 398.6 s), so the 700 m excursion still occurs on four of five laps. Two further events at 522.4 and 644.8 s.
+- **Stop rule: triggered.** Two impacts above 30 m/s² (82.1 m/s² at 340.5 s and 72.7 m/s² at 706.4 s, both logged against kerbs; the lap check reported FAIL).
+- **Verdict: rejected**, as the protocol says. The value 0.35 is not to be searched again without a new hypothesis.
+
+**Why the test did not isolate the hypothesis.** The clamp is applied to the pursuit command, but the track-limit guard (`--limit-guard`, around line 1526 of `scripts/gtr2-drive-lap.py`) adds steering after it whenever three or more tyres are off the road, clamped only to ±1. In the excursions the car is already off the road, so the guard pushes the logged steering back to −0.95 at exactly the moments the clamp was meant to act. Above 40 m/s only 52 of 3070 samples exceed 0.36, and every one of the four events logs −0.95.
+
+So the result rejects this clamp as implemented. It does not reject the front-axle-saturation hypothesis, because the clamp never bound during the excursion. A valid test needs the guard's steering to respect the same limit, or the guard switched off for the test, and then a new pre-registered protocol.
