@@ -1154,3 +1154,10 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - Success measure: the number of track-limit events at 650 to 760 m per lap, and the peak |steer| during those events. The guard is judged to matter if the excursion count changes by at least two events over five laps, or if the peak steering on the excursion falls below 0.9.
 - Stop rule: any spin or impact above 30 m/s² ends the session and is recorded as the guard being needed to avoid crashes.
 - Interpretation rule: a change in excursion count with no crash change is recorded as a guard effect on the excursion, not as a lap-time result.
+
+**Result of the pre-registered limit-guard ablation (2026-11-28, `--live-off limit_guard`, five laps, `signals_20261128_003352.csv`; baseline `signals_20261128_001934.csv`).**
+
+- **Rule outcome: not met.** Track-limit events at 650 to 760 m: 4 with the guard off, 4 with it on, so the count did not change by two. Peak |steer| during the events: 1.00, 0.99, 0.89 and 0.95 without the guard, against 1.00 in all four baseline events. The rule's "falls below 0.9" was met in one event only. No impacts and no spin in the ablation run.
+- **Secondary observation (n = 4 events each side, not a pass):** without the guard each excursion lasted about 3.0 s (3.3, 3.0, 3.0, 3.0 s); with it, about 2.0 s (2.7, 2.2, 2.1, 1.0 s). Lateral error at the worst point was −11 to −14 m without the guard and −8 to −13 m with it.
+- **Reading:** the guard does not prevent the 700 m excursion; the car still leaves the road on every lap. It shortens the time spent off the road. So the earlier worry that the guard makes excursions worse is not supported: on this data it helps, though the steering it adds reaches full lock.
+- The 700 m excursion therefore persists with and without the guard. The guard is not its cause, and removing it does not fix it.
