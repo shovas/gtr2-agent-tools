@@ -939,3 +939,23 @@ Conclusion (observation, with the caveat that it rests on two sessions per build
 - Implication for the target: 1:50.8 is about 2 s below the best lap of this build and about 9 s below its typical lap. It needs a change in the distribution, not a reproduction of a lucky lap.
 
 Remaining setup issue: the lap check ended in both old-build sessions during lap 7 by timeout; the paired runner's settings avoid this, but the cause is not yet traced.
+
+## 2026-11-27: offline scan of track-limit events by lap distance (no game time)
+
+Method: `signals_*.csv` in `scripts/gtr2_ui/runs/` (476 logs). Each event from the `track limits` header is mapped to the nearest sample; lap distance is the running integral of speed within each lap. Scan script: scratchpad `excursion_scan.py` (not committed).
+
+Result: 3209 events. The largest clusters, by 50 m bin (events in the bin):
+
+- 650 to 699 m: 491 (largest). 700 to 749 m: 259.
+- 1150 to 1199 m: 232. 1200 to 1249 m: 90.
+- 4500 to 4549 m: 320 and 4550 to 4599 m: 103. **Not listed in earlier notes.** Next largest to check.
+- 2550 to 2649 m: 189. 2100 to 2149 m: 86.
+- 3850 to 3949 m: 96.
+
+Caveats: a single excursion can log several events, and the distance integral is approximate. Counts show where excursions cluster, not how severe each one is.
+
+State at events, averaged, 690 to 760 m: speed 48.7 m/s, steer -0.87 (close to full lock), heading error -12.7 deg, yaw rate -7.4 deg/s, throttle duty 0.31 (not full throttle on average), gear 3.8. This contradicts the earlier "full throttle" wording; the duty field is an average over events and should be checked per event before it is used.
+
+State at events 1120 to 1200 m: speed 28.3 m/s, steer 0.07, heading error +12.0 deg, brake 0.17, gear 2.5.
+
+Next: the 4500 m cluster is larger than either of the two studied, so it is the first unexplained target. Plan: per-event trace (steer, throttle, heading error, lat_err) for the 4500 m cluster, and a check that the cluster is not an artefact of the lap counter or the start/finish area.
