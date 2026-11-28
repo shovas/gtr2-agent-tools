@@ -1071,3 +1071,12 @@ Competing explanations and what the evidence says:
 3. **Upshift starts the yaw.** Rejected: the divergence starts about 2 s before the shift.
 
 Limits: five laps, four events, one configuration; the grip values are the model's internal estimate, not a measured quantity; the sideslip sign convention is not confirmed against the game. The next test would reduce the steering demand at this speed and check whether the front grip and the excursion both stop, but that is a change to the controller and needs a pre-registered baseline before it is run.
+
+**Pre-registered test: steering clamp at speed (set before any code or game change, 2026-11-27).** The idea is the one already listed as a next step (`docs/analog-driving.md`, the understeer item; `docs/driving-theory.md`, item 1). This section fixes its rule before it is run.
+
+- **Baseline:** five laps, committed configuration, session `signals_20261127_233533.csv`, commit `0d4161e`. Events: four 700 m track-limit events in five laps (31.7, 153.5, 276.2, 398.6 s), each with steering at about −0.45 to −0.52 and front grip falling to 0.5 to 0.7 about 1.5 s later.
+- **Change:** above 40 m/s, the pursuit steering command is limited to ±0.35 of the lock. The value is taken from the baseline: at −2 s before each event, before any divergence, the front grip was 0.84 to 0.96 with steering at −0.35. Below 40 m/s nothing changes.
+- **Success rule:** in a five-lap session, no track-limit event between 650 and 760 m on at least four of five laps, and no loss of lap time above 1.0 s against the baseline's clean-lap average. If either fails, the clamp is rejected, not tuned: the value 0.35 is not to be searched again without a new hypothesis.
+- **Stop rule:** any spin or impact of more than 30 m/s² ends the session and rejects the change.
+- **What it does not test:** the other events (525 m braking, 1150 m, 4500 m). Those stay open.
+- **Status:** not implemented. The change is a single option in the pursuit steering step of `scripts/gtr2-drive-lap.py`, off by default, enabled only by the test's command line.
