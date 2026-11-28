@@ -1132,3 +1132,10 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - The clamp run (`signals_20261127_235023.csv`) was made before the tag existed, so its chain state is not recorded. The baseline makes it unlikely the chain differed, but that is an inference, not a measurement.
 - Open: the clamp run's exceptions (steering of −0.95 at about 50 m/s, on the racing line, in the samples the clamp should limit) remain unexplained. The next check is to count in the driver how often the clamp line executes with a value that changes the command, in a clamp run with the tag on.
 - Also this session: one kerb strike at 92.6 s (69 m/s², Kerbs21, start), and track-limit events at 31.8, 153.7, 275.3, 397.0, 519.2, 528.6 and 648.7 s.
+
+**The clamp did bind, except on 51 samples (2026-11-28, `signals_20261127_235023.csv`, 3070 samples at 40 m/s and above).**
+
+- 80 samples sit exactly at ±0.35 (within 0.005), and none lie between 0.35 and 0.40 in magnitude. That plateau is the clamp working.
+- 51 samples (about 1.7%) are near −0.95 (the histogram shows a second group at 0.95). These are the samples the clamp did not limit, and they are in the excursions.
+- So the clamp is not broken, and my earlier wording ("the clamp did not bind in the excursions") overstated it: it binds in most samples, but not on the ones that matter most. Something writes about −0.95 into the steering command on those 51 samples, after the clamp line. I have not identified the writer. The writers I checked (lines 1284 to 1799 of `scripts/gtr2-drive-lap.py`) are either inactive in this configuration or cannot produce −0.95 at speed.
+- Consequence for the verdict: the rejection under the pre-registered rules stands, but the test was not clean, because the clamp limited the command in most of the samples yet the unlimited samples coincide with the excursions. A fair retest needs the 51-sample writer found first.
