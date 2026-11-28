@@ -1102,3 +1102,16 @@ What the logs do show (`signals_20261127_233533.csv` baseline against `signals_2
 - Open: which branch the excursion samples take. The pursuit assignment and the clamp sit in the `else` branch around line 1297. If the excursion samples skip that branch, the clamp cannot apply to them. This is not yet traced.
 
 Status: the clamp verdict is rejected; the mechanism of the excursion steering is unresolved. The next step is instrumentation, not a new controller test: log which branch sets the steering on each sample, then repeat the clamp test with that branch covered.
+
+**Branch trace of the excursions (2026-11-28, instrumented baseline, no clamp, `signals_20261128_000526.csv`, five laps, `--sig-log` with the new `br` column).**
+
+- Every sample at 40 m/s and above is tagged `pursuit` (3138 of 3138). The steering in the excursions is therefore the pursuit law, not the designed follower, the box or the merge logic.
+- The excursions at 31.7, 154.4, 276.8 and 398.9 s show steering of −0.83 to −1.00 at 49 to 50 m/s with the tag `pursuit`. The baseline reproduces the 700 m excursion, as the earlier session did.
+- Baseline impacts this session: one kerb strike at 701.1 s (68.2 m/s², Kerbs21). Track-limit events also at 520.1 s and 649.6 s.
+
+**Consequence for the clamp test (`ba4bdcc` and the protocol above).** The clamp was meant to limit exactly this pursuit command, but it only applies when `chain is track.main`. The driver starts every lap on the pit chain (`chain0`, line 797) and switches to `track.main` only at the pit-exit join (line 1028). So:
+
+- The out-lap excursion at 31.4 to 32.2 s happens on the pit chain, where the clamp cannot bind. That explains those exceptions.
+- The exceptions at 154.8 s and later are on lap 2, after the switch. The clamp's condition should hold there, and this is not explained. Unresolved.
+
+**Verdict on the test as run.** The clamp rejection stands by the rules, but the test did not cover the first lap's excursion, and it did not cover the lap-2 excursion for a reason I have not found. The test is therefore not a fair test of the front-axle hypothesis. A valid rerun needs (a) the clamp applied on the pit chain as well as the main track, and (b) an explanation of the lap-2 exceptions, before a new pre-registered protocol is run.
