@@ -1211,3 +1211,12 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - Event laps: 4; laps without: 26. Pooled medians, event against no event: onset speed 47.3 against 46.5 m/s; heading error at onset −6.7 against −4.4°; peak brake 1.00 both; minimum speed 20.2 against 20.7 m/s.
 - **Pass rule: not met.** The heading error at onset is more negative on event laps, but within each of the three logs that have event laps the event laps are not consistently different (for example in `signals_20261128_001934.csv` the event laps are −3.6 and −7.2° against −3.8, −4.4, −3.9 and −6.4° without). The differences are smaller than the lap-to-lap spread. The braking event is not explained by any of these measures.
 - **Observation, not a result:** at the minimum-speed sample the heading error is about +22° on every lap of the three logs with the track-limit guard on (`001934`, `000526`, `233533`), and about +8° in the two with it off (`003352`, `004734`). This split is by log configuration, with few logs, and the guard's added steering acts only when the car is off the road. Whether the guard causes the larger heading error at 1150 m needs its own pre-registered test; it is recorded here and not used as a conclusion.
+
+**Pre-registered replication: does the track-limit guard change heading error at 1150 m? (written 2026-11-28, before the runs).**
+
+- **Question:** the observation in c57a38d (heading error about +22° at the 1150 m minimum-speed sample with the guard on, about +8° with it off) is from one guard-off run and three guard-on runs, with other settings differing. This tests it with matched sessions.
+- **Arms:** A = committed configuration, guard on (default live mode), five laps. B = the same with `--live-off limit_guard`, five laps. Two sessions each, run one after the other; no clamp, no other option changes.
+- **Measure:** heading error at the minimum-speed sample in 1100 to 1200 m, per timed lap (nearest waypoint).
+- **Pass rule:** the median difference between arms is at least 10 degrees in the same direction in both replicate pairs (A minus B), with the per-arm lap spread smaller than that difference.
+- **Stop rule:** any impact above 30 m/s² ends the session and voids the arm.
+- **Scope:** this tests only the heading error at 1150 m. It does not test lap time or the track-limit count.
