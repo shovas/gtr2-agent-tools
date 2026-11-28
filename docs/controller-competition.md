@@ -922,3 +922,20 @@ One session of the 1:52.66 build (commit `c9982e5`, its own Imola entry), arm A 
 - Against the rule (at or below 116.0: code regression; at or above 119.0: not the code; between: inconclusive). Result: inconclusive. HEAD's paired sessions averaged 119.6 to 121.8 s, so the old build is about 2 s faster on average, but not the 112 to 113 s of the 1:52.66 lap.
 
 Reading: the old build is faster than HEAD by about 2 s per lap on average, which is a difference between builds, not only selection. It is still about 4 to 5 s slower than 1:52.66, so the best lap is also part of the gap. One more old-build session is needed before any conclusion (the rule's requirement).
+
+### Old-build reproduction, session 2 (2026-11-27): the 1:52.66 build is not faster on average; 1:52.66 is a tail lap
+
+Session 2 of the 1:52.66 build (`signals_20261127_210644.csv`): laps 122.13, 121.92, 122.35, 122.37, 123.07, 123.08 s. The session ended in the same way as session 1 (a run-setup timeout during lap 7 at about 25 s into it; a setup issue to fix in the lap-check call, not a driving result).
+
+Combined over both old-build sessions (11 normal laps, lap 2 of session 1 excluded as a 158.8 s slow lap):
+- Session means: 117.6 s and 122.5 s. The two sessions of the same build differ by about 5 s.
+- Overall mean about 120 s, the same as the HEAD paired sessions (119.6 to 121.8 s).
+- Rule outcome: session 2 is at or above 119.0 s, so by the rule the code is not the cause.
+
+Conclusion (observation, with the caveat that it rests on two sessions per build):
+- The build that produced 1:52.66 does not run about 112 s laps on average. Its ordinary lap is about 120 s, like HEAD.
+- The 1:52.66 lap is therefore a single best lap from the tail of the distribution, not a typical lap of that build. The paired laps are not a broken baseline; they are the typical pace.
+- Session-to-session spread is about 5 s for one build, which is larger than the 2 s gap between builds. Single-session comparisons of 1 to 2 s are not interpretable without many sessions.
+- Implication for the target: 1:50.8 is about 2 s below the best lap of this build and about 9 s below its typical lap. It needs a change in the distribution, not a reproduction of a lucky lap.
+
+Remaining setup issue: the lap check ended in both old-build sessions during lap 7 by timeout; the paired runner's settings avoid this, but the cause is not yet traced.
