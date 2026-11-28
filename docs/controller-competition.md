@@ -1161,3 +1161,12 @@ Next instrument: add the driver's `chain` state (main or pit) to the branch tag,
 - **Secondary observation (n = 4 events each side, not a pass):** without the guard each excursion lasted about 3.0 s (3.3, 3.0, 3.0, 3.0 s); with it, about 2.0 s (2.7, 2.2, 2.1, 1.0 s). Lateral error at the worst point was −11 to −14 m without the guard and −8 to −13 m with it.
 - **Reading:** the guard does not prevent the 700 m excursion; the car still leaves the road on every lap. It shortens the time spent off the road. So the earlier worry that the guard makes excursions worse is not supported: on this data it helps, though the steering it adds reaches full lock.
 - The 700 m excursion therefore persists with and without the guard. The guard is not its cause, and removing it does not fix it.
+
+**Pre-registered front-axle test with the guard off on both arms (2026-11-28, written before the run).**
+
+- **Baseline arm:** `--live-off limit_guard` with no clamp, five laps. This is already run: `signals_20261128_003352.csv`. Four track-limit events at 650 to 760 m (31.8, 152.0, 272.7, 393.4 s), peak |steer| 0.89 to 1.00.
+- **Test arm:** `--live-off limit_guard --steer-clamp 40 0.35`, five laps, identical otherwise. The clamp limits the pursuit command to ±0.35 of the lock at 40 m/s and above, so the guard is off and cannot push the command back.
+- **Success rule:** at most two track-limit events at 650 to 760 m over five laps (against four in the baseline), no impact above 30 m/s², and no clean-lap time more than 1.0 s slower than the baseline.
+- **Stop rule:** any spin or any impact above 30 m/s² ends the session and rejects the clamp.
+- **Verification before the verdict:** the command must actually sit at ±0.35 at 40 m/s and above (at least 80 such samples, and no sample between 0.35 and 0.40 in magnitude), or the arm is void, not judged.
+- **Scope:** this tests only the 700 m excursion under the guard-off condition. It does not test the 525 m or 1150 m events.
