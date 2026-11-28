@@ -1115,3 +1115,12 @@ Status: the clamp verdict is rejected; the mechanism of the excursion steering i
 - The exceptions at 154.8 s and later are on lap 2, after the switch. The clamp's condition should hold there, and this is not explained. Unresolved.
 
 **Verdict on the test as run.** The clamp rejection stands by the rules, but the test did not cover the first lap's excursion, and it did not cover the lap-2 excursion for a reason I have not found. The test is therefore not a fair test of the front-axle hypothesis. A valid rerun needs (a) the clamp applied on the pit chain as well as the main track, and (b) an explanation of the lap-2 exceptions, before a new pre-registered protocol is run.
+
+**Correction to 6a83f57: the out-lap explanation is not supported by the geometry (2026-11-28).**
+
+- The lap counter in the clamp log changes at 140.0 s (0 to 1), 263.9 s, 385.9 s and so on. The exceptions at 154.8 s are therefore on the first timed lap, not on lap 2. The earlier "lap 2" label was wrong.
+- At every excursion sample in both logs (31.5, 153.5, 154.8, 276.2, 278.9, 398.6, 401.0 s) the car is 2 to 6 m from a main racing-line waypoint and 300 m or more from the nearest pit-route waypoint (`scratchpad` check against the AIW: 947 main-path and 177 pit-route waypoints).
+- So the car is physically on the racing line, including at 31.5 s. My statement that the clamp "could not bind on the out lap (pit chain)" rests on the driver's `chain` flag, which is not logged, and I have no evidence the flag reads pit at those samples. It is not established.
+- What is established: the clamp's condition is `chain is track.main`, and the exceptions still occur with the car on the main line. The cause is either the `chain` flag or something else in the pursuit path; the logs cannot separate the two.
+
+Next instrument: add the driver's `chain` state (main or pit) to the branch tag, so each sample records whether the clamp's condition held. Only then can the clamp test be judged fairly.
