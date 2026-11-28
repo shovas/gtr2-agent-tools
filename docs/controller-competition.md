@@ -868,3 +868,17 @@ Reading:
 - Not yet checked: whether the paired runs apply the committed zones at runtime (they should), and the clean-lap distribution of the 1:52.66 configuration over more sessions.
 
 Next: a targeted test of the reverted configuration against the zone, in the staged order of the mission (a short qualification run first, a paired run only if it passes).
+
+### Qualification: the 2400 to 2750 m zone restored (2026-11-27): rule set before the run
+
+Question: does the optimised-line zone at 2400 to 2750 m (the configuration that produced 1:52.66, reverted in `8698c04`) make the lap faster in the current build?
+
+Arm A: the committed Imola entry (incumbent, `--follower pursuit` only, zones 1050 to 1550, 2950 to 3250, 3750 to 4100, 4350 to 4700). Arm B: the same plus `--line-opt-zones 1050 1550 2400 2750 2950 3250 3750 4100 4350 4700` (the zone string from `c9982e5`; the later flag overrides the entry's). One pair, eight timed laps per session, `--log paired_zone.jsonl`. This is a qualification, not a confirmation.
+
+Primary: distance-aligned time at 2750 m (end of the zone), mean over clean and unclean laps, arm B minus arm A.
+Secondary: laps with a track-limit event at 2400 to 2750 m, per arm; clean-lap mean, indicative only.
+
+Decision rule:
+- Continue to a larger paired comparison if arm B is at least 0.5 s faster at 2750 m (mean of the two sessions).
+- Reject the zone if arm B is slower at 2750 m, or if it adds track-limit laps at 2400 to 2750 m.
+- Otherwise: inconclusive, and not carried forward.
