@@ -959,3 +959,19 @@ State at events, averaged, 690 to 760 m: speed 48.7 m/s, steer -0.87 (close to f
 State at events 1120 to 1200 m: speed 28.3 m/s, steer 0.07, heading error +12.0 deg, brake 0.17, gear 2.5.
 
 Next: the 4500 m cluster is larger than either of the two studied, so it is the first unexplained target. Plan: per-event trace (steer, throttle, heading error, lat_err) for the 4500 m cluster, and a check that the cluster is not an artefact of the lap counter or the start/finish area.
+
+## 2026-11-27: the 4500 m cluster is real and is a low-speed, first-gear problem
+
+Scan of the 4500 to 4650 m range (script `cluster_4500.py`, scratchpad, not committed): 511 events from 102 of the 476 logs. Lap counter values 0 to 8 all appear (39, 87, 76, 70, 61, 54, 48, 37, 25 events), so it is not a lap-counter or start/finish artefact. The worst single log has 22 events, so no one run dominates.
+
+Medians (p10 to p90) at the events:
+
+- speed 18.0 m/s (17.7 to 23.8): much slower than the 700 m cluster (48.7 m/s).
+- gear 1 (1 to 2). Throttle duty 0.30 (0.00 to 0.30). Brake 0.00 (0.00 to 0.25).
+- steer -0.13 (-0.22 to -0.03): moderate, not full lock.
+- heading error +8.0 deg (2.2 to 10.5). Yaw rate -10.2 deg/s (-17.3 to +3.5).
+- lateral error -4.4 m (-4.7 to -3.6): the car holds a line about 4.4 m off, on the boundary side that the event log flags.
+
+Reading: this is a slow first-gear corner under throttle, with a steady heading error and a steady offset. It is different from the 700 m cluster (fast, near-full lock) and from the 1150 m cluster (28 m/s, downshift). Three different mechanisms, so one fix will not cover them.
+
+Not checked: which corner this is. The track position is not identified from the AIW here; the final chicane of Imola is a likely candidate but unverified. Next: map 4500 m to a corner using the AIW waypoints and the line-opt zone list, then check whether the offset is set by the planner (target line) or by the controller (tracking error).
