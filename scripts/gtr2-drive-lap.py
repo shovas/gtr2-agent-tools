@@ -1296,7 +1296,7 @@ def main():
                     if len(ks_) >= 20:
                         y_ = sorted(ks_[-200:])[len(ks_[-200:]) // 2] * (b_ * 10 + 5.0)
                         sl_ = max(args.steer_live_min, min(args.steer_live_max, args.steer_live_ref / max(y_, 0.1)))
-                sig["br"] = "pursuit"  # --sig-log: which branch set the steering this sample
+                sig["br"] = "pursuit-main" if chain is track.main else "pursuit-pit"  # --sig-log: which branch set the steering, and whether the chain reads main or pit
                 shared["steer"] = follower.pursuit_steer(herr, yawrate, args.steer_gain, args.damping, sl_)      # the steering law (follower.py); the target is chosen here
                 if args.steer_clamp and chain is track.main and speed >= args.steer_clamp[0]:      # --steer-clamp V LIMIT: test only
                     shared["steer"] = max(-args.steer_clamp[1], min(args.steer_clamp[1], shared["steer"]))
