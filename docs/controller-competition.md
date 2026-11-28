@@ -975,3 +975,22 @@ Medians (p10 to p90) at the events:
 Reading: this is a slow first-gear corner under throttle, with a steady heading error and a steady offset. It is different from the 700 m cluster (fast, near-full lock) and from the 1150 m cluster (28 m/s, downshift). Three different mechanisms, so one fix will not cover them.
 
 Not checked: which corner this is. The track position is not identified from the AIW here; the final chicane of Imola is a likely candidate but unverified. Next: map 4500 m to a corner using the AIW waypoints and the line-opt zone list, then check whether the offset is set by the planner (target line) or by the controller (tracking error).
+
+## 2026-11-27: signal verification and tracking error against the planned line
+
+**Signal definitions checked (before using them).**
+
+- The lap distance from integrating speed is biased. Over 1464 complete laps the integral has a median of 4880.6 m, against the AIW lap length of 4906.4 m, with the 90th percentile at 4972.7 m. Position matching is used instead.
+- `line_off` is constant zero in every log, so it carries no information and must not be used.
+- `lat_err` equals the negative of the offset along the waypoint normal `wp_perp`, measured from the nearest waypoint in x and z. Correlation is −0.90 over 4400 to 4700 m and −0.99 over 650 to 750 m. Scratchpad `geo_offset.py`.
+- The earlier weak correlations of `lat_err` with the planned line (+0.41 and −0.55) came from the biased distance axis, not from a sign flip.
+
+**Tracking error at the 4500 m cluster.** Tracking error means geometric offset minus the planned dry-line offset `wp_path[0]`, binned by 25 m (scratchpad `bin_error.py`):
+
+- 4425 to 4500 m: planned offset +3.3 m, car at about 0 m. Tracking error −3.4 m, SD 1 to 2 m, held for roughly 75 m. The car does not reach the line the planner gives it.
+- 4525 m: planned −2.5 m, car at −4.0 m. Error −1.5 m.
+- 4575 m: planned +4.4 m, car at +4.9 m. Error +0.5 m. The car follows the line here.
+
+So the 4500 m cluster coincides with a sustained lateral tracking error where the planned offset is large, plus the line change into the corner. The events sit where the car is about +4.4 m off centre; the right road half-width near 4500 m is about 4.3 m (waypoint widths), so the cluster is a boundary crossing of a car that is not on the planned line. The exact rule test (section 4 of the mission) is still open.
+
+**Open.** Whether tracking error scales with the size of the planned offset across the whole lap (a whole-lap regression of geometric offset on planned offset). This run is in progress.
